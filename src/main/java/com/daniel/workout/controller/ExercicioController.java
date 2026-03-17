@@ -6,10 +6,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/exercicios")
-@CrossOrigin(origins = "*", allowedHeaders = "*") // LIBERA TUDO
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class ExercicioController {
 
     @Autowired
@@ -33,6 +34,25 @@ public class ExercicioController {
                     return repository.save(exercicio);
                 }).orElseThrow(() -> new RuntimeException("Exercício não encontrado!"));
     }
+
+    @PatchMapping("/{id}")
+    public Exercicio atualizarParcial(@PathVariable Long id, @RequestBody Map<String, Object> campos) {
+        Exercicio exercicio = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Exercício não encontrado!"));
+
+        if (campos.containsKey("carga")) {
+            exercicio.setCarga(Double.parseDouble(campos.get("carga").toString()));
+        }
+        if (campos.containsKey("repeticoes")) {
+            exercicio.setRepeticoes(Integer.parseInt(campos.get("repeticoes").toString()));
+        }
+        if (campos.containsKey("series")) {
+            exercicio.setSeries(Integer.parseInt(campos.get("series").toString()));
+        }
+
+        return repository.save(exercicio);
+    }
+
     @DeleteMapping("/{id}")
     public void deletar(@PathVariable Long id) {
         repository.deleteById(id);
