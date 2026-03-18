@@ -489,12 +489,6 @@ button[type="submit"]:disabled {
 
 .info strong { color: #94a3b8; }
 
-.volume-item {
-  color: #10b981;
-  font-weight: 700;
-  font-size: 13px;
-}
-
 /* EDIÇÃO INLINE NOS CARDS */
 .edit-stats-row {
   display: flex;

@@ -1,34 +1,32 @@
 package com.daniel.workout.model;
 
 import jakarta.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "treinos_finalizados")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class TreinoFinalizado {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String divisao;
-    private int tempoSegundos;
-    private double volumeTotal;
+    // guarda a letra da divisão (A,B,C...) ou nome
+    private String treino;
+
+    // tempo total do treino em segundos
+    private Long tempoSegundos;
+
+    private Long volumeTotal;
+
     private LocalDateTime dataFinalizacao;
 
-    public TreinoFinalizado() {}
-
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public String getDivisao() { return divisao; }
-    public void setDivisao(String divisao) { this.divisao = divisao; }
-
-    public int getTempoSegundos() { return tempoSegundos; }
-    public void setTempoSegundos(int tempoSegundos) { this.tempoSegundos = tempoSegundos; }
-
-    public double getVolumeTotal() { return volumeTotal; }
-    public void setVolumeTotal(double volumeTotal) { this.volumeTotal = volumeTotal; }
-
-    public LocalDateTime getDataFinalizacao() { return dataFinalizacao; }
-    public void setDataFinalizacao(LocalDateTime dataFinalizacao) { this.dataFinalizacao = dataFinalizacao; }
+    @ManyToOne
+    @JoinColumn(name = "usuario_id")
+    private Usuario usuario;
 }
