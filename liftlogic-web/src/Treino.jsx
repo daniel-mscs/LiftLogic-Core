@@ -17,6 +17,7 @@ import {
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { CSS } from '@dnd-kit/utilities'
 import './App.css'
+import Home from './Home'
 
 function ExercicioCard({ ex, concluidos, treinando, toggleConcluido, atualizarExercicio, deletarExercicio }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: ex.id })
@@ -63,17 +64,34 @@ function ExercicioCard({ ex, concluidos, treinando, toggleConcluido, atualizarEx
 }
 
 function Treino({ logout, user }) {
+    const TREINO_START_KEY = 'liftlogic_treino_inicio'
+    const TREINO_ATIVO_KEY = 'liftlogic_treino_ativo'
+    const MAX_TREINO_SEG = 5 * 60 * 60
   const [exercicios, setExercicios] = useState([])
   const [divisao, setDivisao] = useState(localStorage.getItem('divisao') || null)
-  const [treinoAtivo, setTreinoAtivo] = useState('A')
+  const [treinoAtivo, setTreinoAtivo] = useState(() => {
+    return localStorage.getItem(TREINO_ATIVO_KEY) || 'A'
+  })
   const [concluidos, setConcluidos] = useState({})
   const [carregando, setCarregando] = useState(false)
-  const [abaPrincipal, setAbaPrincipal] = useState('treino')
+const [abaPrincipal, setAbaPrincipal] = useState('treino')
   const [historico, setHistorico] = useState([])
   const [modalResumo, setModalResumo] = useState(null)
 
-  const [treinando, setTreinando] = useState(false)
-  const [tempoTotal, setTempoTotal] = useState(0)
+
+  const [treinando, setTreinando] = useState(() => {
+    const salvo = localStorage.getItem(TREINO_START_KEY)
+    if (!salvo) return false
+    const elapsed = Math.floor((Date.now() - Number(salvo)) / 1000)
+    return elapsed < MAX_TREINO_SEG
+  })
+
+  const [tempoTotal, setTempoTotal] = useState(() => {
+    const salvo = localStorage.getItem(TREINO_START_KEY)
+    if (!salvo) return 0
+    const elapsed = Math.floor((Date.now() - Number(salvo)) / 1000)
+    return elapsed < MAX_TREINO_SEG ? elapsed : 0
+  })
   const [descanso, setDescanso] = useState(0)
   const [inputDescanso, setInputDescanso] = useState('')
 
@@ -85,7 +103,9 @@ function Treino({ logout, user }) {
   const timerRef = useRef(null)
   const descansoRef = useRef(null)
   const alertaAtivoRef = useRef(false)
-  const inicioTreinoRef = useRef(null)
+  const inicioTreinoRef = useRef(
+    localStorage.getItem(TREINO_START_KEY) ? Number(localStorage.getItem(TREINO_START_KEY)) : null
+  )
   const inicioDescansoRef = useRef(null)
   const duracaoDescansoRef = useRef(0)
   const audioRef = useRef(new Audio('https://codeskulptor-demos.commondatastorage.googleapis.com/GalaxyInvaders/pause.wav'))
@@ -198,9 +218,17 @@ const buscarDashboard = async () => {
 
   useEffect(() => {
     if (treinando) {
-      inicioTreinoRef.current = Date.now() - tempoTotal * 1000
       timerRef.current = setInterval(() => {
-        setTempoTotal(Math.floor((Date.now() - inicioTreinoRef.current) / 1000))
+        const elapsed = Math.floor((Date.now() - inicioTreinoRef.current) / 1000)
+        if (elapsed >= MAX_TREINO_SEG) {
+          clearInterval(timerRef.current)
+          localStorage.removeItem(TREINO_START_KEY)
+          localStorage.removeItem(TREINO_ATIVO_KEY)
+          setTreinando(false)
+          setTempoTotal(MAX_TREINO_SEG)
+          return
+        }
+        setTempoTotal(elapsed)
       }, 1000)
     } else {
       clearInterval(timerRef.current)
@@ -275,7 +303,9 @@ const buscarDashboard = async () => {
     setModalResumo({ volumeTotal, concluídosCount, total: filtrados.length, kcal, maisHeavy })
   }
 
-  const confirmarFinalizarTreino = async () => {
+    const confirmarFinalizarTreino = async () => {
+    localStorage.removeItem(TREINO_START_KEY)
+    localStorage.removeItem(TREINO_ATIVO_KEY)
     const filtrados = exercicios.filter(ex => ex.treino === treinoAtivo)
     const volumeTotal = filtrados.reduce((acc, ex) => acc + (Number(ex.series || 0) * Number(ex.repeticoes || 0) * Number(ex.carga || 0)), 0)
     const { data, error } = await supabase.from('treinos_finalizados').insert([{
@@ -373,12 +403,22 @@ const buscarDashboard = async () => {
       )}
 
       <nav className="main-nav">
-        <button className={abaPrincipal === 'treino' ? 'nav-btn active' : 'nav-btn'} onClick={() => setAbaPrincipal('treino')}>🏋️‍♂️</button>
-        <button className={abaPrincipal === 'historico' ? 'nav-btn active' : 'nav-btn'} onClick={() => setAbaPrincipal('historico')}>📜</button>
+        <button className={abaPrincipal === 'home' ? 'nav-btn active' : 'nav-btn'} onClick={() => setAbaPrincipal('home')}>🏠</button>
+        <button className={abaPrincipal === 'treino' ? 'nav-btn active' : 'nav-btn'} onClick={() => setAbaPrincipal('treino')}>🏋️‍♂️</button>        <button className={abaPrincipal === 'historico' ? 'nav-btn active' : 'nav-btn'} onClick={() => setAbaPrincipal('historico')}>📜</button>
         <button className={abaPrincipal === 'perfil' ? 'nav-btn active' : 'nav-btn'} onClick={() => setAbaPrincipal('perfil')}>👤</button>
         <button className={abaPrincipal === 'dashboard' ? 'nav-btn active' : 'nav-btn'} onClick={() => setAbaPrincipal('dashboard')}>📊</button>
         <button className="nav-btn nav-btn-logout" onClick={logout}>Sair</button>
       </nav>
+
+      {abaPrincipal === 'home' && (
+        <Home
+          user={user}
+          onIniciarTreino={() => setAbaPrincipal('treino')}
+          treinando={treinando}
+          treinoAtivo={treinoAtivo}
+          divisao={divisao}
+        />
+      )}
 
       {abaPrincipal === 'treino' && (
         <>
@@ -388,8 +428,15 @@ const buscarDashboard = async () => {
 
           <div className="timer-section">
             {!treinando ? (
-              <button className="btn-start-workout" onClick={() => { setTreinando(true); setTempoTotal(0) }}>▶ Iniciar Treino {treinoAtivo}</button>
-            ) : (
+               <button className="btn-start-workout" onClick={() => {
+                 const agora = Date.now()
+                  localStorage.setItem(TREINO_START_KEY, agora)
+                  localStorage.setItem(TREINO_ATIVO_KEY, treinoAtivo)
+               inicioTreinoRef.current = agora
+              setTreinando(true)
+            setTempoTotal(0)
+            }}>▶ Iniciar Treino {treinoAtivo}</button>
+           ) : (
               <div className="active-timer-container">
                 <div className="main-timer">
                   <span>TEMPO DE TREINO</span>
