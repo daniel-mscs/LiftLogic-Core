@@ -85,6 +85,7 @@ function Treino({ logout, user }) {
   const [historico, setHistorico] = useState([])
   const [modalResumo, setModalResumo] = useState(null)
   const [showMore, setShowMore] = useState(false)
+  const [subAbaTreino, setSubAbaTreino] = useState('exercicios')
 
 
   const [treinando, setTreinando] = useState(() => {
@@ -433,8 +434,7 @@ const buscarDashboard = async () => {
                 { id: 'dieta',       icon: '🥗', label: 'Dieta'       },
                 { id: 'suplementos', icon: '💊', label: 'Suplementos' },
                 { id: 'macros',      icon: '🍽️', label: 'Macros'      },
-                { id: 'historico',   icon: '📜', label: 'Histórico'   },
-                { id: 'dashboard',   icon: '📊', label: 'Stats'       },
+
               ].map(item => (
                 <button key={item.id} className={`more-menu-item ${abaPrincipal === item.id ? 'active' : ''}`}
                   onClick={() => { setAbaPrincipal(item.id); setShowMore(false) }}>
@@ -489,189 +489,210 @@ const buscarDashboard = async () => {
       <Macros user={user} />
     )}
 
-      {abaPrincipal === 'treino' && (
-        <>
-          <header className="header-app">
-            <button className="back-btn" onClick={() => { localStorage.removeItem('divisao'); setDivisao(null) }}>← Trocar Divisão</button>
-          </header>
+    {abaPrincipal === 'treino' && (
+      <>
+        {/* Sub-nav do treino */}
+        <div className="treino-subnav">
+          <button
+            className={subAbaTreino === 'exercicios' ? 'treino-subnav-btn active' : 'treino-subnav-btn'}
+            onClick={() => setSubAbaTreino('exercicios')}
+          >🏋️ Exercícios</button>
+          <button
+            className={subAbaTreino === 'stats' ? 'treino-subnav-btn active' : 'treino-subnav-btn'}
+            onClick={() => { setSubAbaTreino('stats'); buscarDashboard() }}
+          >📊 Stats</button>
+          <button
+            className={subAbaTreino === 'historico' ? 'treino-subnav-btn active' : 'treino-subnav-btn'}
+            onClick={() => { setSubAbaTreino('historico'); buscarHistorico() }}
+          >📜 Histórico</button>
+        </div>
 
-          <div className="timer-section">
-            {!treinando ? (
-               <button className="btn-start-workout" onClick={() => {
-                 const agora = Date.now()
+        {/* Exercícios */}
+        {subAbaTreino === 'exercicios' && (
+          <>
+            <header className="header-app">
+              <button className="back-btn" onClick={() => { localStorage.removeItem('divisao'); setDivisao(null) }}>← Trocar Divisão</button>
+            </header>
+
+            <div className="timer-section">
+              {!treinando ? (
+                <button className="btn-start-workout" onClick={() => {
+                  const agora = Date.now()
                   localStorage.setItem(TREINO_START_KEY, agora)
                   localStorage.setItem(TREINO_ATIVO_KEY, treinoAtivo)
-               inicioTreinoRef.current = agora
-              setTreinando(true)
-            setTempoTotal(0)
-            }}>▶ Iniciar Treino {treinoAtivo}</button>
-           ) : (
-              <div className="active-timer-container">
-                <div className="main-timer">
-                  <span>TEMPO DE TREINO</span>
-                  <strong>{formatarTempo(tempoTotal)}</strong>
-                </div>
-                <div className={`rest-timer ${descanso > 0 ? 'active' : ''}`}>
-                  <span>DESCANSO</span>
-                  <strong>{formatarTempo(descanso)}</strong>
-                  <div className="quick-rest-buttons">
-                    <button className="btn-quick-rest" onClick={() => adicionarDescanso(30)}>+30s</button>
-                    <button className="btn-quick-rest" onClick={() => adicionarDescanso(60)}>+60s</button>
-                    <button className="btn-quick-rest" onClick={() => adicionarDescanso(90)}>+90s</button>
+                  inicioTreinoRef.current = agora
+                  setTreinando(true)
+                  setTempoTotal(0)
+                }}>▶ Iniciar Treino {treinoAtivo}</button>
+              ) : (
+                <div className="active-timer-container">
+                  <div className="main-timer">
+                    <span>TEMPO DE TREINO</span>
+                    <strong>{formatarTempo(tempoTotal)}</strong>
                   </div>
-                  <div className="custom-rest-input">
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      placeholder="Tempo manual (seg)"
-                      value={inputDescanso}
-                      onChange={e => setInputDescanso(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') iniciarDescansoManual() }}
-                    />
-                    <div className="rest-actions">
-                      <button type="button" className="btn-play-rest" onClick={iniciarDescansoManual}>▶</button>
-                      <button type="button" className="btn-cancel-rest" onClick={cancelarDescanso} disabled={descanso === 0}>✕</button>
+                  <div className={`rest-timer ${descanso > 0 ? 'active' : ''}`}>
+                    <span>DESCANSO</span>
+                    <strong>{formatarTempo(descanso)}</strong>
+                    <div className="quick-rest-buttons">
+                      <button className="btn-quick-rest" onClick={() => adicionarDescanso(30)}>+30s</button>
+                      <button className="btn-quick-rest" onClick={() => adicionarDescanso(60)}>+60s</button>
+                      <button className="btn-quick-rest" onClick={() => adicionarDescanso(90)}>+90s</button>
+                    </div>
+                    <div className="custom-rest-input">
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        placeholder="Tempo manual (seg)"
+                        value={inputDescanso}
+                        onChange={e => setInputDescanso(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') iniciarDescansoManual() }}
+                      />
+                      <div className="rest-actions">
+                        <button type="button" className="btn-play-rest" onClick={iniciarDescansoManual}>▶</button>
+                        <button type="button" className="btn-cancel-rest" onClick={cancelarDescanso} disabled={descanso === 0}>✕</button>
+                      </div>
                     </div>
                   </div>
+                  <button className="btn-stop-workout" onClick={finalizarTreino}>Finalizar Treino</button>
                 </div>
-                <button className="btn-stop-workout" onClick={finalizarTreino}>Finalizar Treino</button>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
-          <h1 className="title-divisao">Treino {divisao}</h1>
-          <div className="tabs">
-            {abasDisponiveis.map(letra => (
-              <button key={letra} className={treinoAtivo === letra ? 'tab-button active' : 'tab-button'} onClick={() => setTreinoAtivo(letra)}>{letra}</button>
-            ))}
-          </div>
-
-          {!treinando && (
-            <form className="form-cadastro" onSubmit={salvarExercicio}>
-              <input type="text" placeholder="Nome do Exercício (ex: Supino Reto)" value={novoExercicio.nome} onChange={e => setNovoExercicio({ ...novoExercicio, nome: e.target.value })} required />
-              <input type="text" placeholder="Grupo Muscular (ex: Peitoral)" value={novoExercicio.grupo_muscular} onChange={e => setNovoExercicio({ ...novoExercicio, grupo_muscular: e.target.value })} required />
-              <div className="sexo-selector">
-                <button type="button" className={novoExercicio.equipamento === 'halter' ? 'sexo-btn active' : 'sexo-btn'} onClick={() => setNovoExercicio({ ...novoExercicio, equipamento: 'halter' })}>🏋️ Halter</button>
-                <button type="button" className={novoExercicio.equipamento === 'barra' ? 'sexo-btn active' : 'sexo-btn'} onClick={() => setNovoExercicio({ ...novoExercicio, equipamento: 'barra' })}>🔩 Barra</button>
-                <button type="button" className={novoExercicio.equipamento === 'maquina' ? 'sexo-btn active' : 'sexo-btn'} onClick={() => setNovoExercicio({ ...novoExercicio, equipamento: 'maquina' })}>⚙️ Máquina</button>
-              </div>
-              <div className="row">
-                <input type="number" placeholder="Séries" value={novoExercicio.series} onChange={e => setNovoExercicio({ ...novoExercicio, series: e.target.value })} required />
-                <input type="number" placeholder="Reps" value={novoExercicio.repeticoes} onChange={e => setNovoExercicio({ ...novoExercicio, repeticoes: e.target.value })} required />
-                <input type="number" placeholder="Kg" value={novoExercicio.carga} onChange={e => setNovoExercicio({ ...novoExercicio, carga: e.target.value })} required />
-              </div>
-              <button type="submit" disabled={carregando}>{carregando ? 'Salvando...' : `+ Adicionar ao Treino ${treinoAtivo}`}</button>
-            </form>
-          )}
-
-          <div className="lista-exercicios">
-            {carregando && <p className="empty-msg">Carregando...</p>}
-            {!carregando && exerciciosFiltrados.length === 0 && (
-              <p className="empty-msg">Nenhum exercício no Treino {treinoAtivo}. Adicione um! 💪</p>
-            )}
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={exerciciosFiltrados.map(ex => ex.id)} strategy={verticalListSortingStrategy}>
-                {exerciciosFiltrados.map(ex => (
-                  <ExercicioCard key={ex.id} ex={ex} concluidos={concluidos} treinando={treinando} toggleConcluido={toggleConcluido} atualizarExercicio={atualizarExercicio} deletarExercicio={deletarExercicio} />
-                ))}
-              </SortableContext>
-            </DndContext>
-          </div>
-        </>
-      )}
-
-      {abaPrincipal === 'dashboard' && (
-        <div className="dashboard-section">
-          <h1 className="title-divisao">Dashboard 📊</h1>
-          <div className="dash-card">
-            <h3 className="dash-title">🔥 Kcal por Treino</h3>
-            {dashData.historico.length === 0 ? <p className="empty-msg">Nenhum treino ainda.</p> : (
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={dashData.historico.slice(-10).map(t => ({ name: `${t.treino} ${new Date(t.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`, kcal: t.kcal || 0 }))}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
-                  <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} />
-                  <YAxis tick={{ fill: '#64748b', fontSize: 10 }} />
-                  <Tooltip contentStyle={{ background: '#1a1d21', border: '1px solid #ffffff0d', borderRadius: 8, color: '#f8fafc' }} />
-                  <Bar dataKey="kcal" fill="#f97316" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-          <div className="dash-card">
-            <h3 className="dash-title">📦 Volume por Treino</h3>
-            {dashData.historico.length === 0 ? <p className="empty-msg">Nenhum treino ainda.</p> : (
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={dashData.historico.slice(-10).map(t => ({ name: `${t.treino} ${new Date(t.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`, volume: t.volume_total || 0 }))}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
-                  <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} />
-                  <YAxis tick={{ fill: '#64748b', fontSize: 10 }} />
-                  <Tooltip contentStyle={{ background: '#1a1d21', border: '1px solid #ffffff0d', borderRadius: 8, color: '#f8fafc' }} />
-                  <Bar dataKey="volume" fill="#6366f1" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-          <div className="dash-card">
-            <h3 className="dash-title">📈 Evolução de Carga</h3>
-            <select className="dash-select" onChange={e => buscarEvolucao(e.target.value)} defaultValue="">
-              <option value="" disabled>Selecione um exercício</option>
-              {[...new Set(exercicios.map(ex => ex.nome))].map(nome => (
-                <option key={nome} value={nome}>{nome}</option>
+            <h1 className="title-divisao">Treino {divisao}</h1>
+            <div className="tabs">
+              {abasDisponiveis.map(letra => (
+                <button key={letra} className={treinoAtivo === letra ? 'tab-button active' : 'tab-button'} onClick={() => setTreinoAtivo(letra)}>{letra}</button>
               ))}
-            </select>
-            {dashData.evolucao.length > 0 ? (
-              <ResponsiveContainer width="100%" height={180}>
-                <LineChart data={dashData.evolucao.map((ex, i) => ({ name: `#${i + 1}`, carga: ex.carga }))}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
-                  <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} />
-                  <YAxis tick={{ fill: '#64748b', fontSize: 10 }} />
-                  <Tooltip contentStyle={{ background: '#1a1d21', border: '1px solid #ffffff0d', borderRadius: 8, color: '#f8fafc' }} />
-                  <Line type="monotone" dataKey="carga" stroke="#10b981" strokeWidth={2} dot={{ fill: '#10b981', r: 4 }} />
-                </LineChart>
-              </ResponsiveContainer>
+            </div>
+
+            {!treinando && (
+              <form className="form-cadastro" onSubmit={salvarExercicio}>
+                <input type="text" placeholder="Nome do Exercício (ex: Supino Reto)" value={novoExercicio.nome} onChange={e => setNovoExercicio({ ...novoExercicio, nome: e.target.value })} required />
+                <input type="text" placeholder="Grupo Muscular (ex: Peitoral)" value={novoExercicio.grupo_muscular} onChange={e => setNovoExercicio({ ...novoExercicio, grupo_muscular: e.target.value })} required />
+                <div className="sexo-selector">
+                  <button type="button" className={novoExercicio.equipamento === 'halter' ? 'sexo-btn active' : 'sexo-btn'} onClick={() => setNovoExercicio({ ...novoExercicio, equipamento: 'halter' })}>🏋️ Halter</button>
+                  <button type="button" className={novoExercicio.equipamento === 'barra' ? 'sexo-btn active' : 'sexo-btn'} onClick={() => setNovoExercicio({ ...novoExercicio, equipamento: 'barra' })}>🔩 Barra</button>
+                  <button type="button" className={novoExercicio.equipamento === 'maquina' ? 'sexo-btn active' : 'sexo-btn'} onClick={() => setNovoExercicio({ ...novoExercicio, equipamento: 'maquina' })}>⚙️ Máquina</button>
+                </div>
+                <div className="row">
+                  <input type="number" placeholder="Séries" value={novoExercicio.series} onChange={e => setNovoExercicio({ ...novoExercicio, series: e.target.value })} required />
+                  <input type="number" placeholder="Reps" value={novoExercicio.repeticoes} onChange={e => setNovoExercicio({ ...novoExercicio, repeticoes: e.target.value })} required />
+                  <input type="number" placeholder="Kg" value={novoExercicio.carga} onChange={e => setNovoExercicio({ ...novoExercicio, carga: e.target.value })} required />
+                </div>
+                <button type="submit" disabled={carregando}>{carregando ? 'Salvando...' : `+ Adicionar ao Treino ${treinoAtivo}`}</button>
+              </form>
+            )}
+
+            <div className="lista-exercicios">
+              {carregando && <p className="empty-msg">Carregando...</p>}
+              {!carregando && exerciciosFiltrados.length === 0 && (
+                <p className="empty-msg">Nenhum exercício no Treino {treinoAtivo}. Adicione um! 💪</p>
+              )}
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={exerciciosFiltrados.map(ex => ex.id)} strategy={verticalListSortingStrategy}>
+                  {exerciciosFiltrados.map(ex => (
+                    <ExercicioCard key={ex.id} ex={ex} concluidos={concluidos} treinando={treinando} toggleConcluido={toggleConcluido} atualizarExercicio={atualizarExercicio} deletarExercicio={deletarExercicio} />
+                  ))}
+                </SortableContext>
+              </DndContext>
+            </div>
+          </>
+        )}
+
+        {/* Stats */}
+        {subAbaTreino === 'stats' && (
+          <div className="dashboard-section">
+            <div className="dash-card">
+              <h3 className="dash-title">🔥 Kcal por Treino</h3>
+              {dashData.historico.length === 0 ? <p className="empty-msg">Nenhum treino ainda.</p> : (
+                <ResponsiveContainer width="100%" height={180}>
+                  <BarChart data={dashData.historico.slice(-10).map(t => ({ name: `${t.treino} ${new Date(t.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`, kcal: t.kcal || 0 }))}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
+                    <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} />
+                    <YAxis tick={{ fill: '#64748b', fontSize: 10 }} />
+                    <Tooltip contentStyle={{ background: '#1a1d21', border: '1px solid #ffffff0d', borderRadius: 8, color: '#f8fafc' }} />
+                    <Bar dataKey="kcal" fill="#f97316" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+            <div className="dash-card">
+              <h3 className="dash-title">📦 Volume por Treino</h3>
+              {dashData.historico.length === 0 ? <p className="empty-msg">Nenhum treino ainda.</p> : (
+                <ResponsiveContainer width="100%" height={180}>
+                  <BarChart data={dashData.historico.slice(-10).map(t => ({ name: `${t.treino} ${new Date(t.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`, volume: t.volume_total || 0 }))}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
+                    <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} />
+                    <YAxis tick={{ fill: '#64748b', fontSize: 10 }} />
+                    <Tooltip contentStyle={{ background: '#1a1d21', border: '1px solid #ffffff0d', borderRadius: 8, color: '#f8fafc' }} />
+                    <Bar dataKey="volume" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+            <div className="dash-card">
+              <h3 className="dash-title">📈 Evolução de Carga</h3>
+              <select className="dash-select" onChange={e => buscarEvolucao(e.target.value)} defaultValue="">
+                <option value="" disabled>Selecione um exercício</option>
+                {[...new Set(exercicios.map(ex => ex.nome))].map(nome => (
+                  <option key={nome} value={nome}>{nome}</option>
+                ))}
+              </select>
+              {dashData.evolucao.length > 0 ? (
+                <ResponsiveContainer width="100%" height={180}>
+                  <LineChart data={dashData.evolucao.map((ex, i) => ({ name: `#${i + 1}`, carga: ex.carga }))}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
+                    <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} />
+                    <YAxis tick={{ fill: '#64748b', fontSize: 10 }} />
+                    <Tooltip contentStyle={{ background: '#1a1d21', border: '1px solid #ffffff0d', borderRadius: 8, color: '#f8fafc' }} />
+                    <Line type="monotone" dataKey="carga" stroke="#10b981" strokeWidth={2} dot={{ fill: '#10b981', r: 4 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="empty-msg" style={{ marginTop: 16 }}>Selecione um exercício acima 👆</p>
+              )}
+            </div>
+            <div className="dash-card">
+              <h3 className="dash-title">⏱️ Tempo por Treino</h3>
+              {dashData.historico.length === 0 ? <p className="empty-msg">Nenhum treino ainda.</p> : (
+                <ResponsiveContainer width="100%" height={180}>
+                  <LineChart data={dashData.historico.slice(-10).map(t => ({ name: `${t.treino} ${new Date(t.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`, minutos: Math.round((t.tempo_segundos || 0) / 60) }))}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
+                    <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} />
+                    <YAxis tick={{ fill: '#64748b', fontSize: 10 }} />
+                    <Tooltip contentStyle={{ background: '#1a1d21', border: '1px solid #ffffff0d', borderRadius: 8, color: '#f8fafc' }} formatter={(v) => [`${v} min`]} />
+                    <Line type="monotone" dataKey="minutos" stroke="#fbbf24" strokeWidth={2} dot={{ fill: '#fbbf24', r: 4 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Histórico */}
+        {subAbaTreino === 'historico' && (
+          <div className="historico-section">
+            <h1 className="title-divisao">Histórico 📜</h1>
+            {historico.length === 0 ? (
+              <p className="empty-msg">Nenhum treino registrado ainda. Bora treinar! 💪</p>
             ) : (
-              <p className="empty-msg" style={{ marginTop: 16 }}>Selecione um exercício acima 👆</p>
+              historico.map(t => (
+                <div key={t.id} className="card-historico">
+                  <div className="hist-header">
+                    <span className="hist-tag">Treino {t.treino || '—'}</span>
+                    <span className="hist-date">{t.created_at ? new Date(t.created_at).toLocaleDateString('pt-BR') : '-'}</span>
+                  </div>
+                  <div className="hist-stats">
+                    <div className="hist-stat-item"><span>TEMPO</span><strong>{formatarTempo(t.tempo_segundos)}</strong></div>
+                    <div className="hist-stat-item"><span>🔥 KCAL</span><strong>{t.kcal || '—'}</strong></div>
+                  </div>
+                </div>
+              ))
             )}
           </div>
-          <div className="dash-card">
-            <h3 className="dash-title">⏱️ Tempo por Treino</h3>
-            {dashData.historico.length === 0 ? <p className="empty-msg">Nenhum treino ainda.</p> : (
-              <ResponsiveContainer width="100%" height={180}>
-                <LineChart data={dashData.historico.slice(-10).map(t => ({ name: `${t.treino} ${new Date(t.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`, minutos: Math.round((t.tempo_segundos || 0) / 60) }))}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
-                  <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} />
-                  <YAxis tick={{ fill: '#64748b', fontSize: 10 }} />
-                  <Tooltip contentStyle={{ background: '#1a1d21', border: '1px solid #ffffff0d', borderRadius: 8, color: '#f8fafc' }} formatter={(v) => [`${v} min`]} />
-                  <Line type="monotone" dataKey="minutos" stroke="#fbbf24" strokeWidth={2} dot={{ fill: '#fbbf24', r: 4 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </div>
-      )}
-
-      {abaPrincipal === 'historico' && (
-        <div className="historico-section">
-          <h1 className="title-divisao">Meu Histórico 📜</h1>
-          {historico.length === 0 ? (
-            <p className="empty-msg">Nenhum treino registrado ainda. Bora treinar! 💪</p>
-          ) : (
-            historico.map(t => (
-              <div key={t.id} className="card-historico">
-                <div className="hist-header">
-                  <span className="hist-tag">Treino {t.treino || '—'}</span>
-                  <span className="hist-date">{t.created_at ? new Date(t.created_at).toLocaleDateString('pt-BR') : '-'}</span>
-                </div>
-                <div className="hist-stats">
-                  <div className="hist-stat-item"><span>TEMPO</span><strong>{formatarTempo(t.tempo_segundos)}</strong></div>
-                  <div className="hist-stat-item"><span>🔥 KCAL</span><strong>{t.kcal || '—'}</strong></div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      )}
-
+        )}
+      </>
+    )}
       {abaPrincipal === 'perfil' && (
         <div className="perfil-section">
           <h1 className="title-divisao">Meu Perfil 👤</h1>

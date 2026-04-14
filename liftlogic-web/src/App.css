@@ -2760,3 +2760,31 @@ input::-webkit-inner-spin-button {
 @media (max-width: 400px) {
   .macros-tmb-row { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ══════════════════════════════════════
+   TREINO SUB-NAV
+══════════════════════════════════════ */
+.treino-subnav {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  background: #1a1d21;
+  padding: 5px;
+  border-radius: 12px;
+}
+
+.treino-subnav-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #64748b;
+  padding: 10px 5px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.treino-subnav-btn:hover { color: #f8fafc; background: #24282d; }
+.treino-subnav-btn.active { background: #24282d; color: #f8fafc; }
