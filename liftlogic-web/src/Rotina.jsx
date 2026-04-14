@@ -19,40 +19,32 @@ function labelData(dateStr) {
 }
 
 export default function Rotina({ user }) {
-  const [dias, setDias] = useState([])
-  const [tarefas, setTarefas] = useState({})
-  const [carregando, setCarregando] = useState(true)
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
-  const [gerando, setGerando] = useState(false)
+  const [dias, setDias]               = useState([])
+  const [tarefas, setTarefas]         = useState({})
+  const [carregando, setCarregando]   = useState(true)
+  const [startDate, setStartDate]     = useState('')
+  const [endDate, setEndDate]         = useState('')
+  const [gerando, setGerando]         = useState(false)
   const [novasTarefas, setNovasTarefas] = useState({})
-  const [editando, setEditando] = useState(null)
+  const [editando, setEditando]       = useState(null)
+  const [modalClone, setModalClone]   = useState(null)
+    const [clonando, setClonando]       = useState(false)
 
   const hoje = formatarData(new Date())
 
   const buscarRotina = useCallback(async () => {
     setCarregando(true)
     const { data: diasData } = await supabase
-      .from('rotina_dias')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('data', { ascending: true })
+      .from('rotina_dias').select('*').eq('user_id', user.id).order('data', { ascending: true })
 
     if (!diasData || diasData.length === 0) {
-      setDias([])
-      setTarefas({})
-      setCarregando(false)
-      return
+      setDias([]); setTarefas({}); setCarregando(false); return
     }
 
     setDias(diasData)
-
     const ids = diasData.map(d => d.id)
     const { data: tarefasData } = await supabase
-      .from('rotina_tarefas')
-      .select('*')
-      .in('dia_id', ids)
-      .order('ordem', { ascending: true })
+      .from('rotina_tarefas').select('*').in('dia_id', ids).order('ordem', { ascending: true })
 
     const agrupado = {}
     diasData.forEach(d => { agrupado[d.id] = {} })
@@ -83,17 +75,10 @@ export default function Rotina({ user }) {
     const datas = []
     let cur = new Date(startDate + 'T00:00:00')
     const fim = new Date(endDate + 'T00:00:00')
-    while (cur <= fim) {
-      datas.push(formatarData(cur))
-      cur.setDate(cur.getDate() + 1)
-    }
+    while (cur <= fim) { datas.push(formatarData(cur)); cur.setDate(cur.getDate() + 1) }
 
-    const { error } = await supabase.from('rotina_dias').insert(
-      datas.map(data => ({ user_id: user.id, data }))
-    )
-
+    const { error } = await supabase.from('rotina_dias').insert(datas.map(data => ({ user_id: user.id, data })))
     if (error) { alert('Erro ao gerar rotina: ' + error.message); setGerando(false); return }
-
     setGerando(false)
     buscarRotina()
   }
@@ -102,25 +87,14 @@ export default function Rotina({ user }) {
     const key = `${diaId}_${periodo}`
     const texto = (novasTarefas[key] || '').trim()
     if (!texto) return
-
     const tarefasDoPeriodo = tarefas[diaId]?.[periodo] || []
     const { data, error } = await supabase.from('rotina_tarefas').insert([{
-      user_id: user.id,
-      dia_id: diaId,
-      periodo,
-      texto,
-      concluida: false,
-      ordem: tarefasDoPeriodo.length
+      user_id: user.id, dia_id: diaId, periodo, texto, concluida: false, ordem: tarefasDoPeriodo.length
     }]).select()
-
     if (error) { alert('Erro: ' + error.message); return }
-
     setTarefas(prev => ({
       ...prev,
-      [diaId]: {
-        ...prev[diaId],
-        [periodo]: [...(prev[diaId]?.[periodo] || []), data[0]]
-      }
+      [diaId]: { ...prev[diaId], [periodo]: [...(prev[diaId]?.[periodo] || []), data[0]] }
     }))
     setNovasTarefas(prev => ({ ...prev, [key]: '' }))
   }
@@ -138,12 +112,13 @@ export default function Rotina({ user }) {
   }
 
   const deletarTarefa = async (diaId, periodo, tarefaId) => {
-    await supabase.from('rotina_tarefas').delete().eq('id', tarefaId)
+    const { error } = await supabase.from('rotina_tarefas').delete().eq('id', tarefaId)
+    if (error) { alert('Erro ao deletar: ' + error.message); return }
     setTarefas(prev => ({
       ...prev,
       [diaId]: {
         ...prev[diaId],
-        [periodo]: prev[diaId][periodo].filter(t => t.id !== tarefaId)
+        [periodo]: (prev[diaId]?.[periodo] || []).filter(t => t.id !== tarefaId)
       }
     }))
   }
@@ -166,14 +141,81 @@ export default function Rotina({ user }) {
     const ids = dias.map(d => d.id)
     await supabase.from('rotina_tarefas').delete().in('dia_id', ids)
     await supabase.from('rotina_dias').delete().eq('user_id', user.id)
-    setDias([])
-    setTarefas({})
+    setDias([]); setTarefas({})
+  }
+
+  const confirmarClone = async (diaDestinoId) => {
+      if (clonando) return
+      setClonando(true)
+      const diaOrigemId = modalClone
+      setModalClone(null)
+    const tarefasOrigem = PERIODOS.flatMap(p =>
+      (tarefas[diaOrigemId]?.[p] || []).map(t => ({ ...t, periodo: p }))
+    )
+    if (tarefasOrigem.length === 0) { alert('Nenhuma tarefa para clonar!'); setModalClone(null); setClonando(false); return }
+
+    const novas = tarefasOrigem.map(t => ({
+      user_id: user.id,
+      dia_id: diaDestinoId,
+      periodo: t.periodo,
+      texto: t.texto,
+      concluida: false,
+      ordem: (tarefas[diaDestinoId]?.[t.periodo]?.length || 0)
+    }))
+
+    const { data, error } = await supabase.from('rotina_tarefas').insert(novas).select()
+    if (error) { alert('Erro: ' + error.message); setClonando(false); return }
+
+    setTarefas(prev => {
+      const novo = { ...prev }
+      data.forEach(t => {
+        if (!novo[t.dia_id]) novo[t.dia_id] = {}
+        if (!novo[t.dia_id][t.periodo]) novo[t.dia_id][t.periodo] = []
+        novo[t.dia_id][t.periodo].push(t)
+      })
+      return novo
+    })
+
+    setClonando(false)
+    setModalClone(null)
+    alert(`✅ ${data.length} tarefa(s) clonada(s)!`)
   }
 
   if (carregando) return <div style={{ textAlign: 'center', color: '#64748b', paddingTop: 40 }}>Carregando...</div>
 
   return (
     <div className="rotina-section">
+
+      {/* Modal clone */}
+      {modalClone && (
+        <div className="modal-overlay" onClick={() => setModalClone(null)}>
+          <div className="modal-resumo" onClick={e => e.stopPropagation()}>
+            <h2 style={{ fontSize: '1rem', marginBottom: 16 }}>⧉ Clonar tarefas para...</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {dias.filter(d => d.id !== modalClone).map(d => (
+                <button
+                  key={d.id}
+                  onClick={(e) => { e.stopPropagation(); if (!clonando) confirmarClone(d.id) }}
+                  style={{
+                    background: '#24282d', border: '1px solid #ffffff0d', color: '#f8fafc',
+                    borderRadius: 10, padding: '12px 16px', cursor: 'pointer',
+                    textAlign: 'left', fontSize: 14, transition: 'all 0.15s'
+                  }}
+                  onMouseEnter={e => e.target.style.borderColor = '#6366f144'}
+                  onMouseLeave={e => e.target.style.borderColor = '#ffffff0d'}
+                >
+                  <span style={{ color: '#6366f1', fontWeight: 700, marginRight: 8 }}>{labelData(d.data)}</span>
+                  {new Date(d.data + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setModalClone(null)}
+              style={{ marginTop: 14, background: 'transparent', border: '1px solid #ffffff0d', color: '#64748b', borderRadius: 8, padding: '10px', cursor: 'pointer', width: '100%' }}
+            >Cancelar</button>
+          </div>
+        </div>
+      )}
 
       {/* Config de datas */}
       <div className="rotina-config">
@@ -214,14 +256,17 @@ export default function Rotina({ user }) {
                     {new Date(dia.data + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
                   </div>
                 </div>
-                {totalTarefas > 0 && (
-                  <div className="rotina-dia-prog">
-                    <span>{concluidas}/{totalTarefas}</span>
-                    <div className="rotina-dia-prog-bar">
-                      <div style={{ width: `${(concluidas / totalTarefas) * 100}%` }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {totalTarefas > 0 && (
+                    <div className="rotina-dia-prog">
+                      <span>{concluidas}/{totalTarefas}</span>
+                      <div className="rotina-dia-prog-bar">
+                        <div style={{ width: `${(concluidas / totalTarefas) * 100}%` }} />
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                  <button className="rotina-btn-clonar" onClick={() => setModalClone(dia.id)}>⧉</button>
+                </div>
               </div>
 
               {PERIODOS.map(periodo => {
@@ -230,7 +275,6 @@ export default function Rotina({ user }) {
                 return (
                   <div key={periodo} className="rotina-periodo">
                     <div className="rotina-periodo-title">{periodo}</div>
-
                     {itens.map(t => (
                       <div key={t.id} className={`rotina-tarefa ${t.concluida ? 'concluida' : ''}`}>
                         <button className="rotina-check" onClick={() => toggleTarefa(dia.id, periodo, t)}>
@@ -255,7 +299,6 @@ export default function Rotina({ user }) {
                         <button className="rotina-del" onClick={() => deletarTarefa(dia.id, periodo, t.id)}>×</button>
                       </div>
                     ))}
-
                     <div className="rotina-add-row">
                       <input
                         type="text"
