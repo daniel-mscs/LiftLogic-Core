@@ -377,7 +377,7 @@ const buscarDashboard = async () => {
 
   // removido — seleção de divisão agora fica dentro da aba treino
 
-  const abasDisponiveis = divisao.split('')
+  const abasDisponiveis = divisao ? divisao.split('') : []
   const exerciciosFiltrados = exercicios.filter(ex => ex.treino === treinoAtivo)
   const imc = calcularIMC()
   const tmb = calcularTMB()
@@ -420,6 +420,7 @@ const buscarDashboard = async () => {
           {showMore && (
             <div className="bottom-nav-more-menu">
               {[
+                { id: 'habitos', icon: '✅', label: 'Hábitos'         },
                 { id: 'agua',        icon: '💧', label: 'Água'        },
                 { id: 'peso',        icon: '⚖️', label: 'Peso'        },
                 { id: 'dieta',       icon: '🥗', label: 'Dieta'       },
@@ -461,6 +462,10 @@ const buscarDashboard = async () => {
 
       {abaPrincipal === 'rotina' && (
             <Rotina user={user} />
+      )}
+
+      {abaPrincipal === 'habitos' && (
+        <Habitos user={user} />
       )}
 
       {abaPrincipal === 'agua' && (
@@ -756,6 +761,7 @@ const buscarDashboard = async () => {
               <div className="ajuda-item"><div className="ajuda-num">2</div><div className="ajuda-body"><strong>Treino</strong><p>Exercícios com timer, descanso cronometrado, stats de kcal/volume/tempo e histórico completo.</p></div></div>
               <div className="ajuda-item"><div className="ajuda-num">3</div><div className="ajuda-body"><strong>Rotina</strong><p>Gere blocos de dias com tarefas por período (Acordar, Manhã, Tarde, Noite). Enter cria a próxima tarefa. ⧉ clona o dia.</p></div></div>
               <div className="ajuda-item"><div className="ajuda-num">4</div><div className="ajuda-body"><strong>Mais</strong><p>Acessa Água, Peso, Dieta, Suplementos e Macros pelo menu 🗃️.</p></div></div>
+              <div className="ajuda-item"><div className="ajuda-num">💡</div><div className="ajuda-body"><strong>Hábitos personalizados</strong><p>Na seção Hábitos do dia (Home), role até o final e toque em "+ Adicionar hábito". Você pode criar hábitos com emoji e nome personalizados além dos 6 padrões.</p></div></div>
 
               <div className="ajuda-group-title">🧠 Cortisol — o hormônio do estresse</div>
               <div className="ajuda-item"><div className="ajuda-num">💡</div><div className="ajuda-body"><strong>O que é o cortisol?</strong><p>Hormônio produzido em resposta ao estresse. Cronicamente elevado causa retenção de líquido (até 2kg a mais na balança), dificulta queima de gordura, prejudica o sono e reduz testosterona.</p></div></div>

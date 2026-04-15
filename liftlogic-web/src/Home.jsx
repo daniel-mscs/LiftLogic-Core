@@ -4,18 +4,7 @@ import Habitos from './Habitos'
 import Dieta from './Dieta'
 import Suplementos from './Suplementos'
 
-const FRASES = [
-  "Disciplina é fazer o que precisa ser feito, mesmo quando não quer. 💪",
-  "Pequenas ações consistentes constroem grandes resultados. 🎯",
-  "Você está construindo o futuro enquanto cuida do presente. 🚀",
-  "Consistência bate talento quando o talento não é consistente. 🔥",
-  "Você tem poder sobre sua mente, não sobre os eventos externos. — Marco Aurélio 🏛️",
-  "Faça cada ato de sua vida como se fosse o último. — Marco Aurélio 🏛️",
-  "Não é o que acontece com você, mas como você reage a isso que importa. — Epicteto 🏛️",
-  "Enquanto adiamos, a vida passa. — Sêneca 🏛️",
-  "Não é porque as coisas são difíceis que não ousamos. — Sêneca 🏛️",
-  "Temos dois ouvidos e uma boca para ouvir o dobro do que falamos. — Epicteto 🏛️",
-]
+
 
 function getGreeting() {
   const h = new Date().getHours()
@@ -47,12 +36,24 @@ export default function Home({ user, onIniciarTreino, treinando, treinoAtivo, di
   const [historico, setHistorico] = useState([])
   const [streak, setStreak]       = useState(0)
   const [aguaHoje, setAguaHoje]   = useState({ total: 0, meta: 2500 })
+  const [passosHoje, setPassosHoje] = useState(null)
+  const [passosMeta, setPassosMeta] = useState(10000)
   const [pesoHoje, setPesoHoje]   = useState(null)
   const [pesoPrev, setPesoPrev]   = useState(null)
   const [rotina, setRotina]       = useState(null)
   const [carregando, setCarregando] = useState(true)
+  const [frase, setFrase] = useState(null)
 
   const hoje = formatarData(new Date())
+  const buscarFrase = useCallback(async () => {
+      const { data } = await supabase.from('frases').select('texto, autor')
+      if (data && data.length > 0) {
+        const idx = new Date().getDate() % data.length
+        setFrase(data[idx])
+      }
+    }, [])
+
+    useEffect(() => { buscarFrase() }, [buscarFrase])
 
   const carregar = useCallback(async () => {
     setCarregando(true)
@@ -63,6 +64,8 @@ export default function Home({ user, onIniciarTreino, treinando, treinoAtivo, di
       { data: aguaMeta },
       { data: pesoRegs },
       { data: diasData },
+      { data: passosData },
+      { data: passosMetaData },
     ] = await Promise.all([
       supabase.from('perfil').select('*').eq('user_id', user.id).single(),
       supabase.from('treinos_finalizados').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20),
@@ -70,13 +73,17 @@ export default function Home({ user, onIniciarTreino, treinando, treinoAtivo, di
       supabase.from('agua_meta').select('meta_ml').eq('user_id', user.id).single(),
       supabase.from('peso_registro').select('*').eq('user_id', user.id).order('data', { ascending: false }).limit(2),
       supabase.from('rotina_dias').select('id,data').eq('user_id', user.id).eq('data', hoje).single(),
-    ])
-
+            supabase.from('passos_registro').select('passos').eq('user_id', user.id).eq('data', hoje).single(),
+            supabase.from('passos_meta').select('meta_passos').eq('user_id', user.id).single(),
+          ])
     if (p) setPerfil(p)
     if (h) { setHistorico(h); setStreak(calcularStreak(h)) }
 
     const totalAgua = (aguaRegs || []).reduce((s, r) => s + r.ml, 0)
     setAguaHoje({ total: totalAgua, meta: aguaMeta?.meta_ml || 2500 })
+
+    if (passosData) setPassosHoje(passosData.passos)
+    if (passosMetaData) setPassosMeta(passosMetaData.meta_passos)
 
     if (pesoRegs && pesoRegs.length > 0) {
       setPesoHoje(pesoRegs[0])
@@ -117,7 +124,6 @@ export default function Home({ user, onIniciarTreino, treinando, treinoAtivo, di
   }
 
   const nome = perfil?.nome ? perfil.nome.split(' ')[0] : user.email.split('@')[0]
-  const frase = FRASES[new Date().getDate() % FRASES.length]
   const { diasRestantes, pct: pctAno } = getDaysLeft()
   const pctAgua = Math.min(100, Math.round((aguaHoje.total / aguaHoje.meta) * 100))
   const diffPeso = pesoHoje && pesoPrev ? (Number(pesoHoje.peso) - Number(pesoPrev.peso)).toFixed(1) : null
@@ -163,8 +169,14 @@ export default function Home({ user, onIniciarTreino, treinando, treinoAtivo, di
           )
         })()}
 
-      {/* Frase motivacional */}
-      <div className="home-frase">{frase}</div>
+        {/* Frase motivacional */}
+        {frase && (
+          <div className="home-frase">
+            <span>"{frase.texto}"</span>
+            {frase.autor && <span className="home-frase-autor">— {frase.autor}</span>}
+          </div>
+     )}
+
 
       {/* Contador fim do ano */}
       <div className="home-countdown">
@@ -235,6 +247,21 @@ export default function Home({ user, onIniciarTreino, treinando, treinoAtivo, di
         </div>
       </div>
 
+      {/* Card passos */}
+      {passosHoje !== null && (
+        <div className="home-mini-card" onClick={() => onNavegar('passos')} style={{ cursor: 'pointer' }}>
+          <div className="home-mini-icon">👟</div>
+          <div className="home-mini-info">
+            <div className="home-mini-label">PASSOS HOJE</div>
+            <div className="home-mini-val">{passosHoje.toLocaleString('pt-BR')}</div>
+            <div className="home-mini-bar-bg">
+              <div className="home-mini-bar-fill" style={{ width: `${Math.min(100, Math.round((passosHoje / passosMeta) * 100))}%`, background: passosHoje >= passosMeta ? '#10b981' : '#6366f1' }} />
+            </div>
+            <div className="home-mini-sub">{Math.min(100, Math.round((passosHoje / passosMeta) * 100))}% da meta</div>
+          </div>
+        </div>
+      )}
+
       {/* Refeição atual */}
       <div className="home-card">
         <div className="home-section-title">🥗 REFEIÇÃO ATUAL</div>
@@ -248,10 +275,18 @@ export default function Home({ user, onIniciarTreino, treinando, treinoAtivo, di
       </div>
 
       {/* Hábitos do dia */}
-      <div className="home-card">
-        <div className="home-section-title">HÁBITOS DO DIA</div>
-        <Habitos user={user} compact={true} />
-      </div>
+            <div className="home-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <div className="home-section-title" style={{ margin: 0 }}>HÁBITOS DO DIA</div>
+                <button
+                  onClick={() => onNavegar('habitos')}
+                  style={{ background: 'none', border: '1px solid #ffffff0d', borderRadius: 8, color: '#6366f1', fontSize: 11, padding: '4px 10px', cursor: 'pointer' }}
+                >
+                  + Personalizar
+                </button>
+              </div>
+              <Habitos user={user} compact={true} />
+            </div>
 
     </div>
   )

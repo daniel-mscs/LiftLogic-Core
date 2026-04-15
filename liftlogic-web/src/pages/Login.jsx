@@ -1,9 +1,8 @@
 import React, { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import '../App.css'
 
 export default function Login({ onLoginSuccess }) {
-  const [modo, setModo] = useState('login') // 'login' ou 'register'
+  const [modo, setModo] = useState('login')
   const [form, setForm] = useState({ email: '', senha: '' })
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
@@ -39,50 +38,83 @@ export default function Login({ onLoginSuccess }) {
   }
 
   return (
-    <div className="container auth-container">
-      <div className="auth-card">
-        <div className="auth-logo">🧱</div>
-        <h1 className="auth-title">DayForge</h1>
-        <p className="auth-subtitle">{modo === 'login' ? 'Forje seu dia!' : 'Crie sua conta'}</p>
+    <div className="login-bg">
+      {/* Blobs decorativos */}
+      <div className="login-blob login-blob-1" />
+      <div className="login-blob login-blob-2" />
 
-        <form onSubmit={modo === 'login' ? handleLogin : handleRegister} className="auth-form">
-          <div className="auth-field">
+      <div className="login-card">
+        {/* Logo */}
+        <div className="login-logo-wrap">
+          <div className="login-logo">🧱</div>
+          <div className="login-logo-ring" />
+        </div>
+
+        <h1 className="login-title">DayForge</h1>
+        <p className="login-subtitle">
+          {modo === 'login' ? 'Forje seu dia. Um tijolo por vez.' : 'Crie sua conta e comece a construir.'}
+        </p>
+
+        <form onSubmit={modo === 'login' ? handleLogin : handleRegister} className="login-form">
+          <div className="login-field">
             <label>EMAIL</label>
-            <input
-              type="email"
-              name="email"
-              placeholder="seu@email.com"
-              value={form.email}
-              onChange={handleChange}
-              required
-              autoComplete="email"
-            />
+            <div className="login-input-wrap">
+              <span className="login-input-icon">✉️</span>
+              <input
+                type="email"
+                name="email"
+                placeholder="seu@email.com"
+                value={form.email}
+                onChange={handleChange}
+                required
+                autoComplete="email"
+              />
+            </div>
           </div>
 
-          <div className="auth-field">
+          <div className="login-field">
             <label>SENHA</label>
-            <input
-              type="password"
-              name="senha"
-              placeholder={modo === 'register' ? 'Mínimo 6 caracteres' : '••••••••'}
-              value={form.senha}
-              onChange={handleChange}
-              required
-              autoComplete={modo === 'login' ? 'current-password' : 'new-password'}
-            />
+            <div className="login-input-wrap">
+              <span className="login-input-icon">🔒</span>
+              <input
+                type="password"
+                name="senha"
+                placeholder={modo === 'register' ? 'Mínimo 6 caracteres' : '••••••••'}
+                value={form.senha}
+                onChange={handleChange}
+                required
+                autoComplete={modo === 'login' ? 'current-password' : 'new-password'}
+              />
+            </div>
           </div>
 
-          {erro && <p className="auth-erro">⚠️ {erro}</p>}
-          {sucesso && <p className="auth-sucesso">✅ {sucesso}</p>}
+          {erro && (
+            <div className="login-erro">⚠️ {erro}</div>
+          )}
+          {sucesso && (
+            <div className="login-sucesso">✅ {sucesso}</div>
+          )}
 
-          <button type="submit" disabled={loading} className="auth-btn">
-            {loading ? 'Aguarde...' : modo === 'login' ? 'Entrar' : 'Criar Conta'}
+          <button type="submit" disabled={loading} className="login-btn">
+            {loading ? (
+              <span className="login-btn-loading">
+                <span className="login-spinner" />
+                Aguarde...
+              </span>
+            ) : modo === 'login' ? '▶ Entrar' : '🧱 Criar Conta'}
           </button>
         </form>
 
-        <button className="auth-switch" onClick={() => { setModo(modo === 'login' ? 'register' : 'login'); setErro(''); setSucesso('') }}>
-          {modo === 'login' ? 'Não tem conta? Criar conta' : 'Já tem conta? Entrar'}
+        <div className="login-divider"><span>ou</span></div>
+
+        <button className="login-switch" onClick={() => {
+          setModo(modo === 'login' ? 'register' : 'login')
+          setErro(''); setSucesso('')
+        }}>
+          {modo === 'login' ? 'Não tem conta? Criar conta →' : '← Já tenho conta'}
         </button>
+
+        <p className="login-footer">Construa hábitos. Forje resultados. 🔥</p>
       </div>
     </div>
   )
