@@ -81,7 +81,7 @@ function Treino({ logout, user }) {
   })
   const [concluidos, setConcluidos] = useState({})
   const [carregando, setCarregando] = useState(false)
-  const [abaPrincipal, setAbaPrincipal] = useState('treino')
+  const [abaPrincipal, setAbaPrincipal] = useState('home')
   const [historico, setHistorico] = useState([])
   const [modalResumo, setModalResumo] = useState(null)
   const [showMore, setShowMore] = useState(false)

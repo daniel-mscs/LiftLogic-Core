@@ -28,7 +28,7 @@ export default function Agua({ user }) {
   const buscarTudo = useCallback(async () => {
     setCarregando(true)
     const [{ data: regs }, { data: metaData }, { data: perfilData }] = await Promise.all([
-      supabase.from('agua_registro').select('*').eq('user_id', user.id).gte('data', ultimos7[0]).order('created_at', { ascending: false }),
+      supabase.from('agua_registro').select('*').eq('user_id', user.id).gte('data', ultimos7[0]).order('data', { ascending: false }).order('created_at', { ascending: false }),
       supabase.from('agua_meta').select('*').eq('user_id', user.id).single(),
       supabase.from('perfil').select('peso').eq('user_id', user.id).single(),
     ])
@@ -41,7 +41,8 @@ export default function Agua({ user }) {
     })
 
     setHistorico(hist)
-    setRegistros(hist[hoje] || [])
+    const registrosHoje = (regs || []).filter(r => r.data === hoje)
+    setRegistros(registrosHoje)
     if (metaData) setMeta(metaData.meta_ml)
     if (perfilData) setPerfil(perfilData)
     setCarregando(false)
