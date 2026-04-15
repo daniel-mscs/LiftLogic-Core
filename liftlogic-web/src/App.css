@@ -2842,3 +2842,126 @@ input::-webkit-inner-spin-button {
   color: #64748b;
   line-height: 1.6;
 }
+
+/* ══════════════════════════════════════
+   ROTINA GRADE 7x7
+══════════════════════════════════════ */
+.rotina-grade {
+  background: #1a1d21;
+  border: 1px solid #ffffff0d;
+  border-radius: 16px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.rotina-grade-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 6px;
+}
+
+.rotina-grade-dow {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  padding: 4px 0;
+}
+
+.rotina-grade-semana {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.rotina-grade-dia {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  border: 1px solid #ffffff0d;
+  background: #24282d;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px;
+  transition: all 0.15s;
+}
+
+.rotina-grade-dia.vazio {
+  background: transparent;
+  border: none;
+  cursor: default;
+}
+
+.rotina-grade-dia:hover:not(.vazio) {
+  border-color: #6366f144;
+}
+
+.rotina-grade-dia.hoje {
+  border-color: #6366f1;
+  background: #6366f115;
+}
+
+.rotina-grade-dia.selecionado {
+  background: #6366f1;
+  border-color: #6366f1;
+}
+
+.rotina-grade-dia.selecionado .rotina-grade-num {
+  color: #fff;
+}
+
+.rotina-grade-num {
+  font-size: 13px;
+  font-weight: 600;
+  color: #94a3b8;
+  line-height: 1;
+}
+
+.rotina-grade-dia.hoje .rotina-grade-num {
+  color: #6366f1;
+}
+
+.rotina-grade-dia.selecionado .rotina-grade-num {
+  color: #fff;
+}
+
+.rotina-grade-dots {
+  width: 80%;
+  height: 3px;
+  background: #ffffff15;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.rotina-grade-dot-bar {
+  height: 3px;
+  background: #10b981;
+  border-radius: 99px;
+  transition: width 0.3s;
+}
+
+.rotina-grade-dia.selecionado .rotina-grade-dots {
+  background: #ffffff30;
+}
+
+.rotina-grade-dia.selecionado .rotina-grade-dot-bar {
+  background: #fff;
+}
+
+.rotina-drag-handle {
+  cursor: grab;
+  color: #475569;
+  font-size: 14px;
+  padding: 0 4px;
+  flex-shrink: 0;
+  touch-action: none;
+}
+
+.rotina-drag-handle:active {
+  cursor: grabbing;
+}

@@ -41,9 +41,9 @@ export default function Login({ onLoginSuccess }) {
   return (
     <div className="container auth-container">
       <div className="auth-card">
-        <div className="auth-logo">🏋️‍♂️</div>
-        <h1 className="auth-title">LiftLogic</h1>
-        <p className="auth-subtitle">{modo === 'login' ? 'Bem-vindo de volta!' : 'Crie sua conta'}</p>
+        <div className="auth-logo">🧱</div>
+        <h1 className="auth-title">DayForge</h1>
+        <p className="auth-subtitle">{modo === 'login' ? 'Forje seu dia!' : 'Crie sua conta'}</p>
 
         <form onSubmit={modo === 'login' ? handleLogin : handleRegister} className="auth-form">
           <div className="auth-field">

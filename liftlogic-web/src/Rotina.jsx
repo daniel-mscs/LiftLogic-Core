@@ -1,10 +1,51 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { supabase } from './lib/supabase'
+import {
+  DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors,
+} from '@dnd-kit/core'
+import {
+  arrayMove, SortableContext, useSortable, verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 const PERIODOS = ['Acordar', 'Manhã', 'Tarde', 'Noite']
 
 function formatarData(date) {
   return date.toISOString().split('T')[0]
+}
+
+function TarefaItem({ t, diaId, periodo, editando, setEditando, toggleTarefa, salvarEdicao, deletarTarefa }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: t.id })
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  }
+  return (
+    <div ref={setNodeRef} style={style} className={`rotina-tarefa ${t.concluida ? 'concluida' : ''}`}>
+      <span className="rotina-drag-handle" {...attributes} {...listeners}>☰</span>
+      <button className="rotina-check" onClick={() => toggleTarefa(diaId, periodo, t)}>
+        {t.concluida ? '✅' : '⭕'}
+      </button>
+      {editando === t.id ? (
+        <input
+          className="rotina-edit-input"
+          defaultValue={t.texto}
+          autoFocus
+          onBlur={e => salvarEdicao(diaId, periodo, t, e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') salvarEdicao(diaId, periodo, t, e.target.value)
+            if (e.key === 'Escape') setEditando(null)
+          }}
+        />
+      ) : (
+        <span className="rotina-tarefa-texto" onDoubleClick={() => setEditando(t.id)}>
+          {t.texto}
+        </span>
+      )}
+      <button className="rotina-del" onClick={() => deletarTarefa(diaId, periodo, t.id)}>×</button>
+    </div>
+  )
 }
 
 function labelData(dateStr) {
@@ -18,6 +59,12 @@ function labelData(dateStr) {
   return d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })
 }
 
+function chunkArray(arr, size) {
+  const chunks = []
+  for (let i = 0; i < arr.length; i += size) chunks.push(arr.slice(i, i + size))
+  return chunks
+}
+
 export default function Rotina({ user }) {
   const [dias, setDias]               = useState([])
   const [tarefas, setTarefas]         = useState({})
@@ -28,9 +75,15 @@ export default function Rotina({ user }) {
   const [novasTarefas, setNovasTarefas] = useState({})
   const [editando, setEditando]       = useState(null)
   const [modalClone, setModalClone]   = useState(null)
-    const [clonando, setClonando]       = useState(false)
+  const [clonando, setClonando]       = useState(false)
+  const [diaSelecionado, setDiaSelecionado] = useState(null)
 
   const hoje = formatarData(new Date())
+
+  const sensors = useSensors(
+      useSensor(PointerSensor),
+      useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } })
+    )
 
   const buscarRotina = useCallback(async () => {
     setCarregando(true)
@@ -55,6 +108,12 @@ export default function Rotina({ user }) {
     })
 
     setTarefas(agrupado)
+
+    // Auto-seleciona hoje se existir
+    const diaHoje = diasData.find(d => d.data === hoje)
+    if (diaHoje) setDiaSelecionado(diaHoje.id)
+    else setDiaSelecionado(diasData[0]?.id || null)
+
     setCarregando(false)
   }, [user.id])
 
@@ -141,18 +200,18 @@ export default function Rotina({ user }) {
     const ids = dias.map(d => d.id)
     await supabase.from('rotina_tarefas').delete().in('dia_id', ids)
     await supabase.from('rotina_dias').delete().eq('user_id', user.id)
-    setDias([]); setTarefas({})
+    setDias([]); setTarefas({}); setDiaSelecionado(null)
   }
 
   const confirmarClone = async (diaDestinoId) => {
-      if (clonando) return
-      setClonando(true)
-      const diaOrigemId = modalClone
-      setModalClone(null)
+    if (clonando) return
+    setClonando(true)
+    const diaOrigemId = modalClone
+    setModalClone(null)
     const tarefasOrigem = PERIODOS.flatMap(p =>
       (tarefas[diaOrigemId]?.[p] || []).map(t => ({ ...t, periodo: p }))
     )
-    if (tarefasOrigem.length === 0) { alert('Nenhuma tarefa para clonar!'); setModalClone(null); setClonando(false); return }
+    if (tarefasOrigem.length === 0) { alert('Nenhuma tarefa para clonar!'); setClonando(false); return }
 
     const novas = tarefasOrigem.map(t => ({
       user_id: user.id,
@@ -177,9 +236,27 @@ export default function Rotina({ user }) {
     })
 
     setClonando(false)
-    setModalClone(null)
     alert(`✅ ${data.length} tarefa(s) clonada(s)!`)
   }
+
+  const handleDragEnd = async (diaId, periodo, event) => {
+      const { active, over } = event
+      if (!over || active.id === over.id) return
+      const itens = tarefas[diaId]?.[periodo] || []
+      const oldIndex = itens.findIndex(t => t.id === active.id)
+      const newIndex = itens.findIndex(t => t.id === over.id)
+      const novaOrdem = arrayMove(itens, oldIndex, newIndex)
+      setTarefas(prev => ({
+        ...prev,
+        [diaId]: { ...prev[diaId], [periodo]: novaOrdem }
+      }))
+      await Promise.all(novaOrdem.map((t, i) =>
+        supabase.from('rotina_tarefas').update({ ordem: i }).eq('id', t.id)
+      ))
+    }
+
+  const diaSel = dias.find(d => d.id === diaSelecionado)
+  const semanas = chunkArray(dias, 7)
 
   if (carregando) return <div style={{ textAlign: 'center', color: '#64748b', paddingTop: 40 }}>Carregando...</div>
 
@@ -191,18 +268,16 @@ export default function Rotina({ user }) {
         <div className="modal-overlay" onClick={() => setModalClone(null)}>
           <div className="modal-resumo" onClick={e => e.stopPropagation()}>
             <h2 style={{ fontSize: '1rem', marginBottom: 16 }}>⧉ Clonar tarefas para...</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 360, overflowY: 'auto' }}>
               {dias.filter(d => d.id !== modalClone).map(d => (
                 <button
                   key={d.id}
-                  onClick={(e) => { e.stopPropagation(); if (!clonando) confirmarClone(d.id) }}
+                  onClick={() => { if (!clonando) confirmarClone(d.id) }}
                   style={{
                     background: '#24282d', border: '1px solid #ffffff0d', color: '#f8fafc',
                     borderRadius: 10, padding: '12px 16px', cursor: 'pointer',
-                    textAlign: 'left', fontSize: 14, transition: 'all 0.15s'
+                    textAlign: 'left', fontSize: 14
                   }}
-                  onMouseEnter={e => e.target.style.borderColor = '#6366f144'}
-                  onMouseLeave={e => e.target.style.borderColor = '#ffffff0d'}
                 >
                   <span style={{ color: '#6366f1', fontWeight: 700, marginRight: 8 }}>{labelData(d.data)}</span>
                   {new Date(d.data + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })}
@@ -242,63 +317,115 @@ export default function Rotina({ user }) {
       {dias.length === 0 ? (
         <p className="empty-msg" style={{ marginTop: 40 }}>Nenhuma rotina gerada ainda. Selecione as datas acima! 📋</p>
       ) : (
-        dias.map(dia => {
-          const isHoje = dia.data === hoje
-          const totalTarefas = PERIODOS.flatMap(p => tarefas[dia.id]?.[p] || []).length
-          const concluidas = PERIODOS.flatMap(p => tarefas[dia.id]?.[p] || []).filter(t => t.concluida).length
+        <>
+          {/* Grade 7x semanas */}
+          <div className="rotina-grade">
+            {/* Header dias da semana */}
+            <div className="rotina-grade-header">
+              {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(d => (
+                <div key={d} className="rotina-grade-dow">{d}</div>
+              ))}
+            </div>
 
-          return (
-            <div key={dia.id} className={`rotina-dia ${isHoje ? 'hoje' : ''}`}>
+            {/* Grade contínua alinhada por dia da semana */}
+            {(() => {
+              // Monta array contínuo com espaços vazios
+              const firstDow = new Date(dias[0].data + 'T00:00:00').getDay()
+              const cells = [
+                ...Array.from({ length: firstDow }, (_, i) => ({ vazio: true, key: `pre-${i}` })),
+                ...dias.map(dia => ({ vazio: false, dia }))
+              ]
+              // Completa última linha com vazios
+              const resto = cells.length % 7
+              if (resto !== 0) {
+                for (let i = 0; i < 7 - resto; i++) cells.push({ vazio: true, key: `pos-${i}` })
+              }
+              // Divide em semanas de 7
+              const semanasGrid = chunkArray(cells, 7)
+
+              return semanasGrid.map((semana, si) => (
+                <div key={si} className="rotina-grade-semana">
+                  {semana.map((cell, ci) => {
+                    if (cell.vazio) return <div key={cell.key || `${si}-${ci}`} className="rotina-grade-dia vazio" />
+                    const { dia } = cell
+                    const isHoje = dia.data === hoje
+                    const isSel = dia.id === diaSelecionado
+                    const totalT = PERIODOS.flatMap(p => tarefas[dia.id]?.[p] || []).length
+                    const concT = PERIODOS.flatMap(p => tarefas[dia.id]?.[p] || []).filter(t => t.concluida).length
+                    const dayNum = new Date(dia.data + 'T00:00:00').getDate()
+                    return (
+                      <button
+                        key={dia.id}
+                        className={`rotina-grade-dia ${isHoje ? 'hoje' : ''} ${isSel ? 'selecionado' : ''}`}
+                        onClick={() => setDiaSelecionado(isSel ? null : dia.id)}
+                      >
+                        <span className="rotina-grade-num">{dayNum}</span>
+                        {totalT > 0 && (
+                          <div className="rotina-grade-dots">
+                            <div
+                              className="rotina-grade-dot-bar"
+                              style={{ width: `${Math.round((concT / totalT) * 100)}%` }}
+                            />
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              ))
+            })()}
+          </div>
+
+          {/* Detalhe do dia selecionado */}
+          {diaSel && (
+            <div className={`rotina-dia ${diaSel.data === hoje ? 'hoje' : ''}`}>
               <div className="rotina-dia-header">
                 <div>
-                  <div className="rotina-dia-label">{labelData(dia.data)}</div>
+                  <div className="rotina-dia-label">{labelData(diaSel.data)}</div>
                   <div className="rotina-dia-data">
-                    {new Date(dia.data + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                    {new Date(diaSel.data + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  {totalTarefas > 0 && (
-                    <div className="rotina-dia-prog">
-                      <span>{concluidas}/{totalTarefas}</span>
-                      <div className="rotina-dia-prog-bar">
-                        <div style={{ width: `${(concluidas / totalTarefas) * 100}%` }} />
+                  {(() => {
+                    const total = PERIODOS.flatMap(p => tarefas[diaSel.id]?.[p] || []).length
+                    const conc = PERIODOS.flatMap(p => tarefas[diaSel.id]?.[p] || []).filter(t => t.concluida).length
+                    return total > 0 ? (
+                      <div className="rotina-dia-prog">
+                        <span>{conc}/{total}</span>
+                        <div className="rotina-dia-prog-bar">
+                          <div style={{ width: `${(conc / total) * 100}%` }} />
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  <button className="rotina-btn-clonar" onClick={() => setModalClone(dia.id)}>⧉</button>
+                    ) : null
+                  })()}
+                  <button className="rotina-btn-clonar" onClick={() => setModalClone(diaSel.id)}>⧉</button>
                 </div>
               </div>
 
               {PERIODOS.map(periodo => {
-                const key = `${dia.id}_${periodo}`
-                const itens = tarefas[dia.id]?.[periodo] || []
+                const key = `${diaSel.id}_${periodo}`
+                const itens = tarefas[diaSel.id]?.[periodo] || []
                 return (
                   <div key={periodo} className="rotina-periodo">
                     <div className="rotina-periodo-title">{periodo}</div>
-                    {itens.map(t => (
-                      <div key={t.id} className={`rotina-tarefa ${t.concluida ? 'concluida' : ''}`}>
-                        <button className="rotina-check" onClick={() => toggleTarefa(dia.id, periodo, t)}>
-                          {t.concluida ? '✅' : '⭕'}
-                        </button>
-                        {editando === t.id ? (
-                          <input
-                            className="rotina-edit-input"
-                            defaultValue={t.texto}
-                            autoFocus
-                            onBlur={e => salvarEdicao(dia.id, periodo, t, e.target.value)}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter') salvarEdicao(dia.id, periodo, t, e.target.value)
-                              if (e.key === 'Escape') setEditando(null)
-                            }}
-                          />
-                        ) : (
-                          <span className="rotina-tarefa-texto" onDoubleClick={() => setEditando(t.id)}>
-                            {t.texto}
-                          </span>
-                        )}
-                        <button className="rotina-del" onClick={() => deletarTarefa(dia.id, periodo, t.id)}>×</button>
-                      </div>
-                    ))}
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={e => handleDragEnd(diaSel.id, periodo, e)}>
+                    <SortableContext items={itens.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                          {itens.map(t => (
+                           <TarefaItem
+                            key={t.id}
+                               t={t}
+                               diaId={diaSel.id}
+                               periodo={periodo}
+                               editando={editando}
+                               setEditando={setEditando}
+                               toggleTarefa={toggleTarefa}
+                               salvarEdicao={salvarEdicao}
+                               deletarTarefa={deletarTarefa}
+                        />
+                     ))}
+                    </SortableContext>
+                    </DndContext>
                     <div className="rotina-add-row">
                       <input
                         type="text"
@@ -306,16 +433,16 @@ export default function Rotina({ user }) {
                         placeholder="+ Nova tarefa"
                         value={novasTarefas[key] || ''}
                         onChange={e => setNovasTarefas(prev => ({ ...prev, [key]: e.target.value }))}
-                        onKeyDown={e => { if (e.key === 'Enter') adicionarTarefa(dia.id, periodo) }}
+                        onKeyDown={e => { if (e.key === 'Enter') adicionarTarefa(diaSel.id, periodo) }}
                       />
-                      <button className="rotina-add-btn" onClick={() => adicionarTarefa(dia.id, periodo)}>+</button>
+                      <button className="rotina-add-btn" onClick={() => adicionarTarefa(diaSel.id, periodo)}>+</button>
                     </div>
                   </div>
                 )
               })}
             </div>
-          )
-        })
+          )}
+        </>
       )}
     </div>
   )

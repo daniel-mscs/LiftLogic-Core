@@ -373,19 +373,7 @@ const buscarDashboard = async () => {
     return `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
   }
 
-  if (!divisao) {
-    return (
-      <div className="container selection-screen">
-        <h1>🏋️‍♂️ LiftLogic</h1>
-        <p className="subtitle">Olá, {user.email.split('@')[0]}! Escolha sua divisão:</p>
-        <div className="selection-grid">
-          {['AB', 'ABC', 'ABCD', 'ABCDE'].map(op => (
-            <button key={op} onClick={() => { setDivisao(op); setTreinoAtivo('A') }} className="select-btn">{op}</button>
-          ))}
-        </div>
-      </div>
-    )
-  }
+  // removido — seleção de divisão agora fica dentro da aba treino
 
   const abasDisponiveis = divisao.split('')
   const exerciciosFiltrados = exercicios.filter(ex => ex.treino === treinoAtivo)
@@ -511,10 +499,22 @@ const buscarDashboard = async () => {
         {/* Exercícios */}
         {subAbaTreino === 'exercicios' && (
           <>
-            <header className="header-app">
-              <button className="back-btn" onClick={() => { localStorage.removeItem('divisao'); setDivisao(null) }}>← Trocar Divisão</button>
-            </header>
+            {!divisao ? (
+                          <div className="selection-screen" style={{ padding: '20px 0' }}>
+                            <p className="subtitle">Escolha sua divisão de treino:</p>
+                            <div className="selection-grid">
+                              {['AB', 'ABC', 'ABCD', 'ABCDE'].map(op => (
+                                <button key={op} onClick={() => { setDivisao(op); setTreinoAtivo('A') }} className="select-btn">{op}</button>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <header className="header-app">
+                            <button className="back-btn" onClick={() => { localStorage.removeItem('divisao'); setDivisao(null) }}>← Trocar Divisão</button>
+                          </header>
+                        )}
 
+            {divisao && <>
             <div className="timer-section">
               {!treinando ? (
                 <button className="btn-start-workout" onClick={() => {
@@ -596,8 +596,9 @@ const buscarDashboard = async () => {
                   ))}
                 </SortableContext>
               </DndContext>
-            </div>
-          </>
+                          </div>
+                          </>}
+                        </>
         )}
 
         {/* Stats */}
