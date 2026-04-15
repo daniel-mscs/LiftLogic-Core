@@ -148,6 +148,21 @@ export default function Home({ user, onIniciarTreino, treinando, treinoAtivo, di
         {streak > 0 && <div className="home-streak">🔥 {streak} dia{streak > 1 ? 's' : ''}</div>}
       </div>
 
+        {/* Banner stats fim de semana */}
+        {(() => {
+          const dow = new Date().getDay()
+          if (dow !== 0 && dow !== 6) return null
+          return (
+            <div className="home-stats-banner" onClick={() => onNavegar('stats')}>
+              <span>📊</span>
+              <div>
+                <div className="home-stats-banner-title">Resumo da semana disponível!</div>
+                <div className="home-stats-banner-sub">Veja onde acertou e onde pode melhorar →</div>
+              </div>
+            </div>
+          )
+        })()}
+
       {/* Frase motivacional */}
       <div className="home-frase">{frase}</div>
 

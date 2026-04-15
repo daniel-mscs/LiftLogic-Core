@@ -25,6 +25,8 @@ import Peso from './Peso'
 import Suplementos from './Suplementos'
 import Dieta from './Dieta'
 import Macros from './Macros'
+import Passos from './Passos'
+import Stats from './Stats'
 
 function ExercicioCard({ ex, concluidos, treinando, toggleConcluido, atualizarExercicio, deletarExercicio }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: ex.id })
@@ -413,7 +415,7 @@ const buscarDashboard = async () => {
         </button>
         <div className="bottom-nav-more-wrap">
           <button className={`bottom-nav-btn ${['agua','peso','suplementos','dieta','macros','historico','dashboard'].includes(abaPrincipal) ? 'active' : ''}`} onClick={() => setShowMore(p => !p)}>
-            <span>⚡</span><span>Mais</span>
+            <span>🗃️</span><span>Mais</span>
           </button>
           {showMore && (
             <div className="bottom-nav-more-menu">
@@ -423,6 +425,8 @@ const buscarDashboard = async () => {
                 { id: 'dieta',       icon: '🥗', label: 'Dieta'       },
                 { id: 'suplementos', icon: '💊', label: 'Suplementos' },
                 { id: 'macros',      icon: '🍽️', label: 'Macros'      },
+                { id: 'passos', icon: '👟', label: 'Passos' },
+                { id: 'stats', icon: '📊', label: 'Stats' },
 
               ].map(item => (
                 <button key={item.id} className={`more-menu-item ${abaPrincipal === item.id ? 'active' : ''}`}
@@ -476,6 +480,14 @@ const buscarDashboard = async () => {
 
     {abaPrincipal === 'macros' && (
       <Macros user={user} />
+    )}
+
+    {abaPrincipal === 'passos' && (
+      <Passos user={user} />
+    )}
+
+    {abaPrincipal === 'stats' && (
+      <Stats user={user} />
     )}
 
     {abaPrincipal === 'treino' && (
@@ -743,7 +755,7 @@ const buscarDashboard = async () => {
               <div className="ajuda-item"><div className="ajuda-num">1</div><div className="ajuda-body"><strong>Home</strong><p>Visão geral do dia — tarefas, água, peso, refeição atual, suplementos e hábitos.</p></div></div>
               <div className="ajuda-item"><div className="ajuda-num">2</div><div className="ajuda-body"><strong>Treino</strong><p>Exercícios com timer, descanso cronometrado, stats de kcal/volume/tempo e histórico completo.</p></div></div>
               <div className="ajuda-item"><div className="ajuda-num">3</div><div className="ajuda-body"><strong>Rotina</strong><p>Gere blocos de dias com tarefas por período (Acordar, Manhã, Tarde, Noite). Enter cria a próxima tarefa. ⧉ clona o dia.</p></div></div>
-              <div className="ajuda-item"><div className="ajuda-num">4</div><div className="ajuda-body"><strong>Mais</strong><p>Acessa Água, Peso, Dieta, Suplementos e Macros pelo menu ⚡.</p></div></div>
+              <div className="ajuda-item"><div className="ajuda-num">4</div><div className="ajuda-body"><strong>Mais</strong><p>Acessa Água, Peso, Dieta, Suplementos e Macros pelo menu 🗃️.</p></div></div>
 
               <div className="ajuda-group-title">🧠 Cortisol — o hormônio do estresse</div>
               <div className="ajuda-item"><div className="ajuda-num">💡</div><div className="ajuda-body"><strong>O que é o cortisol?</strong><p>Hormônio produzido em resposta ao estresse. Cronicamente elevado causa retenção de líquido (até 2kg a mais na balança), dificulta queima de gordura, prejudica o sono e reduz testosterona.</p></div></div>
@@ -769,6 +781,10 @@ const buscarDashboard = async () => {
               <div className="ajuda-item"><div className="ajuda-num">💡</div><div className="ajuda-body"><strong>Por que pesar todo dia?</strong><p>O peso oscila 1–3kg por resíduo gástrico, hidratação e sódio. Essas variações não são gordura — são fluidos.</p></div></div>
               <div className="ajuda-item"><div className="ajuda-num">💡</div><div className="ajuda-body"><strong>A média de 7 dias é o que importa</strong><p>Se a média da semana 2 for menor que a da semana 1, você emagreceu. Um único dia nunca conta a história real.</p></div></div>
               <div className="ajuda-item"><div className="ajuda-num">💡</div><div className="ajuda-body"><strong>Como se pesar corretamente</strong><p>Sempre em jejum logo após acordar, após urinar, sem roupa ou com roupa leve sempre igual. Mesmo horário todo dia.</p></div></div>
+              <div className="ajuda-group-title">👟 Passos diários</div>
+              <div className="ajuda-item"><div className="ajuda-num">💡</div><div className="ajuda-body"><strong>Como registrar seus passos</strong><p>Usa relógio ou celular que conta passos? Ao final do dia vá na aba Passos (menu 🗃️) e registre quantos passos você deu. Com o tempo você terá um histórico real da sua atividade diária.</p></div></div>
+              <div className="ajuda-item"><div className="ajuda-num">💡</div><div className="ajuda-body"><strong>Por que 10.000 passos?</strong><p>A OMS recomenda 10.000 passos por dia para adultos saudáveis — equivale a aproximadamente 8km e 400 kcal. Mas qualquer aumento já traz benefícios: quem sai de 3.000 para 7.000 já reduz risco cardiovascular significativamente.</p></div></div>
+              <div className="ajuda-item"><div className="ajuda-num">💡</div><div className="ajuda-body"><strong>Passos e emagrecimento</strong><p>Cada 1.000 passos queima aproximadamente 40 kcal. 10.000 passos diários = ~400 kcal extras por dia.</p></div></div>
             </div>
           )}
         </div>
