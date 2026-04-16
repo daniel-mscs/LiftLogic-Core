@@ -27,6 +27,7 @@ import Dieta from './Dieta'
 import Macros from './Macros'
 import Passos from './Passos'
 import Stats from './Stats'
+import HomeWP from './HomeWP'
 
 function ExercicioCard({ ex, concluidos, treinando, toggleConcluido, atualizarExercicio, deletarExercicio }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: ex.id })
