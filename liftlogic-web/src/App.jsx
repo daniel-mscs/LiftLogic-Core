@@ -8,22 +8,21 @@ function App() {
   const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
+    // Listener primeiro — captura qualquer mudança incluindo login
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+      setCarregando(false)
+    })
+
+    // Depois verifica sessão existente
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setCarregando(false)
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-      if (!session) setCarregando(false)
-    })
-
-    // Renova o token a cada 10 minutos
     const refreshInterval = setInterval(async () => {
       const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
-        await supabase.auth.refreshSession()
-      }
+      if (session) await supabase.auth.refreshSession()
     }, 10 * 60 * 1000)
 
     return () => {
@@ -40,10 +39,10 @@ function App() {
   if (carregando) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0f1113', gap: 16 }}>
-              <div style={{ fontSize: 52 }}>🧱</div>
-              <div style={{ color: '#f8fafc', fontSize: 18, fontWeight: 700 }}>DayForge</div>
-              <div style={{ color: '#64748b', fontSize: 13 }}>Forjando seu dia...</div>
-            </div>
+        <div style={{ fontSize: 52 }}>🧱</div>
+        <div style={{ color: '#f8fafc', fontSize: 18, fontWeight: 700 }}>DayForge</div>
+        <div style={{ color: '#64748b', fontSize: 13 }}>Forjando seu dia...</div>
+      </div>
     )
   }
 

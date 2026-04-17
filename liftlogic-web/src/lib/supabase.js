@@ -8,5 +8,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
+    storage: window.localStorage,
+    storageKey: 'dayforge-auth',
+    flowType: 'implicit',
   }
 })

@@ -7,13 +7,23 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
+      devOptions: { enabled: true },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        navigateFallback: 'index.html',
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
+            handler: 'NetworkOnly',
+          }
+        ]
+      },
       manifest: {
-        name: 'LiftLogic',
-        short_name: 'LiftLogic',
-        description: 'Seu app de treino inteligente',
-        theme_color: '#1a1a2e',
-        background_color: '#1a1a2e',
+        name: 'DayForge',
+        short_name: 'DayForge',
+        description: 'Forje seu dia. Treino, rotina, saúde e hábitos.',
+        theme_color: '#0f1113',
+        background_color: '#0f1113',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
