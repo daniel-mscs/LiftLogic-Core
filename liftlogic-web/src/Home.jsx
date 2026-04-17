@@ -212,7 +212,7 @@ export default function Home({ user, onIniciarTreino, treinando, treinoAtivo, di
     : {}
   const temTarefas = Object.keys(tarefasPorPeriodo).length > 0
 
-  if (carregando) return <div style={{ textAlign: 'center', color: '#64748b', paddingTop: 60 }}>Carregando...</div>
+  if (carregando) return <div style={{ textAlign: 'center', color: '#64748b', paddingTop: 60 }}>Preparando seu ambiente... 🧱</div>
 
   return (
     <div className="home-section">
