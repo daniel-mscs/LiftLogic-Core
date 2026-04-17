@@ -57,17 +57,27 @@ export default function Home({ user, onIniciarTreino, treinando, treinoAtivo, di
     })
   const [kcalHoje, setKcalHoje] = useState(0)
   const [kcalMeta, setKcalMeta] = useState(2000)
+  const [kcalGasto, setKcalGasto] = useState({ treino: 0, passos: 0 })
 
   const [editandoHome, setEditandoHome] = useState(false)
   const [blocos, setBlocos] = useState(() => {
     const saved = localStorage.getItem('home_blocos')
-    if (saved) return JSON.parse(saved)
+    if (saved) {
+      const parsed = JSON.parse(saved)
+      // Migra blocos antigos
+      const temPassosSupl = parsed.find(b => b.id === 'passos_supl')
+      if (!temPassosSupl) {
+        localStorage.removeItem('home_blocos')
+        return null
+      }
+      return parsed
+    }
     return [
       { id: 'tarefas',      label: 'Tarefas',      visivel: true },
       { id: 'cards',        label: 'Água + Peso',  visivel: true },
-      { id: 'kcal',         label: 'Kcal',         visivel: true },
+      { id: 'kcal',         label: 'Kcal + Saldo',  visivel: true },
       { id: 'refeicao',     label: 'Refeição',     visivel: true },
-      { id: 'suplementos',  label: 'Suplementos',  visivel: true },
+      { id: 'passos_supl',  label: 'Passos + Suplementos', visivel: true },
       { id: 'habitos',      label: 'Hábitos',      visivel: true },
     ]
   })
@@ -97,7 +107,8 @@ export default function Home({ user, onIniciarTreino, treinando, treinoAtivo, di
         { data: passosMetaData },
         { data: macrosData },
         { data: macrosMetaData },
-      ] = await Promise.all([
+              { data: treinoHoje },
+              ] = await Promise.all([
         supabase.from('perfil').select('*').eq('user_id', user.id).single(),
         supabase.from('treinos_finalizados').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20),
         supabase.from('agua_registro').select('ml').eq('user_id', user.id).eq('data', hoje),
@@ -108,6 +119,7 @@ export default function Home({ user, onIniciarTreino, treinando, treinoAtivo, di
         supabase.from('passos_meta').select('meta_passos').eq('user_id', user.id).single(),
         supabase.from('macros_registro').select('kcal').eq('user_id', user.id).eq('data', hoje),
         supabase.from('macros_meta').select('meta_kcal').eq('user_id', user.id).single(),
+        supabase.from('treinos_finalizados').select('kcal').eq('user_id', user.id).gte('created_at', hoje).single(),
       ])
     if (p) setPerfil(p)
     if (h) { setHistorico(h); setStreak(calcularStreak(h)) }
@@ -120,6 +132,9 @@ export default function Home({ user, onIniciarTreino, treinando, treinoAtivo, di
     const totalKcal = (macrosData || []).reduce((s, r) => s + r.kcal, 0)
         setKcalHoje(totalKcal)
         if (macrosMetaData) setKcalMeta(macrosMetaData.meta_kcal)
+    const kcalTreino = treinoHoje?.kcal || 0
+        const kcalPassosGasto = Math.round((passosData?.passos || 0) * 0.04)
+        setKcalGasto({ treino: kcalTreino, passos: kcalPassosGasto })
 
     if (pesoRegs && pesoRegs.length > 0) {
       setPesoHoje(pesoRegs[0])
@@ -328,36 +343,43 @@ export default function Home({ user, onIniciarTreino, treinando, treinoAtivo, di
                       </div>
                     )}
 
-{bloco.id === 'kcal' && (
-                <div className="home-cards-row">
-                  <div className="home-mini-card" onClick={() => !editandoHome && onNavegar('macros')} style={{ cursor: 'pointer' }}>
-                    <div className="home-mini-icon">🔥</div>
-                    <div className="home-mini-info">
-                      <div className="home-mini-label">KCAL HOJE</div>
-                      <div className="home-mini-val">{kcalHoje > 0 ? kcalHoje.toLocaleString('pt-BR') : '—'}</div>
-                      <div className="home-mini-bar-bg">
-                        <div className="home-mini-bar-fill" style={{ width: `${Math.min(100, Math.round((kcalHoje / kcalMeta) * 100))}%`, background: kcalHoje > kcalMeta ? '#ef4444' : kcalHoje >= kcalMeta * 0.9 ? '#10b981' : '#f59e0b' }} />
+                {bloco.id === 'kcal' && (
+                  <div className="home-cards-row">
+                    <div className="home-mini-card" onClick={() => !editandoHome && onNavegar('macros')} style={{ cursor: 'pointer' }}>
+                      <div className="home-mini-icon">🔥</div>
+                      <div className="home-mini-info">
+                        <div className="home-mini-label">KCAL HOJE</div>
+                        <div className="home-mini-val">{kcalHoje > 0 ? kcalHoje.toLocaleString('pt-BR') : '—'}</div>
+                        <div className="home-mini-bar-bg">
+                          <div className="home-mini-bar-fill" style={{ width: `${Math.min(100, Math.round((kcalHoje / kcalMeta) * 100))}%`, background: kcalHoje > kcalMeta ? '#ef4444' : kcalHoje >= kcalMeta * 0.9 ? '#10b981' : '#f59e0b' }} />
+                        </div>
+                        <div className="home-mini-sub" style={{ color: kcalHoje > kcalMeta ? '#ef4444' : '#64748b' }}>
+                          {Math.round((kcalHoje / kcalMeta) * 100)}% da meta {kcalHoje > kcalMeta ? '⚠️' : ''}
+                        </div>
                       </div>
-                      <div className="home-mini-sub" style={{ color: kcalHoje > kcalMeta ? '#ef4444' : '#64748b' }}>
-                        {Math.round((kcalHoje / kcalMeta) * 100)}% da meta {kcalHoje > kcalMeta ? '⚠️' : ''}
+                    </div>
+                    <div className="home-mini-card" onClick={() => !editandoHome && onNavegar('macros')} style={{ cursor: 'pointer' }}>
+                      <div className="home-mini-icon">⚡</div>
+                      <div className="home-mini-info">
+                        <div className="home-mini-label">SALDO</div>
+                        {(() => {
+                          const gastoTotal = kcalMeta + kcalGasto.treino + kcalGasto.passos
+                          const saldo = kcalHoje - gastoTotal
+                          return (
+                            <>
+                              <div className="home-mini-val" style={{ color: saldo < 0 ? '#10b981' : '#ef4444', fontSize: '1.2rem' }}>
+                                {saldo < 0 ? '-' : '+'}{Math.abs(saldo).toLocaleString('pt-BR')}
+                              </div>
+                              <div className="home-mini-sub" style={{ color: saldo < 0 ? '#10b981' : '#ef4444' }}>
+                                {saldo < 0 ? 'deficit' : 'superavit'}
+                              </div>
+                            </>
+                          )
+                        })()}
                       </div>
                     </div>
                   </div>
-                  <div className="home-mini-card" onClick={() => !editandoHome && onNavegar('passos')} style={{ cursor: 'pointer' }}>
-                    <div className="home-mini-icon">👟</div>
-                    <div className="home-mini-info">
-                      <div className="home-mini-label">PASSOS HOJE</div>
-                      <div className="home-mini-val">{passosHoje ? passosHoje.toLocaleString('pt-BR') : '—'}</div>
-                      <div className="home-mini-bar-bg">
-                        <div className="home-mini-bar-fill" style={{ width: `${Math.min(100, Math.round(((passosHoje || 0) / passosMeta) * 100))}%`, background: (passosHoje || 0) >= passosMeta ? '#10b981' : '#6366f1' }} />
-                      </div>
-                      <div className="home-mini-sub">{Math.min(100, Math.round(((passosHoje || 0) / passosMeta) * 100))}% da meta</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {bloco.id === 'passos' && null}
+                )}
                     {bloco.id === 'refeicao' && (
                       <div className="home-card">
                         <div className="home-section-title">🥗 REFEIÇÃO ATUAL</div>
@@ -365,12 +387,28 @@ export default function Home({ user, onIniciarTreino, treinando, treinoAtivo, di
                       </div>
                     )}
 
-                    {bloco.id === 'suplementos' && (
-                      <div className="home-card">
-                        <div className="home-section-title">💊 SUPLEMENTOS</div>
-                        <Suplementos user={user} compact={true} />
-                      </div>
-                    )}
+                    {bloco.id === 'passos_supl' && (
+                                    <div className="home-cards-row">
+                                      <div className="home-mini-card" onClick={() => !editandoHome && onNavegar('passos')} style={{ cursor: 'pointer' }}>
+                                        <div className="home-mini-icon">👟</div>
+                                        <div className="home-mini-info">
+                                          <div className="home-mini-label">PASSOS HOJE</div>
+                                          <div className="home-mini-val">{passosHoje ? passosHoje.toLocaleString('pt-BR') : '—'}</div>
+                                          <div className="home-mini-bar-bg">
+                                            <div className="home-mini-bar-fill" style={{ width: `${Math.min(100, Math.round(((passosHoje || 0) / passosMeta) * 100))}%`, background: (passosHoje || 0) >= passosMeta ? '#10b981' : '#6366f1' }} />
+                                          </div>
+                                          <div className="home-mini-sub">{Math.min(100, Math.round(((passosHoje || 0) / passosMeta) * 100))}% da meta</div>
+                                        </div>
+                                      </div>
+                                      <div className="home-mini-card" onClick={() => !editandoHome && onNavegar('suplementos')} style={{ cursor: 'pointer' }}>
+                                        <div className="home-mini-icon">💊</div>
+                                        <div className="home-mini-info">
+                                          <div className="home-mini-label">SUPLEMENTOS</div>
+                                          <Suplementos user={user} compact={true} minimode={true} />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
 
                     {bloco.id === 'habitos' && (
                       <div className="home-card">

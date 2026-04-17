@@ -5,7 +5,7 @@ function formatarData(date) {
   return date.toISOString().split('T')[0]
 }
 
-export default function Suplementos({ user, compact = false, onAjuda }) {
+export default function Suplementos({ user, compact = false, minimode = false, onAjuda }) {
   const [lista, setLista]           = useState([])
   const [checks, setChecks]         = useState({})
   const [carregando, setCarregando] = useState(true)
@@ -59,6 +59,21 @@ export default function Suplementos({ user, compact = false, onAjuda }) {
   const concluidosHoje = lista.filter(s => checks[s.id]?.concluido).length
 
   if (carregando) return <div style={{ textAlign: 'center', color: '#64748b', paddingTop: 20 }}>Carregando...</div>
+
+if (minimode) {
+    return (
+      <div style={{ marginTop: 4 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc' }}>
+          {concluidosHoje}/{lista.length}
+        </div>
+        <div style={{ fontSize: 11, color: '#64748b' }}>concluídos hoje</div>
+        <div className="home-mini-bar-bg" style={{ marginTop: 6 }}>
+          <div className="home-mini-bar-fill" style={{ width: `${lista.length > 0 ? Math.round((concluidosHoje / lista.length) * 100) : 0}%`, background: concluidosHoje === lista.length && lista.length > 0 ? '#10b981' : '#6366f1' }} />
+        </div>
+      </div>
+    )
+  }
+
 
   // MODO COMPACTO — usado na Home
   if (compact) {
