@@ -28,6 +28,7 @@ import Macros from './Macros'
 import Passos from './Passos'
 import Stats from './Stats'
 import HomeWP from './HomeWP'
+import SmartPocket from './SmartPocket'
 
 function ExercicioCard({ ex, concluidos, treinando, toggleConcluido, atualizarExercicio, deletarExercicio }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: ex.id })
@@ -444,6 +445,7 @@ const buscarDashboard = async () => {
                 { id: 'macros',      icon: '🍽️', label: 'Macros'      },
                 { id: 'passos', icon: '👟', label: 'Passos' },
                 { id: 'stats', icon: '📊', label: 'Stats' },
+                { id: 'smartpocket', icon: '💰', label: 'SmartPocket' },
 
               ].map(item => (
                 <button key={item.id} className={`more-menu-item ${abaPrincipal === item.id ? 'active' : ''}`}
@@ -510,6 +512,9 @@ const buscarDashboard = async () => {
     {abaPrincipal === 'stats' && (
       <Stats user={user} />
     )}
+
+    {abaPrincipal === 'smartpocket' &&
+        <SmartPocket user={user} />}
 
     {abaPrincipal === 'treino' && (
       <>
@@ -831,6 +836,13 @@ const buscarDashboard = async () => {
               <div className="ajuda-item"><div className="ajuda-num">💡</div><div className="ajuda-body"><strong>Como registrar seus passos</strong><p>Usa relógio ou celular que conta passos? Ao final do dia vá na aba Passos (menu 🗃️) e registre quantos passos você deu. Com o tempo você terá um histórico real da sua atividade diária.</p></div></div>
               <div className="ajuda-item"><div className="ajuda-num">💡</div><div className="ajuda-body"><strong>Por que 10.000 passos?</strong><p>A OMS recomenda 10.000 passos por dia para adultos saudáveis — equivale a aproximadamente 8km e 400 kcal. Mas qualquer aumento já traz benefícios: quem sai de 3.000 para 7.000 já reduz risco cardiovascular significativamente.</p></div></div>
               <div className="ajuda-item"><div className="ajuda-num">💡</div><div className="ajuda-body"><strong>Passos e emagrecimento</strong><p>Cada 1.000 passos queima aproximadamente 40 kcal. 10.000 passos diários = ~400 kcal extras por dia.</p></div></div>
+              <div id="ajuda-smartpocket" className="ajuda-group-title">💰 SmartPocket</div>
+              <div className="ajuda-item"><div className="ajuda-num">1</div><div className="ajuda-body"><strong>O que é?</strong><p>O SmartPocket é seu controle financeiro pessoal integrado ao DayForge. Registre gastos, cartão, investimentos e entradas por mês.</p></div></div>
+              <div className="ajuda-item"><div className="ajuda-num">2</div><div className="ajuda-body"><strong>Gastos</strong><p>Registre suas contas fixas e variáveis do mês com descrição, valor e data de pagamento.</p></div></div>
+              <div className="ajuda-item"><div className="ajuda-num">3</div><div className="ajuda-body"><strong>Cartão de Crédito</strong><p>Lance suas compras no crédito separadamente para ter controle do quanto gastou no cartão.</p></div></div>
+              <div className="ajuda-item"><div className="ajuda-num">4</div><div className="ajuda-body"><strong>Investimentos</strong><p>Registre seus aportes em Caixinha/CDB, Bolsa de Valores ou Reserva de Emergência.</p></div></div>
+              <div className="ajuda-item"><div className="ajuda-num">5</div><div className="ajuda-body"><strong>Entradas</strong><p>Registre tudo que entrou no mês — salário, freelas, vendas, etc.</p></div></div>
+              <div className="ajuda-item"><div className="ajuda-num">💡</div><div className="ajuda-body"><strong>Resumo</strong><p>Na aba Resumo você vê o balanço do mês — entradas menos gastos, cartão e investimentos. Verde = positivo, vermelho = negativo.</p></div></div>
             </div>
           )}
         </div>
