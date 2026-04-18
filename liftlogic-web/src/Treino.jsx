@@ -86,6 +86,7 @@ function Treino({ logout, user }) {
   const [concluidos, setConcluidos] = useState({})
   const [carregando, setCarregando] = useState(false)
   const [abaPrincipal, setAbaPrincipal] = useState('home')
+  const [perfilCompleto, setPerfilCompleto] = useState(true)
   const [historico, setHistorico] = useState([])
   const [modalResumo, setModalResumo] = useState(null)
   const [showMore, setShowMore] = useState(false)
@@ -168,15 +169,26 @@ function Treino({ logout, user }) {
   }
 
   const buscarPerfil = async () => {
-    const { data, error } = await supabase.from('perfil').select('*').eq('user_id', user.id).single()
-    if (error && error.code !== 'PGRST116') console.error('Erro perfil:', error.message)
-    if (data) {
-      const p = { nome: data.nome || '', peso: data.peso || '', altura: data.altura || '', idade: data.idade || '', sexo: data.sexo || 'M' }
-      setPerfil(p)
-      setPerfilOriginal(p)
-      setPerfilEditado(false)
+      const { data, error } = await supabase.from('perfil').select('*').eq('user_id', user.id).single()
+      if (error && error.code !== 'PGRST116') console.error('Erro perfil:', error.message)
+      if (data) {
+        const p = { nome: data.nome || '', peso: data.peso || '', altura: data.altura || '', idade: data.idade || '', sexo: data.sexo || 'M' }
+        setPerfil(p)
+        setPerfilOriginal(p)
+        setPerfilEditado(false)
+        const completo = !!(data.nome && data.peso && data.altura && data.idade && data.sexo)
+        setPerfilCompleto(completo)
+        if (!completo) {
+          setAbaPrincipal('perfil')
+          setPerfilEditado(true)
+        }
+      } else {
+        // Usuário novo sem perfil
+        setPerfilCompleto(false)
+        setAbaPrincipal('perfil')
+        setPerfilEditado(true)
+      }
     }
-  }
 
   const salvarPerfil = async (e) => {
     e.preventDefault()
@@ -192,7 +204,12 @@ function Treino({ logout, user }) {
     }
     const { error } = await supabase.from('perfil').upsert(payload, { onConflict: 'user_id' })
     if (error) setPerfilMsg('Erro ao salvar: ' + error.message)
-    else setPerfilMsg('Perfil salvo com sucesso! ✅')
+        else {
+          setPerfilMsg('Perfil salvo com sucesso! ✅')
+          setPerfilCompleto(true)
+          setPerfilOriginal(perfil)
+          setPerfilEditado(false)
+        }
     setSalvandoPerfil(false)
     setTimeout(() => setPerfilMsg(''), 3000)
   }
@@ -745,8 +762,13 @@ const buscarDashboard = async () => {
           {/* Perfil */}
           {subAbaPerfil === 'perfil' && (
             <>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <h1 className="title-divisao" style={{ margin: 0 }}>Meu Perfil 👤</h1>
+              {!perfilCompleto && (
+                                <div style={{ background: '#6366f115', border: '1px solid #6366f144', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 13, color: '#818cf8' }}>
+                                  👋 Bem-vindo ao DayForge! Complete seu perfil para começar.
+                                </div>
+                              )}
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                              <h1 className="title-divisao" style={{ margin: 0 }}>Meu Perfil 👤</h1>
                 {!perfilEditado && perfilOriginal && (
                   <button className="peso-btn-alterar" onClick={() => setPerfilEditado(true)}>Alterar</button>
                 )}
