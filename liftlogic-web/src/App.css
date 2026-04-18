@@ -1339,19 +1339,23 @@ input::-webkit-inner-spin-button {
   grid-template-columns: repeat(2, 1fr);
   gap: 8px;
   margin-bottom: 12px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .habito-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: #1e2126;
   border: 1px solid #ffffff0d;
   border-radius: 12px;
-  padding: 12px 14px;
+  padding: 10px 10px;
   cursor: pointer;
   transition: all 0.15s;
   user-select: none;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .habito-item:hover { border-color: #ffffff1a; }
@@ -3098,6 +3102,8 @@ input::-webkit-inner-spin-button {
   grid-template-columns: repeat(2, 1fr);
   gap: 8px;
   margin-bottom: 12px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* ══════════════════════════════════════
@@ -3108,19 +3114,23 @@ input::-webkit-inner-spin-button {
   grid-template-columns: repeat(2, 1fr);
   gap: 8px;
   margin-bottom: 12px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .habito-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: #1e2126;
   border: 1px solid #ffffff0d;
   border-radius: 12px;
-  padding: 12px 14px;
+  padding: 10px 10px;
   cursor: pointer;
   transition: all 0.15s;
   user-select: none;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .habito-item:hover { border-color: #ffffff1a; }
@@ -3137,6 +3147,10 @@ input::-webkit-inner-spin-button {
   font-size: 13px;
   font-weight: 500;
   color: #f8fafc;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .habito-check {

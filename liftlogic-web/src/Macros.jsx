@@ -44,6 +44,7 @@ export default function Macros({ user, onAjuda }) {
   const [gramas, setGramas]               = useState('')
   const [refeicaoSel, setRefeicaoSel]     = useState('cafe')
   const [showCustomForm, setShowCustomForm] = useState(false)
+  const [showCustomSection, setShowCustomSection] = useState(false)
   const [novoAlimento, setNovoAlimento]   = useState({ nome: '', kcal: '', prot: '', carb: '', gord: '' })
 
   const hoje = formatarData(new Date())
@@ -409,14 +410,26 @@ export default function Macros({ user, onAjuda }) {
       </div>
 
       {/* Alimentos personalizados */}
-      <div className="macros-card">
-        <div className="macros-card-title-row">
-          <div className="macros-card-title" style={{ margin: 0 }}>ALIMENTOS PERSONALIZADOS</div>
-          <button className="macros-btn-custom" onClick={() => setShowCustomForm(!showCustomForm)}>
-            {showCustomForm ? '✕' : '+ Novo'}
-          </button>
-        </div>
-        {showCustomForm && (
+            <div className="macros-card">
+              <div className="macros-card-title-row">
+                <div className="macros-card-title" style={{ margin: 0 }}>ALIMENTOS PERSONALIZADOS</div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {showCustomSection && (
+                    <button className="macros-btn-custom" onClick={() => setShowCustomForm(!showCustomForm)}>
+                      {showCustomForm ? '✕' : '+ Novo'}
+                    </button>
+                  )}
+                  <button className="macros-btn-custom" onClick={() => { setShowCustomSection(!showCustomSection); setShowCustomForm(false) }}>
+                    {showCustomSection ? 'Ocultar' : 'Mostrar'}
+                  </button>
+                </div>
+              </div>
+              {!showCustomSection && (
+                <p style={{ fontSize: 12, color: '#475569', marginTop: 8 }}>
+                  {customFoods.length > 0 ? `${customFoods.length} alimento${customFoods.length > 1 ? 's' : ''} cadastrado${customFoods.length > 1 ? 's' : ''}` : 'Nenhum alimento personalizado ainda.'}
+                </p>
+              )}
+        {showCustomSection && showCustomForm && (
           <div className="macros-custom-form">
             <input type="text" placeholder="Nome do alimento" value={novoAlimento.nome} onChange={e => setNovoAlimento(p => ({ ...p, nome: e.target.value }))} />
             <div className="macros-custom-grid">
@@ -428,7 +441,7 @@ export default function Macros({ user, onAjuda }) {
             <button className="macros-btn-add" onClick={salvarCustom}>Salvar alimento</button>
           </div>
         )}
-        {customFoods.length > 0 && (
+        {showCustomSection && customFoods.length > 0 && (
           <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
             {customFoods.map(f => (
               <div key={f.id} className="macros-custom-item">
@@ -444,7 +457,7 @@ export default function Macros({ user, onAjuda }) {
             ))}
           </div>
         )}
-        {customFoods.length === 0 && !showCustomForm && (
+        {showCustomSection && customFoods.length === 0 && !showCustomForm && (
           <p style={{ fontSize: 12, color: '#475569', marginTop: 8 }}>Nenhum alimento personalizado ainda.</p>
         )}
       </div>
