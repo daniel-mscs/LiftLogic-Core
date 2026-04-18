@@ -122,7 +122,10 @@ export default function Home({ user, onIniciarTreino, treinando, treinoAtivo, di
         supabase.from('treinos_finalizados').select('kcal').eq('user_id', user.id).gte('created_at', hoje).single(),
       ])
     if (p) setPerfil(p)
-    if (h) { setHistorico(h); setStreak(calcularStreak(h)) }
+    if (h) setHistorico(h)
+    await registrarStreakHoje(user.id)
+    const s = await calcularStreak(user.id)
+    setStreak(s)
 
     const totalAgua = (aguaRegs || []).reduce((s, r) => s + r.ml, 0)
     setAguaHoje({ total: totalAgua, meta: aguaMeta?.meta_ml || 2500 })
@@ -152,20 +155,34 @@ export default function Home({ user, onIniciarTreino, treinando, treinoAtivo, di
 
   useEffect(() => { carregar() }, [carregar])
 
-  function calcularStreak(hist) {
-      if (!hist || hist.length === 0) return 1 // hoje conta sempre
-      const diasTreino = new Set(hist.map(t => new Date(t.created_at).toLocaleDateString('pt-BR')))
-      // Adiciona hoje sempre (entrou no app = ativo hoje)
-      diasTreino.add(new Date().toLocaleDateString('pt-BR'))
-      let s = 0
-      for (let i = 0; i < 60; i++) {
-        const d = new Date()
-        d.setDate(d.getDate() - i)
-        if (diasTreino.has(d.toLocaleDateString('pt-BR'))) s++
-        else if (i > 0) break
-      }
-      return s
-    }
+async function registrarStreakHoje(userId) {
+  const hoje = formatarData(new Date())
+  await supabase.from('streak_registro').upsert(
+    { user_id: userId, data: hoje },
+    { onConflict: 'user_id,data' }
+  )
+}
+
+async function calcularStreak(userId) {
+  const { data } = await supabase
+    .from('streak_registro')
+    .select('data')
+    .eq('user_id', userId)
+    .order('data', { ascending: false })
+    .limit(60)
+
+  if (!data || data.length === 0) return 1
+
+  let s = 0
+  for (let i = 0; i < 60; i++) {
+    const d = new Date()
+    d.setDate(d.getDate() - i)
+    const dataStr = formatarData(d)
+    if (data.find(r => r.data === dataStr)) s++
+    else if (i > 0) break
+  }
+  return s
+}
 
   const sensors = useSensors(
       useSensor(PointerSensor),
