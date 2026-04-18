@@ -20,8 +20,9 @@ export default defineConfig({
       },
       manifest: {
         name: 'DayForge',
+        version: '2',
         short_name: 'DayForge',
-        description: 'Forje seu dia. Treino, rotina, saúde e hábitos.',
+        description: 'Forje seu dia. Treino, rotina, saude e habitos.',
         theme_color: '#0f1113',
         background_color: '#0f1113',
         display: 'standalone',
