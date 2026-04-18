@@ -198,7 +198,11 @@ export default function SmartPocket({ user }) {
             <div style={{ fontSize: 10, color: '#64748b', fontWeight: 800, letterSpacing: '0.08em', marginBottom: 12 }}>ADICIONAR GASTO</div>
             <input placeholder="Descrição (ex: Aluguel)" value={gastoNome} onChange={e => setGastoNome(e.target.value)} onKeyDown={e => e.key === 'Enter' && document.getElementById('gasto-valor')?.focus()} />
             <input id="gasto-valor" type="number" placeholder="Valor R$" value={gastoValor} onChange={e => setGastoValor(e.target.value)} style={{ marginTop: 8 }} onKeyDown={e => e.key === 'Enter' && adicionarGasto()} />
-            <input type="date" value={gastoData} onChange={e => setGastoData(e.target.value)} style={{ marginTop: 8, width: '100%', background: '#24282d', border: '1px solid #ffffff0d', borderRadius: 8, color: '#f8fafc', fontSize: 14, padding: '10px 12px', boxSizing: 'border-box' }} />
+            <div style={{ marginTop: 8, background: '#24282d', border: '1px solid #ffffff0d', borderRadius: 8, padding: '10px 12px' }}>
+              <div style={{ fontSize: 10, color: '#64748b', fontWeight: 800, letterSpacing: '0.08em', marginBottom: 4 }}>DATA DO PAGAMENTO (opcional)</div>
+              <input type="date" value={gastoData} onChange={e => setGastoData(e.target.value)}
+                style={{ width: '100%', background: 'transparent', border: 'none', color: '#f8fafc', fontSize: 14, padding: 0, boxSizing: 'border-box', outline: 'none' }} />
+            </div>
             <button onClick={adicionarGasto} style={{ marginTop: 10, width: '100%', background: '#ef4444', border: 'none', borderRadius: 10, color: '#fff', fontSize: 14, fontWeight: 700, padding: 12, cursor: 'pointer' }}>
               + Adicionar Gasto
             </button>
