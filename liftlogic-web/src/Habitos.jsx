@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { supabase } from './lib/supabase'
+import { ganharXP } from './lib/rpg'
 
 const HABITOS_FIXOS = [
   { id: 'treino',        label: 'Treino',        icon: '🏋️' },
@@ -85,10 +86,11 @@ export default function Habitos({ user, compact = false }) {
       [hoje]: { ...prev[hoje], [habitoId]: novo }
     }))
     await supabase.from('habitos_registro').upsert({
-      user_id: user.id, data: hoje, habito: habitoId, concluido: novo
-    }, { onConflict: 'user_id,data,habito' })
-    const novoMapa = { ...registros, [hoje]: { ...registros[hoje], [habitoId]: novo } }
-    setStreak(calcularStreak(novoMapa))
+          user_id: user.id, data: hoje, habito: habitoId, concluido: novo
+        }, { onConflict: 'user_id,data,habito' })
+        if (novo) await ganharXP(user.id, 'habito_concluido')
+        const novoMapa = { ...registros, [hoje]: { ...registros[hoje], [habitoId]: novo } }
+        setStreak(calcularStreak(novoMapa))
   }
 
   const adicionarCustom = async () => {

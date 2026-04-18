@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { supabase } from './lib/supabase'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine, Cell } from 'recharts'
+import { ganharXP } from './lib/rpg'
 
 function formatarData(date) {
   const offset = date.getTimezoneOffset()
@@ -148,7 +149,8 @@ export default function Macros({ user, onAjuda }) {
     }]).select()
     if (error) { alert('Erro: ' + error.message); return }
     setRegistros(prev => [...prev, data[0]])
-    setQuery(''); setGramas(''); setFoodSel(null); setSugestoes([])
+        setQuery(''); setGramas(''); setFoodSel(null); setSugestoes([])
+        await ganharXP(user.id, 'macros_registrado')
   }
 
   const deletarRegistro = async (id) => {

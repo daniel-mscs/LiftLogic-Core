@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { supabase } from './lib/supabase'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Area, AreaChart } from 'recharts'
+import { ganharXP } from './lib/rpg'
 
 function formatarData(date) {
   const offset = date.getTimezoneOffset()
@@ -74,8 +75,9 @@ export default function Peso({ user, onAjuda }) {
     }
 
     await supabase.from('perfil').upsert({ user_id: user.id, peso: val }, { onConflict: 'user_id' })
-    setPerfil(prev => ({ ...prev, peso: val }))
-    setPesoInput('')
+        setPerfil(prev => ({ ...prev, peso: val }))
+        setPesoInput('')
+        await ganharXP(user.id, 'peso_registrado')
   }
 
   const deletarRegistro = async (id) => {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { supabase } from './lib/supabase'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine, Cell } from 'recharts'
+import { ganharXP } from './lib/rpg'
 
 function formatarData(date) {
   const offset = date.getTimezoneOffset()
@@ -63,9 +64,13 @@ export default function Agua({ user, onAjuda }) {
       user_id: user.id, data: hoje, ml: Number(ml), hora
     }]).select()
     if (error) { alert('Erro: ' + error.message); return }
-    setRegistros(prev => [data[0], ...prev])
-    setHistorico(prev => ({ ...prev, [hoje]: [data[0], ...(prev[hoje] || [])] }))
-    setCustomMl('')
+    const novoTotal = registros.reduce((s, r) => s + r.ml, 0) + Number(ml)
+        if (novoTotal >= meta && registros.reduce((s, r) => s + r.ml, 0) < meta) {
+          await ganharXP(user.id, 'meta_agua')
+        }
+        setRegistros(prev => [data[0], ...prev])
+        setHistorico(prev => ({ ...prev, [hoje]: [data[0], ...(prev[hoje] || [])] }))
+        setCustomMl('')
   }
 
   const deletarRegistro = async (id) => {

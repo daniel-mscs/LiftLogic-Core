@@ -29,6 +29,8 @@ import Passos from './Passos'
 import Stats from './Stats'
 import HomeWP from './HomeWP'
 import SmartPocket from './SmartPocket'
+import RPG from './RPG'
+import { ganharXP } from './lib/rpg'
 
 function ExercicioCard({ ex, concluidos, treinando, toggleConcluido, atualizarExercicio, deletarExercicio }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: ex.id })
@@ -366,9 +368,10 @@ const buscarDashboard = async () => {
     cancelarDescanso()
     setConcluidos({})
     if (data) setHistorico(prev => [data[0], ...prev])
-  }
+        await ganharXP(user.id, 'treino_finalizado')
+      }
 
-  const salvarExercicio = async (e) => {
+      const salvarExercicio = async (e) => {
     e.preventDefault()
     setCarregando(true)
     const exerciciosFiltrados = exercicios.filter(ex => ex.treino === treinoAtivo)
@@ -463,6 +466,7 @@ const buscarDashboard = async () => {
                 { id: 'passos', icon: '👟', label: 'Passos' },
                 { id: 'stats', icon: '📊', label: 'Stats' },
                 { id: 'smartpocket', icon: '💰', label: 'SmartPocket' },
+                { id: 'rpg', icon: '⚔️', label: 'RPG' },
 
               ].map(item => (
                 <button key={item.id} className={`more-menu-item ${abaPrincipal === item.id ? 'active' : ''}`}
@@ -532,6 +536,8 @@ const buscarDashboard = async () => {
 
     {abaPrincipal === 'smartpocket' &&
         <SmartPocket user={user} />}
+
+    {abaPrincipal === 'rpg' && <RPG user={user} />}
 
     {abaPrincipal === 'treino' && (
       <>
@@ -868,9 +874,9 @@ const buscarDashboard = async () => {
             </div>
           )}
         </div>
-              )}
-            </div>
-          )
+                  )}
+                </div>
+              )
         }
 
-export default Treino
+        export default Treino

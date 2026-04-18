@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { supabase } from './lib/supabase'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine, Cell } from 'recharts'
+import { ganharXP } from './lib/rpg'
 
 function formatarData(date) {
   const offset = date.getTimezoneOffset()
@@ -56,8 +57,9 @@ export default function Passos({ user, onAjuda }) {
       }]).select()
       if (error) { alert('Erro: ' + error.message); return }
       setRegistros(prev => [data[0], ...prev])
-    }
-    setPassosInput('')
+            if (val >= meta) await ganharXP(user.id, 'meta_passos')
+          }
+      setPassosInput('')
   }
 
   const deletarRegistro = async (id) => {
