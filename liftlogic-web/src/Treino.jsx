@@ -31,6 +31,7 @@ import HomeWP from './HomeWP'
 import SmartPocket from './SmartPocket'
 import RPG from './RPG'
 import { ganharXP } from './lib/rpg'
+import { NOTIFICACOES, agendarNotificacoes, cancelarNotificacoes, notificacoesSuportadas } from './lib/notifications'
 
 function ExercicioCard({ ex, concluidos, treinando, toggleConcluido, atualizarExercicio, deletarExercicio }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: ex.id })
@@ -95,6 +96,13 @@ function Treino({ logout, user }) {
   const [subAbaTreino, setSubAbaTreino] = useState('exercicios')
   const [subAbaPerfil, setSubAbaPerfil] = useState('perfil')
   const [ajudaAncora, setAjudaAncora] = useState(null)
+    const [notifAtivas, setNotifAtivas] = useState(() => {
+      const salvo = localStorage.getItem('df_notif_ativas')
+      return salvo ? JSON.parse(salvo) : NOTIFICACOES.map(n => n.id)
+    })
+    const [notifPermissao, setNotifPermissao] = useState(
+      typeof Notification !== 'undefined' ? Notification.permission : 'default'
+    )
 
 
   const [treinando, setTreinando] = useState(() => {
@@ -890,6 +898,7 @@ const buscarDashboard = async () => {
           <div className="treino-subnav" style={{ marginBottom: 20 }}>
             <button className={subAbaPerfil === 'perfil' ? 'treino-subnav-btn active' : 'treino-subnav-btn'} onClick={() => setSubAbaPerfil('perfil')}>👤 Perfil</button>
             <button className={subAbaPerfil === 'ajuda' ? 'treino-subnav-btn active' : 'treino-subnav-btn'} onClick={() => setSubAbaPerfil('ajuda')}>❓ Ajuda</button>
+                      <button className={subAbaPerfil === 'notificacoes' ? 'treino-subnav-btn active' : 'treino-subnav-btn'} onClick={() => setSubAbaPerfil('notificacoes')}>🔔 Alertas</button>
           </div>
 
           {/* Perfil */}
@@ -939,6 +948,89 @@ const buscarDashboard = async () => {
               <button className="nav-btn-logout" style={{ marginTop: 24, width: '100%', padding: 14, borderRadius: 10, border: '1px solid #ef444433', background: '#3a1a1a', color: '#ef4444', cursor: 'pointer', fontWeight: 600 }} onClick={logout}>🚪 Sair da conta</button>
             </>
           )}
+
+      {/* Notificações */}
+                {subAbaPerfil === 'notificacoes' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    <h2 className="title-divisao">🔔 Alertas & Notificações</h2>
+
+                    {!notificacoesSuportadas() && (
+                      <div style={{ background: '#ef444415', border: '1px solid #ef444433', borderRadius: 12, padding: 14, fontSize: 13, color: '#ef4444' }}>
+                        Seu navegador não suporta notificações.
+                      </div>
+                    )}
+
+                    {notificacoesSuportadas() && notifPermissao === 'denied' && (
+                      <div style={{ background: '#f59e0b15', border: '1px solid #f59e0b33', borderRadius: 12, padding: 14, fontSize: 13, color: '#f59e0b' }}>
+                        ⚠️ Notificações bloqueadas. Vá nas configurações do navegador e permita notificações para este site.
+                      </div>
+                    )}
+
+                    {notificacoesSuportadas() && notifPermissao !== 'denied' && (
+                      <>
+                        <div style={{ background: '#1a1d21', border: '1px solid #ffffff0d', borderRadius: 16, padding: 16 }}>
+                          <div style={{ fontSize: 10, color: '#64748b', fontWeight: 800, letterSpacing: '0.08em', marginBottom: 14 }}>ESCOLHA OS ALERTAS</div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            {NOTIFICACOES.map(n => {
+                              const ativa = notifAtivas.includes(n.id)
+                              return (
+                                <div key={n.id} style={{
+                                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                  background: '#24282d', borderRadius: 10, padding: '10px 14px'
+                                }}>
+                                  <div>
+                                    <div style={{ fontSize: 13, fontWeight: 600, color: '#f8fafc' }}>{n.titulo}</div>
+                                    <div style={{ fontSize: 11, color: '#64748b' }}>{String(n.hora).padStart(2,'0')}:{String(n.minuto).padStart(2,'0')}h — {n.corpo}</div>
+                                  </div>
+                                  <button onClick={() => {
+                                    const novo = ativa
+                                      ? notifAtivas.filter(i => i !== n.id)
+                                      : [...notifAtivas, n.id]
+                                    setNotifAtivas(novo)
+                                    localStorage.setItem('df_notif_ativas', JSON.stringify(novo))
+                                  }} style={{
+                                    width: 40, height: 24, borderRadius: 12,
+                                    background: ativa ? '#6366f1' : '#334155',
+                                    border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s'
+                                  }}>
+                                    <div style={{
+                                      width: 18, height: 18, borderRadius: '50%', background: '#fff',
+                                      position: 'absolute', top: 3, transition: 'left 0.2s',
+                                      left: ativa ? 19 : 3
+                                    }}/>
+                                  </button>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        <button onClick={async () => {
+                          const ativas = NOTIFICACOES.filter(n => notifAtivas.includes(n.id))
+                          const ok = await agendarNotificacoes(ativas)
+                          if (ok) {
+                            setNotifPermissao('granted')
+                            alert('✅ Notificações ativadas!')
+                          } else {
+                            alert('❌ Permissão negada. Ative nas configurações do navegador.')
+                          }
+                        }} style={{
+                          background: '#6366f1', border: 'none', borderRadius: 12,
+                          color: '#fff', fontSize: 15, fontWeight: 700, padding: 14, cursor: 'pointer'
+                        }}>🔔 Ativar Notificações</button>
+
+                        <button onClick={() => {
+                          cancelarNotificacoes()
+                          alert('🔕 Notificações desativadas!')
+                        }} style={{
+                          background: 'transparent', border: '1px solid #ffffff1a', borderRadius: 12,
+                          color: '#64748b', fontSize: 14, fontWeight: 600, padding: 12, cursor: 'pointer'
+                        }}>🔕 Desativar todas</button>
+                      </>
+                    )}
+                  </div>
+                )}
+
           {/* Ajuda */}
           {subAbaPerfil === 'ajuda' && (
                       <div className="ajuda-section" ref={el => {
