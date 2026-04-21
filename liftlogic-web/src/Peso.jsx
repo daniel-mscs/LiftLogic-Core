@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { supabase } from './lib/supabase'
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Area, AreaChart } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { ganharXP } from './lib/rpg'
 
 function formatarData(date) {
@@ -28,6 +28,107 @@ function imcBarPct(imc) {
   return Math.min(100, Math.max(0, ((imc - min) / (max - min)) * 100))
 }
 
+// Imagens base64 das pessoas musculosas
+const IMG_MASC = '/body-masc.png'
+const IMG_FEM  = '/body-fem.png'
+
+const CORES = {
+  biceps: '#f59e0b', peito: '#6366f1', cintura: '#10b981',
+  quadril: '#ec4899', coxa: '#f97316', panturrilha: '#38bdf8'
+}
+
+const LABELS = {
+  biceps: 'Bíceps', peito: 'Peito', cintura: 'Cintura',
+  quadril: 'Quadril', coxa: 'Coxa', panturrilha: 'Panturrilha'
+}
+
+// Coordenadas calibradas para viewBox 400x700
+// x,y = ponto no corpo | lado = qual lado sai a linha/label
+const PONTOS_MASC = {
+  biceps:      { x: 145, y: 320, lado: 'esq' },
+  peito:       { x: 240, y: 305, lado: 'dir' },
+  cintura:     { x: 210, y: 340, lado: 'dir' },
+  quadril:     { x: 250, y: 400, lado: 'dir' },
+  coxa:        { x: 180, y: 440, lado: 'esq' },
+  panturrilha: { x: 165, y: 515, lado: 'esq' },
+}
+
+const PONTOS_FEM = {
+  biceps:      { x: 155, y: 310, lado: 'esq' },
+  peito:       { x: 215, y: 310, lado: 'dir' },
+  cintura:     { x: 215, y: 345, lado: 'dir' },
+  quadril:     { x: 245, y: 400, lado: 'dir' },
+  coxa:        { x: 178, y: 450, lado: 'esq' },
+  panturrilha: { x: 165, y: 522, lado: 'esq' },
+}
+
+function BodyMeasureVisual({ sexo, medidas }) {
+  const isMasc = sexo !== 'F'
+  const pontos = isMasc ? PONTOS_MASC : PONTOS_FEM
+  const img    = isMasc ? IMG_MASC : IMG_FEM
+
+  return (
+    <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
+      <svg
+        viewBox="0 50 400 600"
+        width="100%"
+        style={{ maxWidth: 340, display: 'block' }}
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        {/* imagem real como fundo do SVG */}
+        <image href={img} x="60" y="10" width="280" height="680" preserveAspectRatio="xMidYMid meet" />
+
+        {/* overlay escuro nas bordas pra dar o efeito glow */}
+        <defs>
+          <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+            <stop offset="55%" stopColor="transparent" stopOpacity="0" />
+            <stop offset="100%" stopColor="#0d0f11" stopOpacity="1" />
+          </radialGradient>
+        </defs>
+
+
+        {/* pontos + linhas + labels */}
+        {Object.entries(pontos).map(([key, { x, y, lado }]) => {
+          const val    = medidas?.[key]
+          const cor    = CORES[key]
+          const isDir  = lado === 'dir'
+          const lx1    = isDir ? x + 18 : x - 18
+          const lx2    = isDir ? x + 95  : x - 95
+          const anchor = isDir ? 'start' : 'end'
+          const tx     = lx2 + (isDir ? 4 : -4)
+
+          return (
+            <g key={key}>
+              {/* linha tracejada horizontal */}
+              <line x1={x} y1={y} x2={lx1} y2={y} stroke={cor} strokeWidth="1.2" strokeDasharray="3 2" opacity="0.8" />
+              <line x1={lx1} y1={y} x2={lx2} y2={y} stroke={cor} strokeWidth="1.2" opacity="0.8" />
+              {/* ponto */}
+              <circle cx={x} cy={y} r="5.5" fill={cor} opacity="0.95" />
+              <circle cx={x} cy={y} r="2.5" fill="#fff" />
+              {/* fundo do label pra legibilidade */}
+              <rect
+                x={isDir ? lx2 : lx2 - 80}
+                y={y - 17}
+                width="80" height="28"
+                rx="5"
+                fill="#0d0f11"
+                opacity="0.6"
+              />
+              {/* textos */}
+              <text x={tx} y={y - 4} fill={cor} fontSize="9" fontWeight="700" textAnchor={anchor} fontFamily="monospace">
+                {LABELS[key].toUpperCase()}
+              </text>
+              <text x={tx} y={y + 9} fill={val ? '#f8fafc' : '#475569'} fontSize="11" fontWeight="800" textAnchor={anchor} fontFamily="monospace">
+                {val ? `${val} cm` : '— cm'}
+              </text>
+            </g>
+          )
+        })}
+      </svg>
+    </div>
+  )
+}
+
 export default function Peso({ user, onAjuda }) {
   const [registros, setRegistros]     = useState([])
   const [perfil, setPerfil]           = useState(null)
@@ -37,15 +138,20 @@ export default function Peso({ user, onAjuda }) {
   const [editandoMeta, setEditandoMeta] = useState(false)
   const [periodoGrafico, setPeriodoGrafico] = useState(14)
   const [carregando, setCarregando]   = useState(true)
+  const [subAba, setSubAba] = useState('peso')
+  const [medidas, setMedidas] = useState([])
+  const [medidasForm, setMedidasForm] = useState({ biceps: '', peito: '', cintura: '', quadril: '', coxa: '', panturrilha: '' })
 
   const hoje = formatarData(new Date())
 
   const buscarTudo = useCallback(async () => {
     setCarregando(true)
-    const [{ data: regs }, { data: perfilData }] = await Promise.all([
+    const [{ data: regs }, { data: perfilData }, { data: medidasData }] = await Promise.all([
       supabase.from('peso_registro').select('*').eq('user_id', user.id).order('data', { ascending: false }).limit(30),
       supabase.from('perfil').select('*').eq('user_id', user.id).single(),
+      supabase.from('medidas_registro').select('*').eq('user_id', user.id).order('data', { ascending: false }).limit(20),
     ])
+    setMedidas(medidasData || [])
     setRegistros(regs || [])
     if (perfilData) {
       setPerfil(perfilData)
@@ -59,7 +165,6 @@ export default function Peso({ user, onAjuda }) {
   const registrarPeso = async () => {
     const val = parseFloat(pesoInput)
     if (!val || val < 30 || val > 300) { alert('Digite um peso válido!'); return }
-
     const existing = registros.find(r => r.data === hoje)
     if (existing) {
       if (!confirm('Já existe um registro hoje. Substituir?')) return
@@ -67,17 +172,14 @@ export default function Peso({ user, onAjuda }) {
       if (error) { alert('Erro: ' + error.message); return }
       setRegistros(prev => prev.map(r => r.id === existing.id ? { ...r, peso: val } : r))
     } else {
-      const { data, error } = await supabase.from('peso_registro').insert([{
-        user_id: user.id, data: hoje, peso: val
-      }]).select()
+      const { data, error } = await supabase.from('peso_registro').insert([{ user_id: user.id, data: hoje, peso: val }]).select()
       if (error) { alert('Erro: ' + error.message); return }
       setRegistros(prev => [data[0], ...prev])
     }
-
     await supabase.from('perfil').upsert({ user_id: user.id, peso: val }, { onConflict: 'user_id' })
-        setPerfil(prev => ({ ...prev, peso: val }))
-        setPesoInput('')
-        await ganharXP(user.id, 'peso_registrado')
+    setPerfil(prev => ({ ...prev, peso: val }))
+    setPesoInput('')
+    await ganharXP(user.id, 'peso_registrado')
   }
 
   const deletarRegistro = async (id) => {
@@ -95,30 +197,27 @@ export default function Peso({ user, onAjuda }) {
   }
 
   const mediaSemana = () => {
-    const ultimos7 = registros.filter(r => {
-      const diff = (new Date(hoje) - new Date(r.data)) / 86400000
-      return diff <= 6
-    })
+    const ultimos7 = registros.filter(r => (new Date(hoje) - new Date(r.data)) / 86400000 <= 6)
     if (ultimos7.length === 0) return null
     return (ultimos7.reduce((s, r) => s + Number(r.peso), 0) / ultimos7.length).toFixed(1)
   }
 
   const dadosGrafico = [...registros].reverse().slice(-periodoGrafico).map(r => ({
-      data: new Date(r.data + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-      peso: Number(r.peso)
-    }))
+    data: new Date(r.data + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+    peso: Number(r.peso)
+  }))
 
-    const tendencia = (() => {
-      if (dadosGrafico.length < 3) return []
-      const n = dadosGrafico.length
-      const sumX = dadosGrafico.reduce((s, _, i) => s + i, 0)
-      const sumY = dadosGrafico.reduce((s, d) => s + d.peso, 0)
-      const sumXY = dadosGrafico.reduce((s, d, i) => s + i * d.peso, 0)
-      const sumX2 = dadosGrafico.reduce((s, _, i) => s + i * i, 0)
-      const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX)
-      const intercept = (sumY - slope * sumX) / n
-      return dadosGrafico.map((d, i) => ({ ...d, tend: parseFloat((slope * i + intercept).toFixed(1)) }))
-    })()
+  const tendencia = (() => {
+    if (dadosGrafico.length < 3) return []
+    const n = dadosGrafico.length
+    const sumX  = dadosGrafico.reduce((s, _, i) => s + i, 0)
+    const sumY  = dadosGrafico.reduce((s, d) => s + d.peso, 0)
+    const sumXY = dadosGrafico.reduce((s, d, i) => s + i * d.peso, 0)
+    const sumX2 = dadosGrafico.reduce((s, _, i) => s + i * i, 0)
+    const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX)
+    const intercept = (sumY - slope * sumX) / n
+    return dadosGrafico.map((d, i) => ({ ...d, tend: parseFloat((slope * i + intercept).toFixed(1)) }))
+  })()
 
   const ultimo    = registros[0] || null
   const penultimo = registros[1] || null
@@ -141,235 +240,309 @@ export default function Peso({ user, onAjuda }) {
         <button className="ajuda-shortcut-btn" onClick={() => onAjuda('ajuda-peso')}>?</button>
       </div>
 
-      {/* Cards principais */}
-      <div className="peso-cards-grid">
-        <div className="peso-stat-card">
-          <div className="peso-stat-label">PESO ATUAL</div>
-          <div className="peso-stat-val">{ultimo ? `${Number(ultimo.peso).toFixed(1)} kg` : '—'}</div>
-          {diff !== null && (
-            <div className="peso-stat-sub" style={{ color: Number(diff) < 0 ? '#10b981' : Number(diff) > 0 ? '#ef4444' : '#64748b' }}>
-              {Number(diff) > 0 ? '▲' : Number(diff) < 0 ? '▼' : '='} {Math.abs(diff)} kg
-            </div>
-          )}
-        </div>
-        <div className="peso-stat-card">
-          <div className="peso-stat-label">IMC</div>
-          <div className="peso-stat-val" style={{ color: imcCls?.color }}>{imc || '—'}</div>
-          <div className="peso-stat-sub">{imcCls?.label || (perfil?.altura ? 'Registre um peso' : 'Configure altura')}</div>
-        </div>
-        <div className="peso-stat-card">
-          <div className="peso-stat-label">MÉDIA 7 DIAS</div>
-          <div className="peso-stat-val">{media ? `${media} kg` : '—'}</div>
-          <div className="peso-stat-sub">{registros.filter(r => (new Date(hoje) - new Date(r.data)) / 86400000 <= 6).length} registros</div>
-        </div>
-        <div className="peso-stat-card">
-          <div className="peso-stat-label">PESO IDEAL</div>
-          <div className="peso-stat-val" style={{ fontSize: '1rem' }}>{pesoIdeal ? `${pesoIdeal.min}–${pesoIdeal.max}` : '—'}</div>
-          <div className="peso-stat-sub">IMC 22–24</div>
-        </div>
+      {/* Sub-nav */}
+      <div style={{ display: 'flex', gap: 6, background: '#1a1d21', padding: 5, borderRadius: 12, marginBottom: 16 }}>
+        {[{ id: 'peso', label: '⚖️ Peso' }, { id: 'medidas', label: '📏 Medidas' }].map(a => (
+          <button key={a.id} onClick={() => setSubAba(a.id)} style={{
+            flex: 1, background: subAba === a.id ? '#24282d' : 'transparent',
+            border: 'none', borderRadius: 8, color: subAba === a.id ? '#f8fafc' : '#64748b',
+            fontSize: 12, fontWeight: 600, padding: '8px 2px', cursor: 'pointer'
+          }}>{a.label}</button>
+        ))}
       </div>
 
-      {/* Gráfico */}
-      {dadosGrafico.length >= 2 && (
-              <div className="peso-card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <div className="peso-card-title" style={{ margin: 0 }}>EVOLUÇÃO DO PESO</div>
-                  <div style={{ display: 'flex', gap: 4 }}>
-                    {[7, 14, 30, 90].map(d => (
-                      <button key={d} onClick={() => setPeriodoGrafico(d)} style={{
-                        background: periodoGrafico === d ? '#6366f1' : '#24282d',
-                        border: '1px solid #ffffff0d', borderRadius: 6,
-                        color: periodoGrafico === d ? '#fff' : '#64748b',
-                        fontSize: 10, fontWeight: 700, padding: '3px 8px', cursor: 'pointer'
-                      }}>{d}d</button>
-                    ))}
-                  </div>
+      {subAba === 'medidas' && (() => {
+        const CAMPOS = [
+          { id: 'biceps',      label: 'Bíceps',      dica: 'Braço flexionado, parte mais grossa' },
+          { id: 'peito',       label: 'Peito',       dica: 'Na altura dos mamilos, braços relaxados' },
+          { id: 'cintura',     label: 'Cintura',     dica: 'Parte mais estreita do abdômen' },
+          { id: 'quadril',     label: 'Quadril',     dica: 'Parte mais larga do quadril/glúteo' },
+          { id: 'coxa',        label: 'Coxa',        dica: 'Parte mais grossa da coxa' },
+          { id: 'panturrilha', label: 'Panturrilha', dica: 'Parte mais grossa da panturrilha' },
+        ]
+        const ultima = medidas[0] || null
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+            {/* Visual corporal */}
+            <div style={{ borderRadius: 16, overflow: 'hidden' }}>
+              <BodyMeasureVisual sexo={perfil?.sexo} medidas={ultima} />
+            </div>
+
+            {/* Dica de como medir */}
+            <div style={{ background: '#1a1d21', border: '1px solid #6366f122', borderRadius: 14, padding: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#6366f1', marginBottom: 10 }}>📏 Como medir corretamente</div>
+              <div style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.7 }}>
+                Use uma <strong style={{ color: '#f8fafc' }}>fita métrica flexível</strong> encostada na pele sem apertar nem folgar. Meça sempre no <strong style={{ color: '#f8fafc' }}>mesmo horário</strong>, de preferência pela manhã em jejum. Respire normalmente e não prenda a respiração.
+              </div>
+            </div>
+
+            {/* Cards da última medida */}
+            {ultima && (
+              <div style={{ background: '#1a1d21', border: '1px solid #ffffff0d', borderRadius: 14, padding: 16 }}>
+                <div style={{ fontSize: 10, color: '#64748b', fontWeight: 800, letterSpacing: '0.08em', marginBottom: 12 }}>
+                  ÚLTIMA MEDIDA — {new Date(ultima.data + 'T00:00:00').toLocaleDateString('pt-BR')}
                 </div>
-                <ResponsiveContainer width="100%" height={200}>
-                  <LineChart data={dadosGrafico}>
-                    <defs>
-                      <linearGradient id="pesoGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2}/>
-                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
-                    <XAxis dataKey="data" tick={{ fill: '#64748b', fontSize: 10 }} />
-                    <YAxis
-                      tick={{ fill: '#64748b', fontSize: 10 }}
-                      domain={['auto', 'auto']}
-                      tickFormatter={v => `${v}kg`}
-                    />
-                    <Tooltip
-                      contentStyle={{ background: '#1a1d21', border: '1px solid #ffffff0d', borderRadius: 8, color: '#f8fafc' }}
-                      formatter={v => [`${v} kg`]}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="peso"
-                      stroke="#6366f1"
-                      strokeWidth={2}
-                      dot={{ fill: '#6366f1', r: 4 }}
-                      activeDot={{ r: 6 }}
-                      fill="url(#pesoGrad)"
-                    />
-                    {tendencia.length >= 2 && (
-                      <Line
-                        type="monotone"
-                        data={tendencia}
-                        dataKey="tend"
-                        stroke="#f59e0b"
-                        strokeWidth={1}
-                        strokeDasharray="4 4"
-                        dot={false}
-                        name="Tendência"
-                      />
-                    )}
-                    {meta && (
-                      <Line
-                        type="monotone"
-                        dataKey={() => meta}
-                        stroke="#10b98166"
-                        strokeWidth={1}
-                        strokeDasharray="4 4"
-                        dot={false}
-                        name="Meta"
-                      />
-                    )}
-                  </LineChart>
-                </ResponsiveContainer>
-                <div style={{ display: 'flex', gap: 14, marginTop: 6, fontSize: 11 }}>
-                  <span style={{ color: '#6366f1' }}>— Peso</span>
-                  <span style={{ color: '#f59e0b' }}>- - Tendência</span>
-                  {meta && <span style={{ color: '#10b981' }}>- - Meta: {meta} kg</span>}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+                  {CAMPOS.map(c => ultima[c.id] ? (
+                    <div key={c.id} style={{ background: '#24282d', borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
+                      <div style={{ fontSize: 10, color: '#64748b', fontWeight: 700 }}>{c.label.toUpperCase()}</div>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: '#f8fafc', marginTop: 4 }}>{ultima[c.id]}</div>
+                      <div style={{ fontSize: 9, color: '#475569' }}>cm</div>
+                    </div>
+                  ) : null)}
                 </div>
               </div>
             )}
 
-      {/* Barra IMC */}
-      {imc && (
-        <div className="peso-card">
-          <div className="peso-card-title">FAIXA DE IMC</div>
-          <div className="peso-imc-track">
-            <div style={{ width: '13%', background: '#85B7EB' }} />
-            <div style={{ width: '22%', background: '#10b981' }} />
-            <div style={{ width: '20%', background: '#fbbf24' }} />
-            <div style={{ width: '20%', background: '#f97316' }} />
-            <div style={{ width: '25%', background: '#ef4444' }} />
-          </div>
-          <div className="peso-imc-marker-wrap">
-            <div className="peso-imc-marker" style={{ left: `${imcBarPct(Number(imc))}%` }}>
-              ▲ {imc}
+            {/* Formulário */}
+            <div style={{ background: '#1a1d21', border: '1px solid #ffffff0d', borderRadius: 14, padding: 16 }}>
+              <div style={{ fontSize: 10, color: '#64748b', fontWeight: 800, letterSpacing: '0.08em', marginBottom: 14 }}>REGISTRAR MEDIDAS</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+                {CAMPOS.map(c => (
+                  <div key={c.id}>
+                    <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, marginBottom: 2 }}>{c.label} (cm)</div>
+                    <div style={{ fontSize: 10, color: '#475569', marginBottom: 4 }}>{c.dica}</div>
+                    <input
+                      type="number" placeholder="Ex: 38" step="0.1"
+                      value={medidasForm[c.id]}
+                      onChange={e => setMedidasForm(p => ({ ...p, [c.id]: e.target.value }))}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                ))}
+              </div>
+              <button onClick={async () => {
+                const algum = Object.values(medidasForm).some(v => v !== '')
+                if (!algum) { alert('Preencha ao menos uma medida!'); return }
+                const payload = { user_id: user.id, data: hoje }
+                CAMPOS.forEach(c => { if (medidasForm[c.id]) payload[c.id] = parseFloat(medidasForm[c.id]) })
+                const { data: novo, error } = await supabase.from('medidas_registro').insert([payload]).select()
+                if (error) { alert(error.message); return }
+                setMedidas(prev => [novo[0], ...prev])
+                setMedidasForm({ biceps: '', peito: '', cintura: '', quadril: '', coxa: '', panturrilha: '' })
+              }} style={{
+                width: '100%', background: '#6366f1', border: 'none', borderRadius: 10,
+                color: '#fff', fontSize: 14, fontWeight: 700, padding: 12, cursor: 'pointer'
+              }}>+ Registrar Medidas</button>
             </div>
+
+            {/* Histórico de medidas */}
+            {medidas.length > 1 && (
+              <div style={{ background: '#1a1d21', border: '1px solid #ffffff0d', borderRadius: 14, padding: 16 }}>
+                <div style={{ fontSize: 10, color: '#64748b', fontWeight: 800, letterSpacing: '0.08em', marginBottom: 12 }}>HISTÓRICO</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {medidas.slice(0, 10).map(m => (
+                    <div key={m.id} style={{
+                      background: '#24282d', borderRadius: 10, padding: '10px 14px',
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#f8fafc', marginBottom: 4 }}>
+                          {new Date(m.data + 'T00:00:00').toLocaleDateString('pt-BR')}
+                        </div>
+                        <div style={{ fontSize: 11, color: '#64748b', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                          {CAMPOS.map(c => m[c.id] ? (
+                            <span key={c.id}>{c.label}: <strong style={{ color: '#94a3b8' }}>{m[c.id]}cm</strong></span>
+                          ) : null)}
+                        </div>
+                      </div>
+                      <button onClick={async () => {
+                        await supabase.from('medidas_registro').delete().eq('id', m.id)
+                        setMedidas(prev => prev.filter(x => x.id !== m.id))
+                      }} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', opacity: 0.4, fontSize: 16 }}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-          <div className="peso-imc-labels">
-            <span>Abaixo</span><span>Normal</span><span>Sobre</span><span>Ob.I</span><span>Ob.II+</span>
+        )
+      })()}
+
+      {subAba === 'peso' && <>
+        <div className="peso-cards-grid">
+          <div className="peso-stat-card">
+            <div className="peso-stat-label">PESO ATUAL</div>
+            <div className="peso-stat-val">{ultimo ? `${Number(ultimo.peso).toFixed(1)} kg` : '—'}</div>
+            {diff !== null && (
+              <div className="peso-stat-sub" style={{ color: Number(diff) < 0 ? '#10b981' : Number(diff) > 0 ? '#ef4444' : '#64748b' }}>
+                {Number(diff) > 0 ? '▲' : Number(diff) < 0 ? '▼' : '='} {Math.abs(diff)} kg
+              </div>
+            )}
+          </div>
+          <div className="peso-stat-card">
+            <div className="peso-stat-label">IMC</div>
+            <div className="peso-stat-val" style={{ color: imcCls?.color }}>{imc || '—'}</div>
+            <div className="peso-stat-sub">{imcCls?.label || (perfil?.altura ? 'Registre um peso' : 'Configure altura')}</div>
+          </div>
+          <div className="peso-stat-card">
+            <div className="peso-stat-label">MÉDIA 7 DIAS</div>
+            <div className="peso-stat-val">{media ? `${media} kg` : '—'}</div>
+            <div className="peso-stat-sub">{registros.filter(r => (new Date(hoje) - new Date(r.data)) / 86400000 <= 6).length} registros</div>
+          </div>
+          <div className="peso-stat-card">
+            <div className="peso-stat-label">PESO IDEAL</div>
+            <div className="peso-stat-val" style={{ fontSize: '1rem' }}>{pesoIdeal ? `${pesoIdeal.min}–${pesoIdeal.max}` : '—'}</div>
+            <div className="peso-stat-sub">IMC 22–24</div>
           </div>
         </div>
-      )}
 
-      {/* Meta de peso */}
-      <div className="peso-card">
-        <div className="peso-card-title-row">
-          <div className="peso-card-title" style={{ margin: 0 }}>META DE PESO</div>
-          {meta && !editandoMeta && (
-            <button className="peso-btn-alterar" onClick={() => setEditandoMeta(true)}>Alterar</button>
+        {dadosGrafico.length >= 2 && (
+          <div className="peso-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div className="peso-card-title" style={{ margin: 0 }}>EVOLUÇÃO DO PESO</div>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {[7, 14, 30, 90].map(d => (
+                  <button key={d} onClick={() => setPeriodoGrafico(d)} style={{
+                    background: periodoGrafico === d ? '#6366f1' : '#24282d',
+                    border: '1px solid #ffffff0d', borderRadius: 6,
+                    color: periodoGrafico === d ? '#fff' : '#64748b',
+                    fontSize: 10, fontWeight: 700, padding: '3px 8px', cursor: 'pointer'
+                  }}>{d}d</button>
+                ))}
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={dadosGrafico}>
+                <defs>
+                  <linearGradient id="pesoGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
+                <XAxis dataKey="data" tick={{ fill: '#64748b', fontSize: 10 }} />
+                <YAxis tick={{ fill: '#64748b', fontSize: 10 }} domain={['auto', 'auto']} tickFormatter={v => `${v}kg`} />
+                <Tooltip
+                  contentStyle={{ background: '#1a1d21', border: '1px solid #ffffff0d', borderRadius: 8, color: '#f8fafc' }}
+                  formatter={v => [`${v} kg`]}
+                />
+                <Line type="monotone" dataKey="peso" stroke="#6366f1" strokeWidth={2} dot={{ fill: '#6366f1', r: 4 }} activeDot={{ r: 6 }} />
+                {tendencia.length >= 2 && (
+                  <Line type="monotone" data={tendencia} dataKey="tend" stroke="#f59e0b" strokeWidth={1} strokeDasharray="4 4" dot={false} name="Tendência" />
+                )}
+                {meta && (
+                  <Line type="monotone" dataKey={() => meta} stroke="#10b98166" strokeWidth={1} strokeDasharray="4 4" dot={false} name="Meta" />
+                )}
+              </LineChart>
+            </ResponsiveContainer>
+            <div style={{ display: 'flex', gap: 14, marginTop: 6, fontSize: 11 }}>
+              <span style={{ color: '#6366f1' }}>— Peso</span>
+              <span style={{ color: '#f59e0b' }}>- - Tendência</span>
+              {meta && <span style={{ color: '#10b981' }}>- - Meta: {meta} kg</span>}
+            </div>
+          </div>
+        )}
+
+        {imc && (
+          <div className="peso-card">
+            <div className="peso-card-title">FAIXA DE IMC</div>
+            <div className="peso-imc-track">
+              <div style={{ width: '13%', background: '#85B7EB' }} />
+              <div style={{ width: '22%', background: '#10b981' }} />
+              <div style={{ width: '20%', background: '#fbbf24' }} />
+              <div style={{ width: '20%', background: '#f97316' }} />
+              <div style={{ width: '25%', background: '#ef4444' }} />
+            </div>
+            <div className="peso-imc-marker-wrap">
+              <div className="peso-imc-marker" style={{ left: `${imcBarPct(Number(imc))}%` }}>▲ {imc}</div>
+            </div>
+            <div className="peso-imc-labels">
+              <span>Abaixo</span><span>Normal</span><span>Sobre</span><span>Ob.I</span><span>Ob.II+</span>
+            </div>
+          </div>
+        )}
+
+        <div className="peso-card">
+          <div className="peso-card-title-row">
+            <div className="peso-card-title" style={{ margin: 0 }}>META DE PESO</div>
+            {meta && !editandoMeta && (
+              <button className="peso-btn-alterar" onClick={() => setEditandoMeta(true)}>Alterar</button>
+            )}
+          </div>
+          {meta && !editandoMeta ? (
+            <div className="peso-meta-display">
+              <div className="peso-meta-val">🎯 {meta} kg</div>
+              {diffMeta !== null && (
+                Number(diffMeta) <= 0
+                  ? <span className="peso-meta-badge done">✅ Meta atingida!</span>
+                  : <span className="peso-meta-badge">Faltam {diffMeta} kg</span>
+              )}
+            </div>
+          ) : (
+            <div className="peso-input-row" style={{ marginTop: meta ? 12 : 0 }}>
+              <input
+                type="number" placeholder={meta ? `Meta atual: ${meta} kg` : 'Ex: 75.0'}
+                step="0.1" min="30" max="300" value={metaInput}
+                onChange={e => setMetaInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') salvarMeta() }}
+                autoFocus={editandoMeta}
+              />
+              <span className="peso-unit">kg</span>
+              <button className="peso-btn-add" onClick={salvarMeta}>Salvar</button>
+              {editandoMeta && (
+                <button className="peso-btn-cancelar" onClick={() => { setEditandoMeta(false); setMetaInput('') }}>✕</button>
+              )}
+            </div>
           )}
         </div>
 
-        {meta && !editandoMeta ? (
-          <div className="peso-meta-display">
-            <div className="peso-meta-val">🎯 {meta} kg</div>
-            {diffMeta !== null && (
-              Number(diffMeta) <= 0
-                ? <span className="peso-meta-badge done">✅ Meta atingida!</span>
-                : <span className="peso-meta-badge">Faltam {diffMeta} kg</span>
-            )}
-          </div>
-        ) : (
-          <div className="peso-input-row" style={{ marginTop: meta ? 12 : 0 }}>
+        <div className="peso-card">
+          <div className="peso-card-title">REGISTRAR HOJE</div>
+          <div className="peso-input-row">
             <input
-              type="number"
-              placeholder={meta ? `Meta atual: ${meta} kg` : 'Ex: 75.0'}
-              step="0.1"
-              min="30"
-              max="300"
-              value={metaInput}
-              onChange={e => setMetaInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') salvarMeta() }}
-              autoFocus={editandoMeta}
+              type="number" placeholder="Ex: 80.5" step="0.1" min="30" max="300"
+              value={pesoInput}
+              onChange={e => setPesoInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') registrarPeso() }}
             />
             <span className="peso-unit">kg</span>
-            <button className="peso-btn-add" onClick={salvarMeta}>Salvar</button>
-            {editandoMeta && (
-              <button className="peso-btn-cancelar" onClick={() => { setEditandoMeta(false); setMetaInput('') }}>✕</button>
-            )}
+            <button className="peso-btn-add" onClick={registrarPeso}>+ Registrar</button>
           </div>
-        )}
-      </div>
-
-      {/* Registrar hoje */}
-      <div className="peso-card">
-        <div className="peso-card-title">REGISTRAR HOJE</div>
-        <div className="peso-input-row">
-          <input
-            type="number"
-            placeholder="Ex: 80.5"
-            step="0.1"
-            min="30"
-            max="300"
-            value={pesoInput}
-            onChange={e => setPesoInput(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') registrarPeso() }}
-          />
-          <span className="peso-unit">kg</span>
-          <button className="peso-btn-add" onClick={registrarPeso}>+ Registrar</button>
-        </div>
-        <p style={{ fontSize: 12, color: '#64748b', marginTop: 8 }}>
-          💡 Pese-se sempre em jejum logo ao acordar para resultados consistentes.
-        </p>
-      </div>
-
-      {/* Média semanal */}
-      {media && (
-        <div className="peso-card">
-          <div className="peso-card-title">MÉDIA SEMANAL</div>
-          <div className="peso-media-val">{media} <span>kg</span></div>
-          <p style={{ fontSize: 12, color: '#64748b', marginTop: 8, lineHeight: 1.6 }}>
-            A média dos últimos 7 dias elimina oscilações de retenção hídrica e resíduo gástrico. Use ela para saber se realmente emagreceu ou engordou na semana.
+          <p style={{ fontSize: 12, color: '#64748b', marginTop: 8 }}>
+            💡 Pese-se sempre em jejum logo ao acordar para resultados consistentes.
           </p>
         </div>
-      )}
 
-      {/* Histórico */}
-      <div className="peso-card">
-        <div className="peso-card-title">HISTÓRICO</div>
-        {registros.length === 0 ? (
-          <p className="empty-msg" style={{ marginTop: 8, fontSize: 13 }}>Nenhum registro ainda.</p>
-        ) : (
-          <div className="peso-log">
-            {registros.map((r, idx) => {
-              const prev = registros[idx + 1]
-              const d = prev ? (Number(r.peso) - Number(prev.peso)).toFixed(1) : null
-              return (
-                <div key={r.id} className="peso-log-item">
-                  <div className="peso-log-left">
-                    <span className="peso-log-val">{Number(r.peso).toFixed(1)} kg</span>
-                    <span className="peso-log-data">{new Date(r.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
-                    {d !== null && (
-                      <span style={{ fontSize: 11, color: Number(d) < 0 ? '#10b981' : Number(d) > 0 ? '#ef4444' : '#64748b' }}>
-                        {Number(d) > 0 ? '▲' : Number(d) < 0 ? '▼' : '='} {Math.abs(d)} kg
-                      </span>
-                    )}
-                  </div>
-                  <button className="agua-log-del" onClick={() => deletarRegistro(r.id)}>✕</button>
-                </div>
-              )
-            })}
+        {media && (
+          <div className="peso-card">
+            <div className="peso-card-title">MÉDIA SEMANAL</div>
+            <div className="peso-media-val">{media} <span>kg</span></div>
+            <p style={{ fontSize: 12, color: '#64748b', marginTop: 8, lineHeight: 1.6 }}>
+              A média dos últimos 7 dias elimina oscilações de retenção hídrica e resíduo gástrico. Use ela para saber se realmente emagreceu ou engordou na semana.
+            </p>
           </div>
         )}
-      </div>
 
+        <div className="peso-card">
+          <div className="peso-card-title">HISTÓRICO</div>
+          {registros.length === 0 ? (
+            <p className="empty-msg" style={{ marginTop: 8, fontSize: 13 }}>Nenhum registro ainda.</p>
+          ) : (
+            <div className="peso-log">
+              {registros.map((r, idx) => {
+                const prev = registros[idx + 1]
+                const d = prev ? (Number(r.peso) - Number(prev.peso)).toFixed(1) : null
+                return (
+                  <div key={r.id} className="peso-log-item">
+                    <div className="peso-log-left">
+                      <span className="peso-log-val">{Number(r.peso).toFixed(1)} kg</span>
+                      <span className="peso-log-data">{new Date(r.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                      {d !== null && (
+                        <span style={{ fontSize: 11, color: Number(d) < 0 ? '#10b981' : Number(d) > 0 ? '#ef4444' : '#64748b' }}>
+                          {Number(d) > 0 ? '▲' : Number(d) < 0 ? '▼' : '='} {Math.abs(d)} kg
+                        </span>
+                      )}
+                    </div>
+                    <button className="agua-log-del" onClick={() => deletarRegistro(r.id)}>✕</button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </>}
     </div>
   )
 }

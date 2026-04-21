@@ -176,7 +176,7 @@ function Personagem2D({ cor, pele, itens }) {
   )
 }
 
-     export default function RPG({ user, xpExterno }) {
+  export default function RPG({ user, xpExterno }) {
   const [rpg, setRpg] = useState(null)
   const [log, setLog] = useState([])
   const [ranking, setRanking] = useState([])
