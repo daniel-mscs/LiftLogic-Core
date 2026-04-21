@@ -127,6 +127,7 @@ function Treino({ logout, user }) {
   const [salvandoPerfil, setSalvandoPerfil] = useState(false)
   const [perfilMsg, setPerfilMsg] = useState('')
   const [dashData, setDashData] = useState({ historico: [], exercicioSelecionado: null, evolucao: [] })
+    const [prs, setPrs] = useState({})
   const [cardioRegistros, setCardioRegistros] = useState([])
   const [cardioForm, setCardioForm] = useState({ tipo: 'Corrida', duracao: '', kcal: '', observacao: '' })
   const timerRef = useRef(null)
@@ -273,6 +274,24 @@ const buscarDashboard = async () => {
   useEffect(() => { if (abaPrincipal === 'historico') buscarHistorico() }, [abaPrincipal])
   useEffect(() => { if (abaPrincipal === 'perfil') buscarPerfil() }, [abaPrincipal])
   useEffect(() => { if (abaPrincipal === 'dashboard') buscarDashboard() }, [abaPrincipal])
+
+    useEffect(() => {
+      if (subAbaTreino !== 'stats' || exercicios.length === 0) return
+      Promise.all([...new Set(exercicios.map(ex => ex.nome))].map(async nome => {
+        const { data } = await supabase
+          .from('historico_carga')
+          .select('carga, created_at')
+          .eq('user_id', user.id)
+          .eq('exercicio_nome', nome)
+          .order('carga', { ascending: false })
+          .limit(1)
+        return { nome, pr: data?.[0]?.carga || null, data: data?.[0]?.created_at || null }
+      })).then(results => {
+        const map = {}
+        results.forEach(r => { map[r.nome] = { pr: r.pr, data: r.data } })
+        setPrs(map)
+      })
+    }, [subAbaTreino, exercicios.length])
 
   useEffect(() => {
     if (treinando) {
@@ -737,7 +756,44 @@ const buscarDashboard = async () => {
               )}
             </div>
             <div className="dash-card">
-              <h3 className="dash-title">⏱️ Tempo por Treino</h3>
+                          <h3 className="dash-title">🏆 Personal Records (PR)</h3>
+                          {(() => {
+                            const exerciciosUnicos = [...new Set(exercicios.map(ex => ex.nome))]
+                            if (exerciciosUnicos.length === 0) return <p className="empty-msg">Nenhum exercício cadastrado ainda.</p>
+                            return (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                                {exerciciosUnicos.map(nome => {
+                                  const info = prs[nome]
+                                  const exAtual = exercicios.find(e => e.nome === nome)
+                                  const isPR = info?.pr && exAtual?.carga && Number(exAtual.carga) >= Number(info.pr)
+                                  return (
+                                    <div key={nome} style={{
+                                      background: '#24282d', borderRadius: 10, padding: '10px 14px',
+                                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                      borderLeft: isPR ? '3px solid #f59e0b' : '3px solid transparent'
+                                    }}>
+                                      <div>
+                                        <div style={{ fontSize: 13, fontWeight: 600, color: '#f8fafc' }}>{nome}</div>
+                                        {info?.data && <div style={{ fontSize: 10, color: '#475569' }}>
+                                          {new Date(info.data).toLocaleDateString('pt-BR')}
+                                        </div>}
+                                      </div>
+                                      <div style={{ textAlign: 'right' }}>
+                                        <div style={{ fontSize: 16, fontWeight: 800, color: '#f59e0b' }}>
+                                          {info?.pr ? `${info.pr} kg` : '—'}
+                                        </div>
+                                        <div style={{ fontSize: 10, color: '#475569' }}>recorde</div>
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            )
+                          })()}
+                        </div>
+
+                        <div className="dash-card">
+                          <h3 className="dash-title">⏱️ Tempo por Treino</h3>
               {dashData.historico.length === 0 ? <p className="empty-msg">Nenhum treino ainda.</p> : (
                 <ResponsiveContainer width="100%" height={180}>
                   <LineChart data={dashData.historico.slice(-10).map(t => ({ name: `${t.treino} ${new Date(t.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`, minutos: Math.round((t.tempo_segundos || 0) / 60) }))}>
