@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from './lib/supabase'
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 
@@ -27,6 +27,9 @@ export default function Stats({ user }) {
   const [passos, setPassos]     = useState([])
   const [passosMeta, setPassosMeta] = useState(10000)
   const [carregando, setCarregando] = useState(true)
+    const [rpg, setRpg] = useState(null)
+    const [perfil, setPerfil] = useState(null)
+    const [compartilhando, setCompartilhando] = useState(false)
 
   const ultimos7 = getLast7Days()
   const inicio = ultimos7[0]
@@ -41,7 +44,9 @@ export default function Stats({ user }) {
       { data: macrosData },
       { data: passosData },
       { data: passosMetaData },
-    ] = await Promise.all([
+            { data: rpgData },
+            { data: perfilData },
+          ] = await Promise.all([
       supabase.from('treinos_finalizados').select('*').eq('user_id', user.id).gte('created_at', inicio).order('created_at', { ascending: true }),
       supabase.from('agua_registro').select('*').eq('user_id', user.id).gte('data', inicio),
       supabase.from('agua_meta').select('meta_ml').eq('user_id', user.id).single(),
@@ -49,7 +54,9 @@ export default function Stats({ user }) {
       supabase.from('macros_registro').select('*').eq('user_id', user.id).gte('data', inicio),
       supabase.from('passos_registro').select('*').eq('user_id', user.id).gte('data', inicio),
       supabase.from('passos_meta').select('meta_passos').eq('user_id', user.id).single(),
-    ])
+            supabase.from('rpg_perfil').select('xp, streak, nivel').eq('user_id', user.id).single(),
+            supabase.from('perfil').select('nome, peso').eq('user_id', user.id).single(),
+          ])
     setTreinos(treinosData || [])
     setAgua(aguaData || [])
     if (aguaMetaData) setAguaMeta(aguaMetaData.meta_ml)
@@ -57,7 +64,9 @@ export default function Stats({ user }) {
     setMacros(macrosData || [])
     setPassos(passosData || [])
     if (passosMetaData) setPassosMeta(passosMetaData.meta_passos)
-    setCarregando(false)
+        setRpg(rpgData || null)
+        setPerfil(perfilData || null)
+        setCarregando(false)
   }, [user.id])
 
   useEffect(() => { buscarTudo() }, [buscarTudo])
@@ -307,6 +316,108 @@ export default function Stats({ user }) {
         )}
       </div>
 
-    </div>
-  )
-}
+    {/* CARD COMPARTILHÁVEL */}
+          <div style={{ borderRadius: 20, overflow: 'hidden' }}>
+                <div id="share-card" style={{
+                  background: 'linear-gradient(135deg, #0f1113 0%, #1a1d21 100%)',
+                  border: '1px solid #ffffff0d', borderRadius: 20, padding: 24,
+            display: 'flex', flexDirection: 'column', gap: 16
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: 10, color: '#64748b', fontWeight: 800, letterSpacing: '0.1em' }}>RELATÓRIO SEMANAL</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: '#f8fafc', marginTop: 2 }}>
+                  {perfil?.nome || 'DayForge'}
+                </div>
+              </div>
+              <div style={{ fontSize: 28 }}>⚔️</div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              {[
+                { icon: '🏋️', label: 'Treinos', val: totalTreinos, sub: totalTreinos > 0 ? `${formatarTempo(tempoTotal)} total` : 'nenhum' },
+                { icon: '⚖️', label: 'Peso', val: pesoDados.length > 0 ? `${pesoDados[pesoDados.length-1].peso}kg` : '—', sub: variacaoPeso !== null ? `${variacaoPeso > 0 ? '+' : ''}${variacaoPeso}kg semana` : 'sem registro' },
+                { icon: '💧', label: 'Água', val: `${diasMetaAgua}/7`, sub: 'dias com meta' },
+                { icon: '👟', label: 'Passos', val: mediaPassos > 0 ? mediaPassos.toLocaleString('pt-BR') : '—', sub: 'média diária' },
+                { icon: '🔥', label: 'Streak', val: `${rpg?.streak || 0} dias`, sub: 'consecutivos' },
+                { icon: '⭐', label: 'XP Total', val: (rpg?.xp || 0).toLocaleString('pt-BR'), sub: `Nível ${rpg?.nivel || 1}` },
+              ].map((item, i) => (
+                <div key={i} style={{
+                  background: '#24282d', borderRadius: 12, padding: '12px 14px',
+                  display: 'flex', alignItems: 'center', gap: 10
+                }}>
+                  <span style={{ fontSize: 22 }}>{item.icon}</span>
+                  <div>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: '#f8fafc' }}>{item.val}</div>
+                    <div style={{ fontSize: 10, color: '#64748b' }}>{item.label} · {item.sub}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ textAlign: 'center', fontSize: 10, color: '#475569', marginTop: 4 }}>
+              dayforge-web.vercel.app · {new Date().toLocaleDateString('pt-BR')}
+            </div>
+          </div>
+
+          </div>
+
+                {/* BOTÃO COMPARTILHAR */}
+          <button onClick={async () => {
+            setCompartilhando(true)
+            try {
+              const html2canvas = (await import('html2canvas')).default
+              const el = document.getElementById('share-card')
+              const canvasRaw = await html2canvas(el, { backgroundColor: null, scale: 2, useCORS: true })
+                        const pad = 20
+                        const finalCanvas = document.createElement('canvas')
+                        finalCanvas.width = canvasRaw.width + pad * 2
+                        finalCanvas.height = canvasRaw.height + pad * 2
+                        const ctx = finalCanvas.getContext('2d')
+                        ctx.fillStyle = '#0f1113'
+                        ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height)
+                        const r = 40
+                        ctx.beginPath()
+                        ctx.moveTo(pad + r, pad)
+                        ctx.lineTo(finalCanvas.width - pad - r, pad)
+                        ctx.quadraticCurveTo(finalCanvas.width - pad, pad, finalCanvas.width - pad, pad + r)
+                        ctx.lineTo(finalCanvas.width - pad, finalCanvas.height - pad - r)
+                        ctx.quadraticCurveTo(finalCanvas.width - pad, finalCanvas.height - pad, finalCanvas.width - pad - r, finalCanvas.height - pad)
+                        ctx.lineTo(pad + r, finalCanvas.height - pad)
+                        ctx.quadraticCurveTo(pad, finalCanvas.height - pad, pad, finalCanvas.height - pad - r)
+                        ctx.lineTo(pad, pad + r)
+                        ctx.quadraticCurveTo(pad, pad, pad + r, pad)
+                        ctx.closePath()
+                        ctx.clip()
+                        ctx.drawImage(canvasRaw, pad, pad)
+                        const canvas = finalCanvas
+              canvas.toBlob(async (blob) => {
+                if (navigator.share && navigator.canShare({ files: [new File([blob], 'dayforge.png', { type: 'image/png' })] })) {
+                  await navigator.share({
+                    title: 'Meu relatório semanal — DayForge',
+                    files: [new File([blob], 'dayforge.png', { type: 'image/png' })]
+                  })
+                } else {
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = 'dayforge-semana.png'
+                  a.click()
+                  URL.revokeObjectURL(url)
+                }
+              })
+            } catch (e) {
+              alert('Erro ao gerar imagem: ' + e.message)
+            }
+            setCompartilhando(false)
+          }} style={{
+            width: '100%', background: '#6366f1', border: 'none', borderRadius: 12,
+            color: '#fff', fontSize: 15, fontWeight: 700, padding: 14, cursor: 'pointer',
+            opacity: compartilhando ? 0.7 : 1
+          }}>
+            {compartilhando ? 'Gerando...' : '📤 Compartilhar Semana'}
+          </button>
+
+        </div>
+      )
+    }
