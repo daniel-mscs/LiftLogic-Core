@@ -17,10 +17,10 @@ function calcularIMC(peso, alturaCm) {
 
 function classificarIMC(imc) {
   if (imc < 18.5) return { label: 'Abaixo do peso', color: '#85B7EB' }
-  if (imc < 25)   return { label: 'Normal',          color: '#10b981' }
-  if (imc < 30)   return { label: 'Sobrepeso',       color: '#fbbf24' }
-  if (imc < 35)   return { label: 'Obesidade I',     color: '#f97316' }
-  return               { label: 'Obesidade II+',    color: '#ef4444' }
+  if (imc < 25) return { label: 'Normal', color: '#10b981' }
+  if (imc < 30) return { label: 'Sobrepeso', color: '#fbbf24' }
+  if (imc < 35) return { label: 'Obesidade I', color: '#f97316' }
+  return { label: 'Obesidade II+', color: '#ef4444' }
 }
 
 function imcBarPct(imc) {
@@ -28,9 +28,8 @@ function imcBarPct(imc) {
   return Math.min(100, Math.max(0, ((imc - min) / (max - min)) * 100))
 }
 
-// Imagens base64 das pessoas musculosas
 const IMG_MASC = '/body-masc.png'
-const IMG_FEM  = '/body-fem.png'
+const IMG_FEM = '/body-fem.png'
 
 const CORES = {
   biceps: '#f59e0b', peito: '#6366f1', cintura: '#10b981',
@@ -42,8 +41,6 @@ const LABELS = {
   quadril: 'Quadril', coxa: 'Coxa', panturrilha: 'Panturrilha'
 }
 
-// Coordenadas calibradas para viewBox 400x700
-// x,y = ponto no corpo | lado = qual lado sai a linha/label
 const PONTOS_MASC = {
   biceps:      { x: 145, y: 320, lado: 'esq' },
   peito:       { x: 240, y: 305, lado: 'dir' },
@@ -65,7 +62,7 @@ const PONTOS_FEM = {
 function BodyMeasureVisual({ sexo, medidas }) {
   const isMasc = sexo !== 'F'
   const pontos = isMasc ? PONTOS_MASC : PONTOS_FEM
-  const img    = isMasc ? IMG_MASC : IMG_FEM
+  const img = isMasc ? IMG_MASC : IMG_FEM
 
   return (
     <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
@@ -75,10 +72,7 @@ function BodyMeasureVisual({ sexo, medidas }) {
         style={{ maxWidth: 340, display: 'block' }}
         xmlns="http://www.w3.org/2000/svg"
       >
-        {/* imagem real como fundo do SVG */}
         <image href={img} x="60" y="10" width="280" height="680" preserveAspectRatio="xMidYMid meet" />
-
-        {/* overlay escuro nas bordas pra dar o efeito glow */}
         <defs>
           <radialGradient id="glow" cx="50%" cy="50%" r="50%">
             <stop offset="55%" stopColor="transparent" stopOpacity="0" />
@@ -86,35 +80,22 @@ function BodyMeasureVisual({ sexo, medidas }) {
           </radialGradient>
         </defs>
 
-
-        {/* pontos + linhas + labels */}
         {Object.entries(pontos).map(([key, { x, y, lado }]) => {
-          const val    = medidas?.[key]
-          const cor    = CORES[key]
-          const isDir  = lado === 'dir'
-          const lx1    = isDir ? x + 18 : x - 18
-          const lx2    = isDir ? x + 95  : x - 95
+          const val = medidas?.[key]
+          const cor = CORES[key]
+          const isDir = lado === 'dir'
+          const lx1 = isDir ? x + 18 : x - 18
+          const lx2 = isDir ? x + 95 : x - 95
           const anchor = isDir ? 'start' : 'end'
-          const tx     = lx2 + (isDir ? 4 : -4)
+          const tx = lx2 + (isDir ? 4 : -4)
 
           return (
             <g key={key}>
-              {/* linha tracejada horizontal */}
               <line x1={x} y1={y} x2={lx1} y2={y} stroke={cor} strokeWidth="1.2" strokeDasharray="3 2" opacity="0.8" />
               <line x1={lx1} y1={y} x2={lx2} y2={y} stroke={cor} strokeWidth="1.2" opacity="0.8" />
-              {/* ponto */}
               <circle cx={x} cy={y} r="5.5" fill={cor} opacity="0.95" />
               <circle cx={x} cy={y} r="2.5" fill="#fff" />
-              {/* fundo do label pra legibilidade */}
-              <rect
-                x={isDir ? lx2 : lx2 - 80}
-                y={y - 17}
-                width="80" height="28"
-                rx="5"
-                fill="#0d0f11"
-                opacity="0.6"
-              />
-              {/* textos */}
+              <rect x={isDir ? lx2 : lx2 - 80} y={y - 17} width="80" height="28" rx="5" fill="#0d0f11" opacity="0.6" />
               <text x={tx} y={y - 4} fill={cor} fontSize="9" fontWeight="700" textAnchor={anchor} fontFamily="monospace">
                 {LABELS[key].toUpperCase()}
               </text>
@@ -130,17 +111,20 @@ function BodyMeasureVisual({ sexo, medidas }) {
 }
 
 export default function Peso({ user, onAjuda }) {
-  const [registros, setRegistros]     = useState([])
-  const [perfil, setPerfil]           = useState(null)
-  const [pesoInput, setPesoInput]     = useState('')
-  const [metaInput, setMetaInput]     = useState('')
-  const [meta, setMeta]               = useState(null)
+  const [registros, setRegistros] = useState([])
+  const [perfil, setPerfil] = useState(null)
+  const [pesoInput, setPesoInput] = useState('')
+  const [metaInput, setMetaInput] = useState('')
+  const [meta, setMeta] = useState(null)
   const [editandoMeta, setEditandoMeta] = useState(false)
   const [periodoGrafico, setPeriodoGrafico] = useState(14)
-  const [carregando, setCarregando]   = useState(true)
+  const [carregando, setCarregando] = useState(true)
   const [subAba, setSubAba] = useState('peso')
   const [medidas, setMedidas] = useState([])
   const [medidasForm, setMedidasForm] = useState({ biceps: '', peito: '', cintura: '', quadril: '', coxa: '', panturrilha: '' })
+  const [medidaSel, setMedidaSel] = useState('cintura')
+    const [compDataA, setCompDataA] = useState('')
+    const [compDataB, setCompDataB] = useState('')
 
   const hoje = formatarData(new Date())
 
@@ -210,8 +194,8 @@ export default function Peso({ user, onAjuda }) {
   const tendencia = (() => {
     if (dadosGrafico.length < 3) return []
     const n = dadosGrafico.length
-    const sumX  = dadosGrafico.reduce((s, _, i) => s + i, 0)
-    const sumY  = dadosGrafico.reduce((s, d) => s + d.peso, 0)
+    const sumX = dadosGrafico.reduce((s, _, i) => s + i, 0)
+    const sumY = dadosGrafico.reduce((s, d) => s + d.peso, 0)
     const sumXY = dadosGrafico.reduce((s, d, i) => s + i * d.peso, 0)
     const sumX2 = dadosGrafico.reduce((s, _, i) => s + i * i, 0)
     const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX)
@@ -219,17 +203,26 @@ export default function Peso({ user, onAjuda }) {
     return dadosGrafico.map((d, i) => ({ ...d, tend: parseFloat((slope * i + intercept).toFixed(1)) }))
   })()
 
-  const ultimo    = registros[0] || null
+  const ultimo = registros[0] || null
   const penultimo = registros[1] || null
-  const imc       = ultimo && perfil?.altura ? calcularIMC(Number(ultimo.peso), Number(perfil.altura)) : null
-  const imcCls    = imc ? classificarIMC(Number(imc)) : null
-  const media     = mediaSemana()
-  const diff      = ultimo && penultimo ? (Number(ultimo.peso) - Number(penultimo.peso)).toFixed(1) : null
-  const diffMeta  = ultimo && meta ? (Number(ultimo.peso) - meta).toFixed(1) : null
+  const imc = ultimo && perfil?.altura ? calcularIMC(Number(ultimo.peso), Number(perfil.altura)) : null
+  const imcCls = imc ? classificarIMC(Number(imc)) : null
+  const media = mediaSemana()
+  const diff = ultimo && penultimo ? (Number(ultimo.peso) - Number(penultimo.peso)).toFixed(1) : null
+  const diffMeta = ultimo && meta ? (Number(ultimo.peso) - meta).toFixed(1) : null
   const pesoIdeal = perfil?.altura ? (() => {
     const h = perfil.altura / 100
     return { min: (22 * h * h).toFixed(1), max: (24 * h * h).toFixed(1) }
   })() : null
+
+  const CAMPOS_GRAF = [
+    { id: 'biceps', label: 'Bíceps', cor: '#f59e0b' },
+    { id: 'peito', label: 'Peito', cor: '#6366f1' },
+    { id: 'cintura', label: 'Cintura', cor: '#10b981' },
+    { id: 'quadril', label: 'Quadril', cor: '#ec4899' },
+    { id: 'coxa', label: 'Coxa', cor: '#f97316' },
+    { id: 'panturrilha', label: 'Panturrilha', cor: '#38bdf8' },
+  ]
 
   if (carregando) return <div style={{ textAlign: 'center', color: '#64748b', paddingTop: 40 }}>Carregando seu peso... ⚖️</div>
 
@@ -253,14 +246,34 @@ export default function Peso({ user, onAjuda }) {
 
       {subAba === 'medidas' && (() => {
         const CAMPOS = [
-          { id: 'biceps',      label: 'Bíceps',      dica: 'Braço flexionado, parte mais grossa' },
-          { id: 'peito',       label: 'Peito',       dica: 'Na altura dos mamilos, braços relaxados' },
-          { id: 'cintura',     label: 'Cintura',     dica: 'Parte mais estreita do abdômen' },
-          { id: 'quadril',     label: 'Quadril',     dica: 'Parte mais larga do quadril/glúteo' },
-          { id: 'coxa',        label: 'Coxa',        dica: 'Parte mais grossa da coxa' },
+          { id: 'biceps', label: 'Bíceps', dica: 'Braço flexionado, parte mais grossa' },
+          { id: 'peito', label: 'Peito', dica: 'Na altura dos mamilos, braços relaxados' },
+          { id: 'cintura', label: 'Cintura', dica: 'Parte mais estreita do abdômen' },
+          { id: 'quadril', label: 'Quadril', dica: 'Parte mais larga do quadril/glúteo' },
+          { id: 'coxa', label: 'Coxa', dica: 'Parte mais grossa da coxa' },
           { id: 'panturrilha', label: 'Panturrilha', dica: 'Parte mais grossa da panturrilha' },
         ]
         const ultima = medidas[0] || null
+
+        const campo = CAMPOS_GRAF.find(c => c.id === medidaSel)
+        const datas = [...new Set([...medidas].reverse().map(m =>
+          new Date(m.data + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+        ))]
+        const dadosGrafTodos = datas.map(data => {
+          const reg = [...medidas].reverse().find(m =>
+            new Date(m.data + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) === data
+          )
+          const ponto = { data }
+          CAMPOS_GRAF.forEach(c => { if (reg?.[c.id]) ponto[c.id] = Number(reg[c.id]) })
+          return ponto
+        })
+        const dadosGraf = [...medidas].reverse()
+          .filter(m => m[medidaSel])
+          .map(m => ({
+            data: new Date(m.data + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+            valor: Number(m[medidaSel])
+          }))
+
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
@@ -273,7 +286,9 @@ export default function Peso({ user, onAjuda }) {
             <div style={{ background: '#1a1d21', border: '1px solid #6366f122', borderRadius: 14, padding: 16 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: '#6366f1', marginBottom: 10 }}>📏 Como medir corretamente</div>
               <div style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.7 }}>
-                Use uma <strong style={{ color: '#f8fafc' }}>fita métrica flexível</strong> encostada na pele sem apertar nem folgar. Meça sempre no <strong style={{ color: '#f8fafc' }}>mesmo horário</strong>, de preferência pela manhã em jejum. Respire normalmente e não prenda a respiração.
+                Use uma <strong style={{ color: '#f8fafc' }}>fita métrica flexível</strong> encostada na pele sem apertar nem folgar.
+                Meça sempre no <strong style={{ color: '#f8fafc' }}>mesmo horário</strong>, de preferência pela manhã em jejum.
+                Respire normalmente e não prenda a respiração.
               </div>
             </div>
 
@@ -327,8 +342,136 @@ export default function Peso({ user, onAjuda }) {
               }}>+ Registrar Medidas</button>
             </div>
 
-            {/* Histórico de medidas */}
-            {medidas.length > 1 && (
+            {/* Gráfico de evolução das medidas */}
+            {medidas.length >= 2 && (
+              <div style={{ background: '#1a1d21', border: '1px solid #ffffff0d', borderRadius: 14, padding: 16 }}>
+                <div style={{ fontSize: 10, color: '#64748b', fontWeight: 800, letterSpacing: '0.08em', marginBottom: 12 }}>EVOLUÇÃO DAS MEDIDAS</div>
+                <div style={{ display: 'flex', flexWrap: 'nowrap', overflowX: 'auto', gap: 6, marginBottom: 14, paddingBottom: 4, scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                  <button onClick={() => setMedidaSel('todos')} style={{
+                    background: medidaSel === 'todos' ? '#ffffff22' : '#24282d',
+                    border: `1px solid ${medidaSel === 'todos' ? '#ffffff44' : '#ffffff0d'}`,
+                    borderRadius: 8, color: medidaSel === 'todos' ? '#f8fafc' : '#64748b',
+                    fontSize: 10, fontWeight: 700, padding: '3px 7px', cursor: 'pointer', whiteSpace: 'nowrap'
+                  }}>Todos</button>
+                  {CAMPOS_GRAF.map(c => (
+                    <button key={c.id} onClick={() => setMedidaSel(c.id)} style={{
+                      background: medidaSel === c.id ? c.cor + '33' : '#24282d',
+                      border: `1px solid ${medidaSel === c.id ? c.cor : '#ffffff0d'}`,
+                      borderRadius: 8, color: medidaSel === c.id ? c.cor : '#64748b',
+                      fontSize: 10, fontWeight: 700, padding: '3px 7px', cursor: 'pointer', whiteSpace: 'nowrap'
+                    }}>{c.label}</button>
+                  ))}
+                </div>
+                {medidaSel === 'todos' ? (
+                  <ResponsiveContainer width="100%" height={180}>
+                    <LineChart data={dadosGrafTodos}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
+                      <XAxis dataKey="data" tick={{ fill: '#64748b', fontSize: 10 }} />
+                      <YAxis tick={{ fill: '#64748b', fontSize: 10 }} domain={['auto', 'auto']} tickFormatter={v => `${v}cm`} />
+                      <Tooltip contentStyle={{ background: '#1a1d21', border: '1px solid #ffffff0d', borderRadius: 8, color: '#f8fafc' }} formatter={(v, name) => [`${v} cm`, LABELS[name]]} />
+                      {CAMPOS_GRAF.map(c => (
+                        <Line key={c.id} type="monotone" dataKey={c.id} stroke={c.cor} strokeWidth={2} dot={false} connectNulls />
+                      ))}
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : dadosGraf.length >= 2 ? (
+                  <ResponsiveContainer width="100%" height={180}>
+                    <LineChart data={dadosGraf}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
+                      <XAxis dataKey="data" tick={{ fill: '#64748b', fontSize: 10 }} />
+                      <YAxis tick={{ fill: '#64748b', fontSize: 10 }} domain={['auto', 'auto']} tickFormatter={v => `${v}cm`} />
+                      <Tooltip
+                        contentStyle={{ background: '#1a1d21', border: '1px solid #ffffff0d', borderRadius: 8, color: '#f8fafc' }}
+                        formatter={v => [`${v} cm`, campo?.label]}
+                      />
+                      <Line type="monotone" dataKey="valor" stroke={campo?.cor} strokeWidth={2} dot={{ fill: campo?.cor, r: 4 }} activeDot={{ r: 6 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p style={{ textAlign: 'center', color: '#475569', fontSize: 13 }}>Registre mais medidas de {campo?.label} para ver a evolução.</p>
+                )}
+              </div>
+            )}
+
+            {/* Comparativo antes/depois */}
+                {medidas.length >= 2 && (() => {
+                const dataA = compDataA || medidas[medidas.length - 1]?.data || ''
+                              const dataB = compDataB || medidas[0]?.data || ''
+                              const regA = medidas.find(m => m.data === dataA)
+                              const regB = medidas.find(m => m.data === dataB)
+                          return (
+                            <div style={{ background: '#1a1d21', border: '1px solid #ffffff0d', borderRadius: 14, padding: 16 }}>
+                              <div style={{ fontSize: 10, color: '#64748b', fontWeight: 800, letterSpacing: '0.08em', marginBottom: 14 }}>COMPARATIVO ANTES / DEPOIS</div>
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+                                <div>
+                                  <div style={{ fontSize: 10, color: '#64748b', marginBottom: 4 }}>ANTES</div>
+                                  <select value={dataA} onChange={e => setCompDataA(e.target.value)} style={{
+                                    width: '100%', background: '#24282d', border: '1px solid #ffffff0d',
+                                    borderRadius: 8, color: '#f8fafc', fontSize: 12, padding: '6px 8px'
+                                  }}>
+                                    {[...medidas].reverse().map(m => (
+                                      <option key={m.id} value={m.data}>
+                                        {new Date(m.data + 'T00:00:00').toLocaleDateString('pt-BR')}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: 10, color: '#64748b', marginBottom: 4 }}>DEPOIS</div>
+                                  <select value={dataB} onChange={e => setCompDataB(e.target.value)} style={{
+                                    width: '100%', background: '#24282d', border: '1px solid #ffffff0d',
+                                    borderRadius: 8, color: '#f8fafc', fontSize: 12, padding: '6px 8px'
+                                  }}>
+                                    {[...medidas].reverse().map(m => (
+                                      <option key={m.id} value={m.data}>
+                                        {new Date(m.data + 'T00:00:00').toLocaleDateString('pt-BR')}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                {CAMPOS_GRAF.map(c => {
+                                  const vA = regA?.[c.id]
+                                  const vB = regB?.[c.id]
+                                  const diff = vA && vB ? (Number(vB) - Number(vA)).toFixed(1) : null
+                                  const positivo = diff > 0
+                                  const negativo = diff < 0
+                                  return (
+                                    <div key={c.id} style={{
+                                      display: 'grid', gridTemplateColumns: '80px 1fr 1fr 60px',
+                                      alignItems: 'center', gap: 8,
+                                      background: '#24282d', borderRadius: 10, padding: '8px 12px'
+                                    }}>
+                                      <div style={{ fontSize: 11, fontWeight: 700, color: c.cor }}>{c.label}</div>
+                                      <div style={{ textAlign: 'center' }}>
+                                        <div style={{ fontSize: 9, color: '#475569', marginBottom: 2 }}>ANTES</div>
+                                        <div style={{ fontSize: 15, fontWeight: 700, color: '#f8fafc' }}>{vA ? `${vA}cm` : '—'}</div>
+                                      </div>
+                                      <div style={{ textAlign: 'center' }}>
+                                        <div style={{ fontSize: 9, color: '#475569', marginBottom: 2 }}>DEPOIS</div>
+                                        <div style={{ fontSize: 15, fontWeight: 700, color: '#f8fafc' }}>{vB ? `${vB}cm` : '—'}</div>
+                                      </div>
+                                      <div style={{ textAlign: 'center' }}>
+                                        {diff !== null ? (
+                                          <span style={{
+                                            fontSize: 12, fontWeight: 700,
+                                            color: negativo ? '#10b981' : positivo ? '#ef4444' : '#64748b'
+                                          }}>
+                                            {positivo ? '+' : ''}{diff}cm
+                                          </span>
+                                        ) : <span style={{ color: '#475569', fontSize: 12 }}>—</span>}
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          )
+                        })()}
+
+                        {/* Histórico de medidas */}
+                        {medidas.length > 1 && (
               <div style={{ background: '#1a1d21', border: '1px solid #ffffff0d', borderRadius: 14, padding: 16 }}>
                 <div style={{ fontSize: 10, color: '#64748b', fontWeight: 800, letterSpacing: '0.08em', marginBottom: 12 }}>HISTÓRICO</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -407,8 +550,8 @@ export default function Peso({ user, onAjuda }) {
               <LineChart data={dadosGrafico}>
                 <defs>
                   <linearGradient id="pesoGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
