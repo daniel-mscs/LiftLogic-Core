@@ -597,9 +597,62 @@ export default function Peso({ user, onAjuda }) {
           </div>
         )}
 
-        <div className="peso-card">
-          <div className="peso-card-title-row">
-            <div className="peso-card-title" style={{ margin: 0 }}>META DE PESO</div>
+        {imc && perfil?.sexo && (() => {
+                  const imcN = Number(imc)
+                  const sexo = perfil.sexo
+                  // Fórmula de Deurenberg: %gordura = (1.2 * IMC) + (0.23 * idade) - (10.8 * sexo) - 5.4
+                  // sexo: 1=masculino, 0=feminino
+                  const idadeN = Number(perfil.idade) || 25
+                  const s = sexo === 'M' ? 1 : 0
+                  const pctGordura = Math.max(0, (1.2 * imcN) + (0.23 * idadeN) - (10.8 * s) - 5.4).toFixed(1)
+                  const pesoN = Number(ultimo?.peso)
+                  const massaGorda = ((pctGordura / 100) * pesoN).toFixed(1)
+                  const massaMagra = (pesoN - massaGorda).toFixed(1)
+                  const classGordura = sexo === 'M'
+                    ? pctGordura < 6 ? { label: 'Atleta', cor: '#3b82f6' }
+                    : pctGordura < 14 ? { label: 'Fitness', cor: '#10b981' }
+                    : pctGordura < 18 ? { label: 'Aceitável', cor: '#f59e0b' }
+                    : pctGordura < 25 ? { label: 'Sobrepeso', cor: '#f97316' }
+                    : { label: 'Obesidade', cor: '#ef4444' }
+                    : pctGordura < 14 ? { label: 'Atleta', cor: '#3b82f6' }
+                    : pctGordura < 21 ? { label: 'Fitness', cor: '#10b981' }
+                    : pctGordura < 25 ? { label: 'Aceitável', cor: '#f59e0b' }
+                    : pctGordura < 32 ? { label: 'Sobrepeso', cor: '#f97316' }
+                    : { label: 'Obesidade', cor: '#ef4444' }
+
+                  return (
+                    <div className="peso-card">
+                      <div className="peso-card-title">🧬 COMPOSIÇÃO CORPORAL ESTIMADA</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 12 }}>
+                        <div style={{ background: '#24282d', borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
+                          <div style={{ fontSize: 10, color: '#64748b', fontWeight: 700 }}>% GORDURA</div>
+                          <div style={{ fontSize: 20, fontWeight: 800, color: classGordura.cor, marginTop: 4 }}>{pctGordura}%</div>
+                          <div style={{ fontSize: 10, color: classGordura.cor, marginTop: 2 }}>{classGordura.label}</div>
+                        </div>
+                        <div style={{ background: '#24282d', borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
+                          <div style={{ fontSize: 10, color: '#64748b', fontWeight: 700 }}>M. GORDA</div>
+                          <div style={{ fontSize: 20, fontWeight: 800, color: '#f8fafc', marginTop: 4 }}>{massaGorda}</div>
+                          <div style={{ fontSize: 10, color: '#475569', marginTop: 2 }}>kg</div>
+                        </div>
+                        <div style={{ background: '#24282d', borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
+                          <div style={{ fontSize: 10, color: '#64748b', fontWeight: 700 }}>M. MAGRA</div>
+                          <div style={{ fontSize: 20, fontWeight: 800, color: '#10b981', marginTop: 4 }}>{massaMagra}</div>
+                          <div style={{ fontSize: 10, color: '#475569', marginTop: 2 }}>kg</div>
+                        </div>
+                      </div>
+                      <div style={{ height: 8, background: '#ffffff0d', borderRadius: 99, overflow: 'hidden', marginBottom: 6 }}>
+                        <div style={{ height: 8, width: `${Math.min(100, pctGordura)}%`, background: classGordura.cor, borderRadius: 99 }} />
+                      </div>
+                      <p style={{ fontSize: 11, color: '#475569', lineHeight: 1.5 }}>
+                        💡 Estimativa pela fórmula de Deurenberg (IMC + idade + sexo). Para maior precisão use bioimpedância ou DEXA.
+                      </p>
+                    </div>
+                  )
+                })()}
+
+                <div className="peso-card">
+                  <div className="peso-card-title-row">
+                    <div className="peso-card-title" style={{ margin: 0 }}>META DE PESO</div>
             {meta && !editandoMeta && (
               <button className="peso-btn-alterar" onClick={() => setEditandoMeta(true)}>Alterar</button>
             )}
@@ -631,8 +684,61 @@ export default function Peso({ user, onAjuda }) {
           )}
         </div>
 
-        <div className="peso-card">
-          <div className="peso-card-title">REGISTRAR HOJE</div>
+        {meta && tendencia.length >= 3 && (() => {
+                  const n = dadosGrafico.length
+                  const sumX = dadosGrafico.reduce((s, _, i) => s + i, 0)
+                  const sumY = dadosGrafico.reduce((s, d) => s + d.peso, 0)
+                  const sumXY = dadosGrafico.reduce((s, d, i) => s + i * d.peso, 0)
+                  const sumX2 = dadosGrafico.reduce((s, _, i) => s + i * i, 0)
+                  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX)
+                  if (Math.abs(slope) < 0.001) return null
+                  const pesoAtual = dadosGrafico[dadosGrafico.length - 1].peso
+                  const diasRestantes = Math.round((meta - pesoAtual) / slope)
+                  const sentidoCerto = (slope < 0 && meta < pesoAtual) || (slope > 0 && meta > pesoAtual)
+                            if (Math.abs(slope) < 0.001) return null
+                            const muitoDevagar = sentidoCerto && Math.abs(diasRestantes) > 365
+                  const dataEst = new Date()
+                            dataEst.setDate(dataEst.getDate() + Math.abs(diasRestantes))
+                            const cor = sentidoCerto ? '#10b981' : '#ef4444'
+                            return (
+                              <div className="peso-card">
+                                <div className="peso-card-title">📅 PREVISÃO DE META</div>
+                                {!sentidoCerto ? (
+                                  <div style={{ background: '#ef444415', border: '1px solid #ef444433', borderRadius: 10, padding: 12, marginTop: 4 }}>
+                                    <div style={{ fontSize: 13, color: '#ef4444', fontWeight: 700, marginBottom: 4 }}>⚠️ Tendência contrária à meta</div>
+                                    <div style={{ fontSize: 12, color: '#94a3b8' }}>
+                                      Você está {slope > 0 ? 'ganhando' : 'perdendo'} {Math.abs(slope).toFixed(2)} kg/dia, mas sua meta é {meta < pesoAtual ? 'emagrecer' : 'ganhar peso'}. Mantenha a consistência para reverter a tendência.
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                      <span style={{ fontSize: 13, color: '#94a3b8' }}>Tendência atual</span>
+                                      <span style={{ fontSize: 13, fontWeight: 700, color: cor }}>{slope > 0 ? '+' : ''}{slope.toFixed(2)} kg/dia</span>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                        <span style={{ fontSize: 13, color: '#94a3b8' }}>Dias restantes</span>
+                                                        <span style={{ fontSize: 13, fontWeight: 700, color: muitoDevagar ? '#f59e0b' : '#f8fafc' }}>
+                                                          {muitoDevagar ? '+1 ano' : `${Math.abs(diasRestantes)} dias`}
+                                                        </span>
+                                                      </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                      <span style={{ fontSize: 13, color: '#94a3b8' }}>Data estimada</span>
+                                      <span style={{ fontSize: 13, fontWeight: 700, color: cor }}>
+                                        {dataEst.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                      </span>
+                                    </div>
+                                  </div>
+                                )}
+                                <p style={{ fontSize: 11, color: '#475569', marginTop: 8, lineHeight: 1.5 }}>
+                                  💡 Baseado na tendência dos últimos {periodoGrafico} dias. Pode variar conforme sua consistência.
+                                </p>
+                              </div>
+                            )
+                })()}
+
+                <div className="peso-card">
+                  <div className="peso-card-title">REGISTRAR HOJE</div>
           <div className="peso-input-row">
             <input
               type="number" placeholder="Ex: 80.5" step="0.1" min="30" max="300"
