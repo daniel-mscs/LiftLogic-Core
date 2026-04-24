@@ -297,7 +297,7 @@ export default function Macros({ user, onAjuda }) {
           <div className="macros-card-title">SALDO CALÓRICO DO DIA</div>
               {(() => {
                 const gastoTotal = meta + kcalGasto.treino + kcalGasto.passos + kcalGasto.cardio
-                                const saldo = total.kcal - gastoTotal
+                const saldo = total.kcal - gastoTotal
                                 const maxVal = Math.max(gastoTotal, total.kcal, 1)
                                 const linhas = [
                                   { label: 'Meta base', val: meta, color: '#6366f1' },

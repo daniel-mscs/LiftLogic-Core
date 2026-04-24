@@ -119,7 +119,7 @@ export default function Home({ user, onIniciarTreino, treinando, treinoAtivo, di
         supabase.from('passos_meta').select('meta_passos').eq('user_id', user.id).single(),
         supabase.from('macros_registro').select('kcal').eq('user_id', user.id).eq('data', hoje),
         supabase.from('macros_meta').select('meta_kcal').eq('user_id', user.id).single(),
-        supabase.from('treinos_finalizados').select('kcal').eq('user_id', user.id).gte('created_at', hoje).single(),
+        supabase.from('treinos_finalizados').select('kcal, created_at').eq('user_id', user.id).gte('created_at', hoje + 'T03:00:00Z').lte('created_at', new Date(new Date(hoje).getTime() + 86400000).toISOString().split('T')[0] + 'T02:59:59Z'),
       ])
     if (p) setPerfil(p)
     if (h) setHistorico(h)
@@ -135,9 +135,13 @@ export default function Home({ user, onIniciarTreino, treinando, treinoAtivo, di
     const totalKcal = (macrosData || []).reduce((s, r) => s + r.kcal, 0)
         setKcalHoje(totalKcal)
         if (macrosMetaData) setKcalMeta(macrosMetaData.meta_kcal)
-    const kcalTreino = treinoHoje?.kcal || 0
-        const kcalPassosGasto = Math.round((passosData?.passos || 0) * 0.04)
-        setKcalGasto({ treino: kcalTreino, passos: kcalPassosGasto })
+    const kcalTreino = (treinoHoje || []).filter(r => {
+      const offset = new Date().getTimezoneOffset()
+      const dataLocal = new Date(new Date(r.created_at).getTime() - offset * 60000).toISOString().split('T')[0]
+      return dataLocal === hoje
+    }).reduce((s, r) => s + (r.kcal || 0), 0)
+    const kcalPassosGasto = Math.round((passosData?.passos || 0) * 0.04)
+    setKcalGasto({ treino: kcalTreino, passos: kcalPassosGasto })
 
     if (pesoRegs && pesoRegs.length > 0) {
       setPesoHoje(pesoRegs[0])
@@ -380,7 +384,7 @@ async function calcularStreak(userId) {
                       <div className="home-mini-info">
                         <div className="home-mini-label">SALDO</div>
                         {(() => {
-                          const gastoTotal = kcalMeta + kcalGasto.treino + kcalGasto.passos
+                          const gastoTotal = kcalMeta + kcalGasto.treino + kcalGasto.passos + (kcalGasto.cardio || 0)
                           const saldo = kcalHoje - gastoTotal
                           return (
                             <>
