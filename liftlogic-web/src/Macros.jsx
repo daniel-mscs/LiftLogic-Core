@@ -69,7 +69,7 @@ export default function Macros({ user, onAjuda }) {
       supabase.from('alimentos_base').select('*').order('nome', { ascending: true }),
       supabase.from('perfil').select('*').eq('user_id', user.id).single(),
       supabase.from('passos_registro').select('passos').eq('user_id', user.id).eq('data', hoje).single(),
-      supabase.from('treinos_finalizados').select('kcal').eq('user_id', user.id).gte('created_at', hoje).single(),
+      supabase.from('treinos_finalizados').select('kcal').eq('user_id', user.id).gte('created_at', hoje + 'T00:00:00').lte('created_at', hoje + 'T23:59:59'),
             supabase.from('cardio_registro').select('kcal').eq('user_id', user.id).eq('data', hoje),
           ])
     setRegistros(regs || [])
@@ -78,7 +78,7 @@ export default function Macros({ user, onAjuda }) {
     setAlimentosBase(base || [])
     if (perfilData) { setPerfil(perfilData); setObjetivoSel(perfilData.objetivo || 'manter') }
         const kcalPassos = Math.round((passosHoje?.passos || 0) * 0.04)
-                const kcalTreino = treinoHoje?.kcal || 0
+                const kcalTreino = (treinoHoje || []).reduce((s, r) => s + (r.kcal || 0), 0)
                 const kcalCardio = (cardioHoje || []).reduce((s, r) => s + (r.kcal || 0), 0)
                 setKcalGasto({ passos: kcalPassos, treino: kcalTreino, cardio: kcalCardio })
         const ultimos7 = Array.from({ length: 7 }, (_, i) => {
