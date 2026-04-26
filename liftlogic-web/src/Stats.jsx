@@ -19,17 +19,29 @@ function getLast7Days() {
 function round1(n) { return Math.round(n * 10) / 10 }
 
 export default function Stats({ user }) {
-  const [treinos, setTreinos]   = useState([])
-  const [agua, setAgua]         = useState([])
-  const [aguaMeta, setAguaMeta] = useState(2500)
-  const [pesos, setPesos]       = useState([])
-  const [macros, setMacros]     = useState([])
-  const [passos, setPassos]     = useState([])
+  const [treinos, setTreinos]       = useState([])
+  const [agua, setAgua]             = useState([])
+  const [aguaMeta, setAguaMeta]     = useState(2500)
+  const [pesos, setPesos]           = useState([])
+  const [macros, setMacros]         = useState([])
+  const [passos, setPassos]         = useState([])
   const [passosMeta, setPassosMeta] = useState(10000)
   const [carregando, setCarregando] = useState(true)
-    const [rpg, setRpg] = useState(null)
-    const [perfil, setPerfil] = useState(null)
-    const [compartilhando, setCompartilhando] = useState(false)
+  const [rpg, setRpg]               = useState(null)
+  const [perfil, setPerfil]         = useState(null)
+  const [compartilhando, setCompartilhando] = useState(false)
+  const [aba, setAba]               = useState('semana')
+
+  // Dados mensais
+  const [treinosMes, setTreinosMes]   = useState([])
+  const [aguaMes, setAguaMes]         = useState([])
+  const [pesosMes, setPesosMes]       = useState([])
+  const [passosMes, setPassosMes]     = useState([])
+  const [carregandoMes, setCarregandoMes] = useState(false)
+  const [mesSel, setMesSel]           = useState(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  })
 
   const ultimos7 = getLast7Days()
   const inicio = ultimos7[0]
@@ -44,9 +56,9 @@ export default function Stats({ user }) {
       { data: macrosData },
       { data: passosData },
       { data: passosMetaData },
-            { data: rpgData },
-            { data: perfilData },
-          ] = await Promise.all([
+      { data: rpgData },
+      { data: perfilData },
+    ] = await Promise.all([
       supabase.from('treinos_finalizados').select('*').eq('user_id', user.id).gte('created_at', inicio).order('created_at', { ascending: true }),
       supabase.from('agua_registro').select('*').eq('user_id', user.id).gte('data', inicio),
       supabase.from('agua_meta').select('meta_ml').eq('user_id', user.id).single(),
@@ -54,9 +66,9 @@ export default function Stats({ user }) {
       supabase.from('macros_registro').select('*').eq('user_id', user.id).gte('data', inicio),
       supabase.from('passos_registro').select('*').eq('user_id', user.id).gte('data', inicio),
       supabase.from('passos_meta').select('meta_passos').eq('user_id', user.id).single(),
-            supabase.from('rpg_perfil').select('xp, streak, nivel').eq('user_id', user.id).single(),
-            supabase.from('perfil').select('nome, peso').eq('user_id', user.id).single(),
-          ])
+      supabase.from('rpg_perfil').select('xp, streak, nivel').eq('user_id', user.id).single(),
+      supabase.from('perfil').select('nome, peso').eq('user_id', user.id).single(),
+    ])
     setTreinos(treinosData || [])
     setAgua(aguaData || [])
     if (aguaMetaData) setAguaMeta(aguaMetaData.meta_ml)
@@ -64,18 +76,45 @@ export default function Stats({ user }) {
     setMacros(macrosData || [])
     setPassos(passosData || [])
     if (passosMetaData) setPassosMeta(passosMetaData.meta_passos)
-        setRpg(rpgData || null)
-        setPerfil(perfilData || null)
-        setCarregando(false)
+    setRpg(rpgData || null)
+    setPerfil(perfilData || null)
+    setCarregando(false)
+  }, [user.id])
+
+  const buscarMes = useCallback(async (mes) => {
+    setCarregandoMes(true)
+    const [ano, m] = mes.split('-').map(Number)
+    const inicioMes = `${mes}-01`
+    const fimMes = new Date(ano, m, 0)
+    const fimMesStr = formatarData(fimMes)
+
+    const [
+      { data: treinosM },
+      { data: aguaM },
+      { data: pesosM },
+      { data: passosM },
+    ] = await Promise.all([
+      supabase.from('treinos_finalizados').select('*').eq('user_id', user.id).gte('created_at', inicioMes).lte('created_at', fimMesStr + 'T23:59:59'),
+      supabase.from('agua_registro').select('*').eq('user_id', user.id).gte('data', inicioMes).lte('data', fimMesStr),
+      supabase.from('peso_registro').select('*').eq('user_id', user.id).gte('data', inicioMes).lte('data', fimMesStr).order('data', { ascending: true }),
+      supabase.from('passos_registro').select('*').eq('user_id', user.id).gte('data', inicioMes).lte('data', fimMesStr),
+    ])
+    setTreinosMes(treinosM || [])
+    setAguaMes(aguaM || [])
+    setPesosMes(pesosM || [])
+    setPassosMes(passosM || [])
+    setCarregandoMes(false)
   }, [user.id])
 
   useEffect(() => { buscarTudo() }, [buscarTudo])
+  useEffect(() => { if (aba === 'mes') buscarMes(mesSel) }, [aba, mesSel, buscarMes])
 
-  // Treinos
+  // Stats semanais
   const totalTreinos = treinos.length
   const treinosLetras = [...new Set(treinos.map(t => t.treino))].sort().join(', ')
   const tempoTotal = treinos.reduce((s, t) => s + (t.tempo_segundos || 0), 0)
   const kcalTotal = treinos.reduce((s, t) => s + (t.kcal || 0), 0)
+
   const formatarTempo = (s) => {
     const h = Math.floor(s / 3600)
     const m = Math.floor((s % 3600) / 60)
@@ -83,7 +122,6 @@ export default function Stats({ user }) {
     return `${m}min`
   }
 
-  // Água por dia
   const aguaPorDia = ultimos7.map(data => {
     const regs = agua.filter(r => r.data === data)
     return { data, total: regs.reduce((s, r) => s + r.ml, 0) }
@@ -91,7 +129,6 @@ export default function Stats({ user }) {
   const mediaAgua = Math.round(aguaPorDia.reduce((s, d) => s + d.total, 0) / 7)
   const diasMetaAgua = aguaPorDia.filter(d => d.total >= aguaMeta).length
 
-  // Peso
   const pesoDados = ultimos7.map(data => {
     const reg = pesos.find(r => r.data === data)
     return { data, peso: reg ? Number(reg.peso) : null }
@@ -100,7 +137,6 @@ export default function Stats({ user }) {
     ? round1(pesoDados[pesoDados.length - 1].peso - pesoDados[0].peso)
     : null
 
-  // Macros por dia
   const macrosPorDia = ultimos7.map(data => {
     const regs = macros.filter(r => r.data === data)
     return {
@@ -119,7 +155,6 @@ export default function Stats({ user }) {
     ? round1(diasComMacros.reduce((s, d) => s + d.prot, 0) / diasComMacros.length)
     : 0
 
-  // Passos por dia
   const passosPorDia = ultimos7.map(data => {
     const reg = passos.find(r => r.data === data)
     return { data, passos: reg?.passos || 0 }
@@ -128,287 +163,277 @@ export default function Stats({ user }) {
   const diasMetaPassos = passosPorDia.filter(d => d.passos >= passosMeta).length
 
   const labelDia = (data) => new Date(data + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit' })
-
   const tooltipStyle = { background: '#1a1d21', border: '1px solid #ffffff0d', borderRadius: 8, color: '#f8fafc', fontSize: 12 }
+
+  // Stats mensais
+  const totalTreinosMes = treinosMes.length
+  const tempoTotalMes = treinosMes.reduce((s, t) => s + (t.tempo_segundos || 0), 0)
+  const kcalTotalMes = treinosMes.reduce((s, t) => s + (t.kcal || 0), 0)
+  const divisoesMes = treinosMes.reduce((acc, t) => {
+    acc[t.treino] = (acc[t.treino] || 0) + 1
+    return acc
+  }, {})
+
+  const [ano, m] = mesSel.split('-').map(Number)
+  const diasNoMes = new Date(ano, m, 0).getDate()
+
+  const aguaPorDiaMes = (() => {
+    const map = {}
+    aguaMes.forEach(r => {
+      if (!map[r.data]) map[r.data] = 0
+      map[r.data] += r.ml
+    })
+    return map
+  })()
+  const diasMetaAguaMes = Object.values(aguaPorDiaMes).filter(v => v >= aguaMeta).length
+
+  const diasMetaPassosMes = passosMes.filter(r => r.passos >= passosMeta).length
+
+  const pesoInicioMes = pesosMes[0] ? Number(pesosMes[0].peso) : null
+  const pesoFimMes = pesosMes.length > 0 ? Number(pesosMes[pesosMes.length - 1].peso) : null
+  const variacaoPesoMes = pesoInicioMes && pesoFimMes ? round1(pesoFimMes - pesoInicioMes) : null
+
+  // Opções de meses disponíveis (últimos 12)
+  const mesesOpts = Array.from({ length: 12 }, (_, i) => {
+    const d = new Date()
+    d.setMonth(d.getMonth() - i)
+    const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    const label = d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+    return { val, label }
+  })
 
   if (carregando) return <div style={{ textAlign: 'center', color: '#64748b', paddingTop: 40 }}>Carregando seus stats... 📊</div>
 
   return (
     <div className="stats-section">
-      <h2 className="title-divisao">📊 Stats da Semana</h2>
-      <p style={{ fontSize: 12, color: '#64748b', marginTop: -8 }}>
-        {new Date(inicio + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} —{' '}
-        {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
-      </p>
+      <h2 className="title-divisao">📊 Stats</h2>
 
-      {/* TREINOS */}
-      <div className="stats-card">
-        <div className="stats-card-title">⚔️ TREINOS</div>
-        {totalTreinos === 0 ? (
-          <p className="empty-msg" style={{ fontSize: 13 }}>Nenhum treino essa semana.</p>
-        ) : (
-          <>
-            <div className="stats-grid-4">
-              <div className="stats-item">
-                <span>Quantidade</span>
-                <strong>{totalTreinos}</strong>
-              </div>
-              <div className="stats-item">
-                <span>Divisões</span>
-                <strong>{treinosLetras || '—'}</strong>
-              </div>
-              <div className="stats-item">
-                <span>Tempo total</span>
-                <strong>{formatarTempo(tempoTotal)}</strong>
-              </div>
-              <div className="stats-item">
-                <span>Kcal total</span>
-                <strong>{kcalTotal > 0 ? kcalTotal : '—'}</strong>
-              </div>
-            </div>
-            <div style={{ marginTop: 16 }}>
-              <ResponsiveContainer width="100%" height={120}>
-                <BarChart data={treinos.map(t => ({
-                  name: `${t.treino} ${new Date(t.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`,
-                  min: Math.round((t.tempo_segundos || 0) / 60)
-                }))}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
-                  <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 9 }} />
-                  <YAxis tick={{ fill: '#64748b', fontSize: 9 }} />
-                  <Tooltip contentStyle={tooltipStyle} formatter={v => [`${v} min`]} />
-                  <Bar dataKey="min" fill="#6366f1" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </>
-        )}
+      {/* Seletor de aba */}
+      <div style={{ display: 'flex', gap: 6, background: '#1a1d21', padding: 5, borderRadius: 12, marginBottom: 16 }}>
+        {[{ id: 'semana', label: '📅 Semana' }, { id: 'mes', label: '📆 Mês' }].map(a => (
+          <button key={a.id} onClick={() => setAba(a.id)} style={{
+            flex: 1, background: aba === a.id ? '#24282d' : 'transparent',
+            border: 'none', borderRadius: 8, color: aba === a.id ? '#f8fafc' : '#64748b',
+            fontSize: 13, fontWeight: 600, padding: '8px 2px', cursor: 'pointer'
+          }}>{a.label}</button>
+        ))}
       </div>
 
-      {/* ÁGUA */}
-      <div className="stats-card">
-        <div className="stats-card-title">💧 ÁGUA</div>
-        <div className="stats-grid-2">
-          <div className="stats-item">
-            <span>Média diária</span>
-            <strong>{mediaAgua > 0 ? `${(mediaAgua/1000).toFixed(1)}L` : '—'}</strong>
-          </div>
-          <div className="stats-item">
-            <span>Dias c/ meta</span>
-            <strong style={{ color: diasMetaAgua >= 5 ? '#10b981' : '#f97316' }}>{diasMetaAgua}/7</strong>
-          </div>
-        </div>
-        <div style={{ marginTop: 12 }}>
-          <ResponsiveContainer width="100%" height={100}>
-            <BarChart data={aguaPorDia.map(d => ({ name: labelDia(d.data), ml: d.total }))}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
-              <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 9 }} />
-              <YAxis tick={{ fill: '#64748b', fontSize: 9 }} />
-              <Tooltip contentStyle={tooltipStyle} formatter={v => [`${v} ml`]} />
-              <Bar dataKey="ml" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+      {/* ABA SEMANA */}
+      {aba === 'semana' && (
+        <>
+          <p style={{ fontSize: 12, color: '#64748b', marginTop: -8, marginBottom: 16 }}>
+            {new Date(inicio + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} —{' '}
+            {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+          </p>
 
-      {/* PESO */}
-      <div className="stats-card">
-        <div className="stats-card-title">⚖️ PESO</div>
-        {pesoDados.length === 0 ? (
-          <p className="empty-msg" style={{ fontSize: 13 }}>Nenhum registro essa semana.</p>
-        ) : (
-          <>
-            <div className="stats-grid-2">
-              <div className="stats-item">
-                <span>Registros</span>
-                <strong>{pesoDados.length}/7 dias</strong>
-              </div>
-              <div className="stats-item">
-                <span>Variação</span>
-                <strong style={{ color: variacaoPeso === null ? '#64748b' : variacaoPeso < 0 ? '#10b981' : variacaoPeso > 0 ? '#ef4444' : '#64748b' }}>
-                  {variacaoPeso === null ? '—' : `${variacaoPeso > 0 ? '+' : ''}${variacaoPeso} kg`}
-                </strong>
-              </div>
-            </div>
-            <div style={{ marginTop: 12 }}>
-              <ResponsiveContainer width="100%" height={100}>
-                <LineChart data={pesoDados.map(d => ({ name: labelDia(d.data), peso: d.peso }))}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
-                  <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 9 }} />
-                  <YAxis tick={{ fill: '#64748b', fontSize: 9 }} domain={['auto', 'auto']} />
-                  <Tooltip contentStyle={tooltipStyle} formatter={v => [`${v} kg`]} />
-                  <Line type="monotone" dataKey="peso" stroke="#6366f1" strokeWidth={2} dot={{ fill: '#6366f1', r: 3 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* MACROS */}
-      <div className="stats-card">
-        <div className="stats-card-title">🍽️ MACROS</div>
-        {diasComMacros.length === 0 ? (
-          <p className="empty-msg" style={{ fontSize: 13 }}>Nenhum registro essa semana.</p>
-        ) : (
-          <>
-            <div className="stats-grid-4">
-              <div className="stats-item">
-                <span>Média kcal</span>
-                <strong>{mediaKcal}</strong>
-              </div>
-              <div className="stats-item">
-                <span>Média prot</span>
-                <strong>{mediaProt}g</strong>
-              </div>
-              <div className="stats-item">
-                <span>Dias registrados</span>
-                <strong>{diasComMacros.length}/7</strong>
-              </div>
-              <div className="stats-item">
-                <span>Kcal total</span>
-                <strong>{diasComMacros.reduce((s, d) => s + d.kcal, 0)}</strong>
-              </div>
-            </div>
-            <div style={{ marginTop: 12 }}>
-              <ResponsiveContainer width="100%" height={100}>
-                <BarChart data={macrosPorDia.map(d => ({ name: labelDia(d.data), kcal: d.kcal }))}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
-                  <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 9 }} />
-                  <YAxis tick={{ fill: '#64748b', fontSize: 9 }} />
-                  <Tooltip contentStyle={tooltipStyle} formatter={v => [`${v} kcal`]} />
-                  <Bar dataKey="kcal" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* PASSOS */}
-      <div className="stats-card">
-        <div className="stats-card-title">👟 PASSOS</div>
-        {passosPorDia.every(d => d.passos === 0) ? (
-          <p className="empty-msg" style={{ fontSize: 13 }}>Nenhum registro essa semana.</p>
-        ) : (
-          <>
-            <div className="stats-grid-2">
-              <div className="stats-item">
-                <span>Média diária</span>
-                <strong>{mediaPassos > 0 ? mediaPassos.toLocaleString('pt-BR') : '—'}</strong>
-              </div>
-              <div className="stats-item">
-                <span>Dias c/ meta</span>
-                <strong style={{ color: diasMetaPassos >= 5 ? '#10b981' : '#f97316' }}>{diasMetaPassos}/7</strong>
-              </div>
-            </div>
-            <div style={{ marginTop: 12 }}>
-              <ResponsiveContainer width="100%" height={100}>
-                <BarChart data={passosPorDia.map(d => ({ name: labelDia(d.data), passos: d.passos }))}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
-                  <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 9 }} />
-                  <YAxis tick={{ fill: '#64748b', fontSize: 9 }} />
-                  <Tooltip contentStyle={tooltipStyle} formatter={v => [`${v.toLocaleString('pt-BR')} passos`]} />
-                  <Bar dataKey="passos" fill="#10b981" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </>
-        )}
-      </div>
-
-    {/* CARD COMPARTILHÁVEL */}
-          <div style={{ borderRadius: 20, overflow: 'hidden' }}>
-                <div id="share-card" style={{
-                  background: 'linear-gradient(135deg, #0f1113 0%, #1a1d21 100%)',
-                  border: '1px solid #ffffff0d', borderRadius: 20, padding: 24,
-            display: 'flex', flexDirection: 'column', gap: 16
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ fontSize: 10, color: '#64748b', fontWeight: 800, letterSpacing: '0.1em' }}>RELATÓRIO SEMANAL</div>
-                <div style={{ fontSize: 18, fontWeight: 800, color: '#f8fafc', marginTop: 2 }}>
-                  {perfil?.nome || 'DayForge'}
+          <div className="stats-card">
+            <div className="stats-card-title">⚔️ TREINOS</div>
+            {totalTreinos === 0 ? (
+              <p className="empty-msg" style={{ fontSize: 13 }}>Nenhum treino essa semana.</p>
+            ) : (
+              <>
+                <div className="stats-grid-4">
+                  <div className="stats-item"><span>Quantidade</span><strong>{totalTreinos}</strong></div>
+                  <div className="stats-item"><span>Divisões</span><strong>{treinosLetras || '—'}</strong></div>
+                  <div className="stats-item"><span>Tempo total</span><strong>{formatarTempo(tempoTotal)}</strong></div>
+                  <div className="stats-item"><span>Kcal total</span><strong>{kcalTotal > 0 ? kcalTotal : '—'}</strong></div>
                 </div>
-              </div>
-              <div style={{ fontSize: 28 }}>⚔️</div>
-            </div>
+                <div style={{ marginTop: 16 }}>
+                  <ResponsiveContainer width="100%" height={120}>
+                    <BarChart data={treinos.map(t => ({
+                      name: `${t.treino} ${new Date(t.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`,
+                      min: Math.round((t.tempo_segundos || 0) / 60)
+                    }))}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
+                      <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 9 }} />
+                      <YAxis tick={{ fill: '#64748b', fontSize: 9 }} />
+                      <Tooltip contentStyle={tooltipStyle} formatter={v => [`${v} min`]} />
+                      <Bar dataKey="min" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </>
+            )}
+          </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              {[
-                { icon: '🏋️', label: 'Treinos', val: totalTreinos, sub: totalTreinos > 0 ? `${formatarTempo(tempoTotal)} total` : 'nenhum' },
-                { icon: '⚖️', label: 'Peso', val: pesoDados.length > 0 ? `${pesoDados[pesoDados.length-1].peso}kg` : '—', sub: variacaoPeso !== null ? `${variacaoPeso > 0 ? '+' : ''}${variacaoPeso}kg semana` : 'sem registro' },
-                { icon: '💧', label: 'Água', val: `${diasMetaAgua}/7`, sub: 'dias com meta' },
-                { icon: '👟', label: 'Passos', val: mediaPassos > 0 ? mediaPassos.toLocaleString('pt-BR') : '—', sub: 'média diária' },
-                { icon: '🔥', label: 'Streak', val: `${rpg?.streak || 0} dias`, sub: 'consecutivos' },
-                { icon: '⭐', label: 'XP Total', val: (rpg?.xp || 0).toLocaleString('pt-BR'), sub: `Nível ${rpg?.nivel || 1}` },
-              ].map((item, i) => (
-                <div key={i} style={{
-                  background: '#24282d', borderRadius: 12, padding: '12px 14px',
-                  display: 'flex', alignItems: 'center', gap: 10
-                }}>
-                  <span style={{ fontSize: 22 }}>{item.icon}</span>
-                  <div>
-                    <div style={{ fontSize: 16, fontWeight: 800, color: '#f8fafc' }}>{item.val}</div>
-                    <div style={{ fontSize: 10, color: '#64748b' }}>{item.label} · {item.sub}</div>
+          <div className="stats-card">
+            <div className="stats-card-title">💧 ÁGUA</div>
+            <div className="stats-grid-2">
+              <div className="stats-item"><span>Média diária</span><strong>{mediaAgua > 0 ? `${(mediaAgua/1000).toFixed(1)}L` : '—'}</strong></div>
+              <div className="stats-item"><span>Dias c/ meta</span><strong style={{ color: diasMetaAgua >= 5 ? '#10b981' : '#f97316' }}>{diasMetaAgua}/7</strong></div>
+            </div>
+            <div style={{ marginTop: 12 }}>
+              <ResponsiveContainer width="100%" height={100}>
+                <BarChart data={aguaPorDia.map(d => ({ name: labelDia(d.data), ml: d.total }))}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
+                  <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 9 }} />
+                  <YAxis tick={{ fill: '#64748b', fontSize: 9 }} />
+                  <Tooltip contentStyle={tooltipStyle} formatter={v => [`${v} ml`]} />
+                  <Bar dataKey="ml" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="stats-card">
+            <div className="stats-card-title">⚖️ PESO</div>
+            {pesoDados.length === 0 ? (
+              <p className="empty-msg" style={{ fontSize: 13 }}>Nenhum registro essa semana.</p>
+            ) : (
+              <>
+                <div className="stats-grid-2">
+                  <div className="stats-item"><span>Registros</span><strong>{pesoDados.length}/7 dias</strong></div>
+                  <div className="stats-item">
+                    <span>Variação</span>
+                    <strong style={{ color: variacaoPeso === null ? '#64748b' : variacaoPeso < 0 ? '#10b981' : variacaoPeso > 0 ? '#ef4444' : '#64748b' }}>
+                      {variacaoPeso === null ? '—' : `${variacaoPeso > 0 ? '+' : ''}${variacaoPeso} kg`}
+                    </strong>
                   </div>
                 </div>
-              ))}
-            </div>
+                <div style={{ marginTop: 12 }}>
+                  <ResponsiveContainer width="100%" height={100}>
+                    <LineChart data={pesoDados.map(d => ({ name: labelDia(d.data), peso: d.peso }))}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
+                      <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 9 }} />
+                      <YAxis tick={{ fill: '#64748b', fontSize: 9 }} domain={['auto', 'auto']} />
+                      <Tooltip contentStyle={tooltipStyle} formatter={v => [`${v} kg`]} />
+                      <Line type="monotone" dataKey="peso" stroke="#6366f1" strokeWidth={2} dot={{ fill: '#6366f1', r: 3 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </>
+            )}
+          </div>
 
-            <div style={{ textAlign: 'center', fontSize: 10, color: '#475569', marginTop: 4 }}>
-              dayforge-web.vercel.app · {new Date().toLocaleDateString('pt-BR')}
+          <div className="stats-card">
+            <div className="stats-card-title">🍽️ MACROS</div>
+            {diasComMacros.length === 0 ? (
+              <p className="empty-msg" style={{ fontSize: 13 }}>Nenhum registro essa semana.</p>
+            ) : (
+              <>
+                <div className="stats-grid-4">
+                  <div className="stats-item"><span>Média kcal</span><strong>{mediaKcal}</strong></div>
+                  <div className="stats-item"><span>Média prot</span><strong>{mediaProt}g</strong></div>
+                  <div className="stats-item"><span>Dias registrados</span><strong>{diasComMacros.length}/7</strong></div>
+                  <div className="stats-item"><span>Kcal total</span><strong>{diasComMacros.reduce((s, d) => s + d.kcal, 0)}</strong></div>
+                </div>
+                <div style={{ marginTop: 12 }}>
+                  <ResponsiveContainer width="100%" height={100}>
+                    <BarChart data={macrosPorDia.map(d => ({ name: labelDia(d.data), kcal: d.kcal }))}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
+                      <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 9 }} />
+                      <YAxis tick={{ fill: '#64748b', fontSize: 9 }} />
+                      <Tooltip contentStyle={tooltipStyle} formatter={v => [`${v} kcal`]} />
+                      <Bar dataKey="kcal" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="stats-card">
+            <div className="stats-card-title">👟 PASSOS</div>
+            {passosPorDia.every(d => d.passos === 0) ? (
+              <p className="empty-msg" style={{ fontSize: 13 }}>Nenhum registro essa semana.</p>
+            ) : (
+              <>
+                <div className="stats-grid-2">
+                  <div className="stats-item"><span>Média diária</span><strong>{mediaPassos > 0 ? mediaPassos.toLocaleString('pt-BR') : '—'}</strong></div>
+                  <div className="stats-item"><span>Dias c/ meta</span><strong style={{ color: diasMetaPassos >= 5 ? '#10b981' : '#f97316' }}>{diasMetaPassos}/7</strong></div>
+                </div>
+                <div style={{ marginTop: 12 }}>
+                  <ResponsiveContainer width="100%" height={100}>
+                    <BarChart data={passosPorDia.map(d => ({ name: labelDia(d.data), passos: d.passos }))}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
+                      <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 9 }} />
+                      <YAxis tick={{ fill: '#64748b', fontSize: 9 }} />
+                      <Tooltip contentStyle={tooltipStyle} formatter={v => [`${v.toLocaleString('pt-BR')} passos`]} />
+                      <Bar dataKey="passos" fill="#10b981" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Card compartilhável */}
+          <div style={{ borderRadius: 20, overflow: 'hidden' }}>
+            <div id="share-card" style={{
+              background: 'linear-gradient(135deg, #0f1113 0%, #1a1d21 100%)',
+              border: '1px solid #ffffff0d', borderRadius: 20, padding: 24,
+              display: 'flex', flexDirection: 'column', gap: 16
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: 10, color: '#64748b', fontWeight: 800, letterSpacing: '0.1em' }}>RELATÓRIO SEMANAL</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: '#f8fafc', marginTop: 2 }}>{perfil?.nome || 'DayForge'}</div>
+                </div>
+                <div style={{ fontSize: 28 }}>⚔️</div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {[
+                  { icon: '🏋️', label: 'Treinos', val: totalTreinos, sub: totalTreinos > 0 ? `${formatarTempo(tempoTotal)} total` : 'nenhum' },
+                  { icon: '⚖️', label: 'Peso', val: pesoDados.length > 0 ? `${pesoDados[pesoDados.length-1].peso}kg` : '—', sub: variacaoPeso !== null ? `${variacaoPeso > 0 ? '+' : ''}${variacaoPeso}kg semana` : 'sem registro' },
+                  { icon: '💧', label: 'Água', val: `${diasMetaAgua}/7`, sub: 'dias com meta' },
+                  { icon: '👟', label: 'Passos', val: mediaPassos > 0 ? mediaPassos.toLocaleString('pt-BR') : '—', sub: 'média diária' },
+                  { icon: '🔥', label: 'Streak', val: `${rpg?.streak || 0} dias`, sub: 'consecutivos' },
+                  { icon: '⭐', label: 'XP Total', val: (rpg?.xp || 0).toLocaleString('pt-BR'), sub: `Nível ${rpg?.nivel || 1}` },
+                ].map((item, i) => (
+                  <div key={i} style={{ background: '#24282d', borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 22 }}>{item.icon}</span>
+                    <div>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: '#f8fafc' }}>{item.val}</div>
+                      <div style={{ fontSize: 10, color: '#64748b' }}>{item.label} · {item.sub}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ textAlign: 'center', fontSize: 10, color: '#475569', marginTop: 4 }}>
+                dayforge-web.vercel.app · {new Date().toLocaleDateString('pt-BR')}
+              </div>
             </div>
           </div>
 
-          </div>
-
-                {/* BOTÃO COMPARTILHAR */}
           <button onClick={async () => {
             setCompartilhando(true)
             try {
               const html2canvas = (await import('html2canvas')).default
               const el = document.getElementById('share-card')
               const canvasRaw = await html2canvas(el, { backgroundColor: null, scale: 2, useCORS: true })
-                        const pad = 20
-                        const finalCanvas = document.createElement('canvas')
-                        finalCanvas.width = canvasRaw.width + pad * 2
-                        finalCanvas.height = canvasRaw.height + pad * 2
-                        const ctx = finalCanvas.getContext('2d')
-                        ctx.fillStyle = '#0f1113'
-                        ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height)
-                        const r = 40
-                        ctx.beginPath()
-                        ctx.moveTo(pad + r, pad)
-                        ctx.lineTo(finalCanvas.width - pad - r, pad)
-                        ctx.quadraticCurveTo(finalCanvas.width - pad, pad, finalCanvas.width - pad, pad + r)
-                        ctx.lineTo(finalCanvas.width - pad, finalCanvas.height - pad - r)
-                        ctx.quadraticCurveTo(finalCanvas.width - pad, finalCanvas.height - pad, finalCanvas.width - pad - r, finalCanvas.height - pad)
-                        ctx.lineTo(pad + r, finalCanvas.height - pad)
-                        ctx.quadraticCurveTo(pad, finalCanvas.height - pad, pad, finalCanvas.height - pad - r)
-                        ctx.lineTo(pad, pad + r)
-                        ctx.quadraticCurveTo(pad, pad, pad + r, pad)
-                        ctx.closePath()
-                        ctx.clip()
-                        ctx.drawImage(canvasRaw, pad, pad)
-                        const canvas = finalCanvas
-              canvas.toBlob(async (blob) => {
+              const pad = 20
+              const finalCanvas = document.createElement('canvas')
+              finalCanvas.width = canvasRaw.width + pad * 2
+              finalCanvas.height = canvasRaw.height + pad * 2
+              const ctx = finalCanvas.getContext('2d')
+              ctx.fillStyle = '#0f1113'
+              ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height)
+              const r = 40
+              ctx.beginPath()
+              ctx.moveTo(pad + r, pad)
+              ctx.lineTo(finalCanvas.width - pad - r, pad)
+              ctx.quadraticCurveTo(finalCanvas.width - pad, pad, finalCanvas.width - pad, pad + r)
+              ctx.lineTo(finalCanvas.width - pad, finalCanvas.height - pad - r)
+              ctx.quadraticCurveTo(finalCanvas.width - pad, finalCanvas.height - pad, finalCanvas.width - pad - r, finalCanvas.height - pad)
+              ctx.lineTo(pad + r, finalCanvas.height - pad)
+              ctx.quadraticCurveTo(pad, finalCanvas.height - pad, pad, finalCanvas.height - pad - r)
+              ctx.lineTo(pad, pad + r)
+              ctx.quadraticCurveTo(pad, pad, pad + r, pad)
+              ctx.closePath()
+              ctx.clip()
+              ctx.drawImage(canvasRaw, pad, pad)
+              finalCanvas.toBlob(async (blob) => {
                 if (navigator.share && navigator.canShare({ files: [new File([blob], 'dayforge.png', { type: 'image/png' })] })) {
-                  await navigator.share({
-                    title: 'Meu relatório semanal — DayForge',
-                    files: [new File([blob], 'dayforge.png', { type: 'image/png' })]
-                  })
+                  await navigator.share({ title: 'Meu relatório semanal — DayForge', files: [new File([blob], 'dayforge.png', { type: 'image/png' })] })
                 } else {
                   const url = URL.createObjectURL(blob)
                   const a = document.createElement('a')
-                  a.href = url
-                  a.download = 'dayforge-semana.png'
-                  a.click()
+                  a.href = url; a.download = 'dayforge-semana.png'; a.click()
                   URL.revokeObjectURL(url)
                 }
               })
-            } catch (e) {
-              alert('Erro ao gerar imagem: ' + e.message)
-            }
+            } catch (e) { alert('Erro ao gerar imagem: ' + e.message) }
             setCompartilhando(false)
           }} style={{
             width: '100%', background: '#6366f1', border: 'none', borderRadius: 12,
@@ -417,7 +442,94 @@ export default function Stats({ user }) {
           }}>
             {compartilhando ? 'Gerando...' : '📤 Compartilhar Semana'}
           </button>
+        </>
+      )}
 
-        </div>
-      )
-    }
+      {/* ABA MÊS */}
+      {aba === 'mes' && (
+        <>
+          {/* Seletor de mês */}
+          <select
+            value={mesSel}
+            onChange={e => setMesSel(e.target.value)}
+            style={{ width: '100%', background: '#1a1d21', border: '1px solid #ffffff0d', borderRadius: 10, color: '#f8fafc', fontSize: 13, padding: '10px 12px', marginBottom: 16 }}
+          >
+            {mesesOpts.map(o => <option key={o.val} value={o.val}>{o.label}</option>)}
+          </select>
+
+          {carregandoMes ? (
+            <div style={{ textAlign: 'center', color: '#64748b', paddingTop: 20 }}>Carregando... 📊</div>
+          ) : (
+            <>
+              {/* Resumo conquistas */}
+              <div className="stats-card">
+                <div className="stats-card-title">🏆 RESUMO DO MÊS</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  {[
+                    { icon: '🏋️', label: 'Treinos', val: totalTreinosMes, sub: totalTreinosMes > 0 ? formatarTempo(tempoTotalMes) + ' total' : 'nenhum' },
+                    { icon: '🔥', label: 'Kcal queimadas', val: kcalTotalMes > 0 ? kcalTotalMes.toLocaleString('pt-BR') : '—', sub: 'no treino' },
+                    { icon: '💧', label: 'Meta de água', val: `${diasMetaAguaMes}/${diasNoMes}`, sub: 'dias atingidos' },
+                    { icon: '👟', label: 'Meta de passos', val: `${diasMetaPassosMes}/${diasNoMes}`, sub: 'dias atingidos' },
+                    { icon: '⚖️', label: 'Variação peso', val: variacaoPesoMes !== null ? `${variacaoPesoMes > 0 ? '+' : ''}${variacaoPesoMes} kg` : '—', sub: pesoInicioMes ? `${pesoInicioMes}kg → ${pesoFimMes}kg` : 'sem registro' },
+                    { icon: '⭐', label: 'XP atual', val: (rpg?.xp || 0).toLocaleString('pt-BR'), sub: `Nível ${rpg?.nivel || 1}` },
+                  ].map((item, i) => (
+                    <div key={i} style={{ background: '#24282d', borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 22 }}>{item.icon}</span>
+                      <div>
+                        <div style={{ fontSize: 16, fontWeight: 800, color: '#f8fafc' }}>{item.val}</div>
+                        <div style={{ fontSize: 10, color: '#64748b' }}>{item.label} · {item.sub}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Divisões do mês */}
+              {Object.keys(divisoesMes).length > 0 && (
+                <div className="stats-card">
+                  <div className="stats-card-title">🏋️ TREINOS POR DIVISÃO</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {Object.entries(divisoesMes).sort((a, b) => b[1] - a[1]).map(([div, qtd]) => (
+                      <div key={div} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#24282d', borderRadius: 10, padding: '8px 14px' }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: '#f8fafc' }}>Treino {div}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ height: 6, width: Math.round((qtd / totalTreinosMes) * 100), background: '#6366f1', borderRadius: 99 }} />
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#6366f1' }}>{qtd}x</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Evolução peso no mês */}
+              {pesosMes.length >= 2 && (
+                <div className="stats-card">
+                  <div className="stats-card-title">⚖️ EVOLUÇÃO DO PESO</div>
+                  <ResponsiveContainer width="100%" height={120}>
+                    <LineChart data={pesosMes.map(p => ({
+                      name: new Date(p.data + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+                      peso: Number(p.peso)
+                    }))}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
+                      <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 9 }} />
+                      <YAxis tick={{ fill: '#64748b', fontSize: 9 }} domain={['auto', 'auto']} />
+                      <Tooltip contentStyle={tooltipStyle} formatter={v => [`${v} kg`]} />
+                      <Line type="monotone" dataKey="peso" stroke="#6366f1" strokeWidth={2} dot={{ fill: '#6366f1', r: 3 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
+              {totalTreinosMes === 0 && pesosMes.length === 0 && diasMetaAguaMes === 0 && (
+                <p style={{ textAlign: 'center', color: '#475569', fontSize: 13, paddingTop: 20 }}>
+                  Nenhum dado registrado neste mês ainda.
+                </p>
+              )}
+            </>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
