@@ -446,7 +446,7 @@ export default function Macros({ user, onAjuda }) {
       </div>
 
       {/* Clonar de dia passado */}
-      <div className="macros-card">
+            <div className="macros-card" style={{ overflow: 'visible' }}>
         <div className="macros-card-title-row">
           <div className="macros-card-title" style={{ margin: 0 }}>📋 Clonar de outro dia</div>
           <button className="macros-btn-custom" onClick={() => setShowClonar(p => !p)}>
@@ -461,15 +461,15 @@ export default function Macros({ user, onAjuda }) {
                 value={dataClonar}
                 max={new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split('T')[0]}
                 onChange={e => { setDataClonar(e.target.value); buscarRegistrosDia(e.target.value) }}
-                style={{ width: '100%' }}
-              />
-            </div>
-            {carregandoClonar && <p style={{ fontSize: 12, color: '#64748b' }}>Carregando...</p>}
+                style={{ width: '100%', colorScheme: 'dark' }}
+                              />
+                            </div>
+                            {carregandoClonar && <p style={{ fontSize: 12, color: '#64748b' }}>Carregando...</p>}
             {!carregandoClonar && dataClonar && registrosClonar.length === 0 && (
               <p style={{ fontSize: 12, color: '#475569' }}>Nenhum alimento registrado nesse dia.</p>
             )}
             {!carregandoClonar && registrosClonar.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, overflow: 'hidden' }}>
                 {registrosClonar.map(r => (
                   <div key={r.id} style={{
                                       background: '#24282d', borderRadius: 10, padding: '10px 14px',
@@ -649,10 +649,10 @@ export default function Macros({ user, onAjuda }) {
                       value={dataHistorico}
                       max={new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split('T')[0]}
                       onChange={e => { setDataHistorico(e.target.value); buscarHistoricoDia(e.target.value) }}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                  {carregandoHist && <p style={{ fontSize: 12, color: '#64748b' }}>Carregando...</p>}
+                      style={{ width: '100%', colorScheme: 'dark' }}
+                                    />
+                                  </div>
+                                  {carregandoHist && <p style={{ fontSize: 12, color: '#64748b' }}>Carregando...</p>}
                   {!carregandoHist && dataHistorico && registrosHistorico.length === 0 && (
                     <p style={{ fontSize: 12, color: '#475569' }}>Nenhum alimento registrado nesse dia.</p>
                   )}
