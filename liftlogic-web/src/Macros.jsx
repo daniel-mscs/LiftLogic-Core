@@ -454,15 +454,15 @@ export default function Macros({ user, onAjuda }) {
         </div>
         {showClonar && (
           <>
-            <div style={{ marginTop: 12, marginBottom: 12 }}>
-              <input
-                type="date"
-                value={dataClonar}
-                max={new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split('T')[0]}
-                onChange={e => { setDataClonar(e.target.value); buscarRegistrosDia(e.target.value) }}
-                style={{ width: '100%', colorScheme: 'dark', fontSize: 14, padding: '10px 12px' }}
-              />
-            </div>
+            <div style={{ marginTop: 12, marginBottom: 12, overflow: 'hidden', borderRadius: 10 }}>
+                          <input
+                            type="date"
+                            value={dataClonar}
+                            max={new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split('T')[0]}
+                            onChange={e => { setDataClonar(e.target.value); buscarRegistrosDia(e.target.value) }}
+                            style={{ width: '100%', colorScheme: 'dark', fontSize: 14, padding: '10px 12px', display: 'block', boxSizing: 'border-box' }}
+                          />
+                        </div>
             {carregandoClonar && <p style={{ fontSize: 12, color: '#64748b' }}>Carregando...</p>}
             {!carregandoClonar && dataClonar && registrosClonar.length === 0 && (
               <p style={{ fontSize: 12, color: '#475569' }}>Nenhum alimento registrado nesse dia.</p>
@@ -643,15 +643,15 @@ export default function Macros({ user, onAjuda }) {
         </div>
         {showHistorico && (
           <>
-            <div style={{ marginTop: 12, marginBottom: 12 }}>
-              <input
-                type="date"
-                value={dataHistorico}
-                max={new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split('T')[0]}
-                onChange={e => { setDataHistorico(e.target.value); buscarHistoricoDia(e.target.value) }}
-                style={{ width: '100%', colorScheme: 'dark' }}
-              />
-            </div>
+            <div style={{ marginTop: 12, marginBottom: 12, overflow: 'hidden', borderRadius: 10 }}>
+                          <input
+                            type="date"
+                            value={dataHistorico}
+                            max={new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split('T')[0]}
+                            onChange={e => { setDataHistorico(e.target.value); buscarHistoricoDia(e.target.value) }}
+                            style={{ width: '100%', colorScheme: 'dark', fontSize: 14, padding: '10px 12px', display: 'block', boxSizing: 'border-box' }}
+                          />
+                        </div>
             {carregandoHist && <p style={{ fontSize: 12, color: '#64748b' }}>Carregando...</p>}
             {!carregandoHist && dataHistorico && registrosHistorico.length === 0 && (
               <p style={{ fontSize: 12, color: '#475569' }}>Nenhum alimento registrado nesse dia.</p>
