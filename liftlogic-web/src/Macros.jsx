@@ -50,7 +50,6 @@ export default function Macros({ user, onAjuda }) {
   const [showSaldo, setShowSaldo]             = useState(true)
   const [novoAlimento, setNovoAlimento]       = useState({ nome: '', kcal: '', prot: '', carb: '', gord: '' })
 
-  // Clonar de dia passado
   const [showClonar, setShowClonar]           = useState(false)
   const [showHistorico, setShowHistorico]     = useState(false)
   const [dataHistorico, setDataHistorico]     = useState('')
@@ -245,10 +244,10 @@ export default function Macros({ user, onAjuda }) {
       }
     }
     const refeicaoClone = gramasClonar[r.id + '_ref'] ?? r.refeicao
-        const { data, error } = await supabase.from('macros_registro').insert([{
-          user_id: user.id, data: hoje, nome: r.nome,
-          gramas: g, refeicao: refeicaoClone, ...macros
-        }]).select()
+    const { data, error } = await supabase.from('macros_registro').insert([{
+      user_id: user.id, data: hoje, nome: r.nome,
+      gramas: g, refeicao: refeicaoClone, ...macros
+    }]).select()
     if (error) { alert('Erro: ' + error.message); return }
     setRegistros(prev => [...prev, data[0]])
     await ganharXP(user.id, 'macros_registrado')
@@ -446,7 +445,7 @@ export default function Macros({ user, onAjuda }) {
       </div>
 
       {/* Clonar de dia passado */}
-            <div className="macros-card" style={{ overflow: 'visible' }}>
+      <div className="macros-card">
         <div className="macros-card-title-row">
           <div className="macros-card-title" style={{ margin: 0 }}>📋 Clonar de outro dia</div>
           <button className="macros-btn-custom" onClick={() => setShowClonar(p => !p)}>
@@ -462,41 +461,42 @@ export default function Macros({ user, onAjuda }) {
                 max={new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split('T')[0]}
                 onChange={e => { setDataClonar(e.target.value); buscarRegistrosDia(e.target.value) }}
                 style={{ width: '100%', colorScheme: 'dark' }}
-                              />
-                            </div>
-                            {carregandoClonar && <p style={{ fontSize: 12, color: '#64748b' }}>Carregando...</p>}
+              />
+            </div>
+            {carregandoClonar && <p style={{ fontSize: 12, color: '#64748b' }}>Carregando...</p>}
             {!carregandoClonar && dataClonar && registrosClonar.length === 0 && (
               <p style={{ fontSize: 12, color: '#475569' }}>Nenhum alimento registrado nesse dia.</p>
             )}
             {!carregandoClonar && registrosClonar.length > 0 && (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, overflow: 'hidden' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {registrosClonar.map(r => (
                   <div key={r.id} style={{
-                                      background: '#24282d', borderRadius: 10, padding: '10px 14px',
-                                      display: 'flex', flexDirection: 'column', gap: 8
-                                    }}>
-                                      <div style={{ fontSize: 13, fontWeight: 600, color: '#f8fafc' }}>{r.nome}</div>
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <input
-                                          type="number"
-                                          value={gramasClonar[r.id] ?? r.gramas}
-                                          onChange={e => setGramasClonar(p => ({ ...p, [r.id]: e.target.value }))}
-                                          style={{ width: 70, textAlign: 'center', fontSize: 12, flexShrink: 0 }}
-                                        />
-                                        <span style={{ fontSize: 11, color: '#64748b', flexShrink: 0 }}>g</span>
-                                        <select
-                                          value={gramasClonar[r.id + '_ref'] ?? r.refeicao}
-                                          onChange={e => setGramasClonar(p => ({ ...p, [r.id + '_ref']: e.target.value }))}
-                                          style={{ flex: 1, fontSize: 11, background: '#1a1d21', border: '1px solid #ffffff0d', borderRadius: 6, color: '#f8fafc', padding: '4px 6px' }}
-                                        >
-                                          {REFEICOES_OPTS.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
-                                        </select>
-                                        <button onClick={() => clonarAlimento(r)} style={{
-                                          background: '#6366f1', border: 'none', borderRadius: 8,
-                                          color: '#fff', fontSize: 11, fontWeight: 700, padding: '6px 12px', cursor: 'pointer', flexShrink: 0
-                                        }}>+ Clonar</button>
-                                      </div>
-                                    </div>
+                    background: '#24282d', borderRadius: 10, padding: '10px 14px',
+                    display: 'flex', flexDirection: 'column', gap: 8
+                  }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#f8fafc' }}>{r.nome}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'nowrap' }}>
+                      <input
+                        type="number"
+                        value={gramasClonar[r.id] ?? r.gramas}
+                        onChange={e => setGramasClonar(p => ({ ...p, [r.id]: e.target.value }))}
+                        style={{ width: 64, textAlign: 'center', fontSize: 12, flexShrink: 0 }}
+                      />
+                      <span style={{ fontSize: 11, color: '#64748b', flexShrink: 0 }}>g</span>
+                      <select
+                        value={gramasClonar[r.id + '_ref'] ?? r.refeicao}
+                        onChange={e => setGramasClonar(p => ({ ...p, [r.id + '_ref']: e.target.value }))}
+                        style={{ flex: 1, minWidth: 0, fontSize: 10, background: '#1a1d21', border: '1px solid #ffffff0d', borderRadius: 6, color: '#f8fafc', padding: '4px 4px' }}
+                      >
+                        {REFEICOES_OPTS.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+                      </select>
+                      <button onClick={() => clonarAlimento(r)} style={{
+                        background: '#6366f1', border: 'none', borderRadius: 8,
+                        color: '#fff', fontSize: 11, fontWeight: 700, padding: '6px 10px',
+                        cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap'
+                      }}>+ Clonar</button>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
@@ -634,80 +634,80 @@ export default function Macros({ user, onAjuda }) {
       </div>
 
       {/* Histórico de dias anteriores */}
-            <div className="macros-card">
-              <div className="macros-card-title-row">
-                <div className="macros-card-title" style={{ margin: 0 }}>🔍 Ver dia anterior</div>
-                <button className="macros-btn-custom" onClick={() => setShowHistorico(p => !p)}>
-                  {showHistorico ? 'Ocultar' : 'Mostrar'}
-                </button>
-              </div>
-              {showHistorico && (
+      <div className="macros-card">
+        <div className="macros-card-title-row">
+          <div className="macros-card-title" style={{ margin: 0 }}>🔍 Ver dia anterior</div>
+          <button className="macros-btn-custom" onClick={() => setShowHistorico(p => !p)}>
+            {showHistorico ? 'Ocultar' : 'Mostrar'}
+          </button>
+        </div>
+        {showHistorico && (
+          <>
+            <div style={{ marginTop: 12, marginBottom: 12 }}>
+              <input
+                type="date"
+                value={dataHistorico}
+                max={new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split('T')[0]}
+                onChange={e => { setDataHistorico(e.target.value); buscarHistoricoDia(e.target.value) }}
+                style={{ width: '100%', colorScheme: 'dark' }}
+              />
+            </div>
+            {carregandoHist && <p style={{ fontSize: 12, color: '#64748b' }}>Carregando...</p>}
+            {!carregandoHist && dataHistorico && registrosHistorico.length === 0 && (
+              <p style={{ fontSize: 12, color: '#475569' }}>Nenhum alimento registrado nesse dia.</p>
+            )}
+            {!carregandoHist && registrosHistorico.length > 0 && (() => {
+              const totalHist = registrosHistorico.reduce((acc, r) => ({
+                kcal: acc.kcal + r.kcal,
+                prot: round1(acc.prot + Number(r.prot)),
+                carb: round1(acc.carb + Number(r.carb)),
+                gord: round1(acc.gord + Number(r.gord)),
+              }), { kcal: 0, prot: 0, carb: 0, gord: 0 })
+              const porRef = REFEICOES_OPTS.reduce((acc, r) => {
+                const itens = registrosHistorico.filter(reg => reg.refeicao === r.id)
+                if (itens.length > 0) acc[r.id] = { label: r.label, itens }
+                return acc
+              }, {})
+              return (
                 <>
-                  <div style={{ marginTop: 12, marginBottom: 12 }}>
-                    <input
-                      type="date"
-                      value={dataHistorico}
-                      max={new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split('T')[0]}
-                      onChange={e => { setDataHistorico(e.target.value); buscarHistoricoDia(e.target.value) }}
-                      style={{ width: '100%', colorScheme: 'dark' }}
-                                    />
-                                  </div>
-                                  {carregandoHist && <p style={{ fontSize: 12, color: '#64748b' }}>Carregando...</p>}
-                  {!carregandoHist && dataHistorico && registrosHistorico.length === 0 && (
-                    <p style={{ fontSize: 12, color: '#475569' }}>Nenhum alimento registrado nesse dia.</p>
-                  )}
-                  {!carregandoHist && registrosHistorico.length > 0 && (() => {
-                    const totalHist = registrosHistorico.reduce((acc, r) => ({
-                      kcal: acc.kcal + r.kcal,
-                      prot: round1(acc.prot + Number(r.prot)),
-                      carb: round1(acc.carb + Number(r.carb)),
-                      gord: round1(acc.gord + Number(r.gord)),
-                    }), { kcal: 0, prot: 0, carb: 0, gord: 0 })
-                    const porRef = REFEICOES_OPTS.reduce((acc, r) => {
-                      const itens = registrosHistorico.filter(reg => reg.refeicao === r.id)
-                      if (itens.length > 0) acc[r.id] = { label: r.label, itens }
-                      return acc
-                    }, {})
-                    return (
-                      <>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #ffffff0d', marginBottom: 12 }}>
-                          <span style={{ fontSize: 12, color: '#94a3b8' }}>Total do dia</span>
-                          <div style={{ display: 'flex', gap: 10, fontSize: 12 }}>
-                            <span style={{ color: '#f59e0b', fontWeight: 700 }}>⚡ {totalHist.kcal}</span>
-                            <span style={{ color: '#10b981' }}>🥩 {totalHist.prot}g</span>
-                            <span style={{ color: '#6366f1' }}>🍞 {totalHist.carb}g</span>
-                            <span style={{ color: '#f97316' }}>🧈 {totalHist.gord}g</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #ffffff0d', marginBottom: 12 }}>
+                    <span style={{ fontSize: 12, color: '#94a3b8' }}>Total do dia</span>
+                    <div style={{ display: 'flex', gap: 10, fontSize: 12 }}>
+                      <span style={{ color: '#f59e0b', fontWeight: 700 }}>⚡ {totalHist.kcal}</span>
+                      <span style={{ color: '#10b981' }}>🥩 {totalHist.prot}g</span>
+                      <span style={{ color: '#6366f1' }}>🍞 {totalHist.carb}g</span>
+                      <span style={{ color: '#f97316' }}>🧈 {totalHist.gord}g</span>
+                    </div>
+                  </div>
+                  {Object.entries(porRef).map(([id, { label, itens }]) => (
+                    <div key={id} style={{ marginBottom: 12 }}>
+                      <div className="macros-ref-header">
+                        <span className="macros-ref-label">{label}</span>
+                        <span className="macros-ref-total">{itens.reduce((s, r) => s + r.kcal, 0)} kcal</span>
+                      </div>
+                      {itens.map(r => (
+                        <div key={r.id} className="macros-log-item">
+                          <div className="macros-log-top">
+                            <span className="macros-log-nome">{r.nome} <span style={{ color: '#64748b', fontWeight: 400 }}>({r.gramas}g)</span></span>
+                          </div>
+                          <div className="macros-log-vals">
+                            <span>⚡ {r.kcal}</span>
+                            <span>🥩 {r.prot}g</span>
+                            <span>🍞 {r.carb}g</span>
+                            <span>🧈 {r.gord}g</span>
                           </div>
                         </div>
-                        {Object.entries(porRef).map(([id, { label, itens }]) => (
-                          <div key={id} style={{ marginBottom: 12 }}>
-                            <div className="macros-ref-header">
-                              <span className="macros-ref-label">{label}</span>
-                              <span className="macros-ref-total">{itens.reduce((s, r) => s + r.kcal, 0)} kcal</span>
-                            </div>
-                            {itens.map(r => (
-                              <div key={r.id} className="macros-log-item">
-                                <div className="macros-log-top">
-                                  <span className="macros-log-nome">{r.nome} <span style={{ color: '#64748b', fontWeight: 400 }}>({r.gramas}g)</span></span>
-                                </div>
-                                <div className="macros-log-vals">
-                                  <span>⚡ {r.kcal}</span>
-                                  <span>🥩 {r.prot}g</span>
-                                  <span>🍞 {r.carb}g</span>
-                                  <span>🧈 {r.gord}g</span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ))}
-                      </>
-                    )
-                  })()}
+                      ))}
+                    </div>
+                  ))}
                 </>
-              )}
-            </div>
+              )
+            })()}
+          </>
+        )}
+      </div>
 
-            {/* TMB */}
+      {/* TMB */}
       {tmb && (
         <div className="macros-card">
           <div className="macros-card-title">TAXA METABÓLICA BASAL (TMB)</div>
