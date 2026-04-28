@@ -460,7 +460,7 @@ export default function Macros({ user, onAjuda }) {
                 value={dataClonar}
                 max={new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split('T')[0]}
                 onChange={e => { setDataClonar(e.target.value); buscarRegistrosDia(e.target.value) }}
-                style={{ width: '100%', colorScheme: 'dark' }}
+                style={{ width: '100%', colorScheme: 'dark', fontSize: 14, padding: '10px 12px' }}
               />
             </div>
             {carregandoClonar && <p style={{ fontSize: 12, color: '#64748b' }}>Carregando...</p>}
