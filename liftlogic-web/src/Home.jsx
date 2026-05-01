@@ -18,6 +18,7 @@ import { supabase } from "./lib/supabase";
 import Habitos from "./Habitos";
 import Dieta from "./Dieta";
 import Suplementos from "./Suplementos";
+import { SkeletonStyle, SkeletonBox, SkeletonCard, SkeletonRow, SkeletonGrid } from "./lib/skeleton";
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -366,11 +367,34 @@ export default function Home({
     setSalvandoHumor(false);
   };
   if (carregando)
-    return (
-      <div style={{ textAlign: "center", color: "#64748b", paddingTop: 60 }}>
-        Preparando seu ambiente... 🧱
-      </div>
-    );
+      return (
+        <div className="home-section">
+          <SkeletonStyle />
+          <SkeletonCard style={{ height: 70 }}>
+            <SkeletonBox width="50%" height={20} />
+            <SkeletonBox width="35%" height={13} />
+          </SkeletonCard>
+          <SkeletonCard>
+            <SkeletonBox height={40} radius={99} />
+          </SkeletonCard>
+          <SkeletonGrid cols={2} gap={10}>
+            <SkeletonCard style={{ margin: 0 }}>
+              <SkeletonBox width={32} height={32} radius={99} />
+              <SkeletonBox width="60%" height={13} />
+              <SkeletonBox height={8} radius={99} />
+            </SkeletonCard>
+            <SkeletonCard style={{ margin: 0 }}>
+              <SkeletonBox width={32} height={32} radius={99} />
+              <SkeletonBox width="60%" height={13} />
+              <SkeletonBox height={8} radius={99} />
+            </SkeletonCard>
+          </SkeletonGrid>
+          <SkeletonCard>
+            <SkeletonBox width="45%" height={11} />
+            {[1,2,3].map(i => <SkeletonBox key={i} height={36} radius={8} />)}
+          </SkeletonCard>
+        </div>
+      );
 
   return (
     <div className="home-section">

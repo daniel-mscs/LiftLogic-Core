@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "./lib/supabase";
 import { toast } from "./lib/toast";
+import { SkeletonSupl } from "./lib/skeleton";
 
 function formatarData(date) {
   return date.toISOString().split("T")[0];
@@ -110,12 +111,7 @@ export default function Suplementos({
 
   const concluidosHoje = lista.filter((s) => checks[s.id]?.concluido).length;
 
-  if (carregando)
-    return (
-      <div style={{ textAlign: "center", color: "#64748b", paddingTop: 20 }}>
-        Carregando seus suplementos... 💊
-      </div>
-    );
+  if (carregando) return <div className="supl-section"><SkeletonSupl /></div>;
 
   if (minimode) {
     return (

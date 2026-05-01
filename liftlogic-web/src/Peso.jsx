@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import { ganharXP } from "./lib/rpg";
 import { toast } from "./lib/toast";
+import { SkeletonPeso } from "./lib/skeleton";
 
 function formatarData(date) {
   const offset = date.getTimezoneOffset();
@@ -363,12 +364,7 @@ export default function Peso({ user, onAjuda }) {
     { id: "panturrilha", label: "Panturrilha", cor: "#38bdf8" },
   ];
 
-  if (carregando)
-    return (
-      <div style={{ textAlign: "center", color: "#64748b", paddingTop: 40 }}>
-        Carregando seu peso... ⚖️
-      </div>
-    );
+  if (carregando) return <div className="peso-section"><SkeletonPeso /></div>;
 
   return (
     <div className="peso-section">

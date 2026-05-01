@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "./lib/supabase";
 import { toast } from "./lib/toast";
+import { SkeletonAgua } from "./lib/skeleton";
 import {
   BarChart,
   Bar,
@@ -136,12 +137,7 @@ export default function Agua({ user, onAjuda }) {
     salvarMeta(ml);
   };
 
-  if (carregando)
-    return (
-      <div style={{ textAlign: "center", color: "#64748b", paddingTop: 40 }}>
-        Carregando sua hidratação... 💧
-      </div>
-    );
+  if (carregando) return <div className="agua-section"><SkeletonAgua /></div>;
 
   return (
     <div className="agua-section">

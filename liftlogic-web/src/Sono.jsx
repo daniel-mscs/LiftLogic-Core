@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "./lib/supabase";
 import { toast } from "./lib/toast";
+import { SkeletonSono } from "./lib/skeleton";
 import {
   BarChart,
   Bar,
@@ -122,12 +123,7 @@ export default function Sono({ user }) {
     (r) => ultimos7.includes(r.data) && parseFloat(calcularHoras(r.dormiu, r.acordou)) >= 7,
   ).length;
 
-  if (carregando)
-    return (
-      <div style={{ textAlign: "center", color: "#64748b", paddingTop: 40 }}>
-        Carregando seu sono... 😴
-      </div>
-    );
+  if (carregando) return <div style={{ display: "flex", flexDirection: "column", gap: 14, paddingBottom: 80 }}><SkeletonSono /></div>;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, paddingBottom: 80 }}>
