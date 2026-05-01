@@ -78,6 +78,7 @@ export default function Home({
   const [humor, setHumor] = useState(null);
   const [salvandoHumor, setSalvandoHumor] = useState(false);
     const [showConfetti, setShowConfetti] = useState(false);
+      const [statsAniversario, setStatsAniversario] = useState(null);
 
     const isAniversario = (() => {
       if (!perfil?.data_nascimento) return false;
@@ -93,11 +94,77 @@ export default function Home({
     })();
 
     useEffect(() => {
-      if (isAniversario) {
-        setShowConfetti(true);
-        setTimeout(() => setShowConfetti(false), 8000);
-      }
-    }, [isAniversario]);
+        if (isAniversario) {
+          setShowConfetti(true);
+          setTimeout(() => setShowConfetti(false), 8000);
+          buscarStatsAniversario();
+        }
+      }, [isAniversario]);
+
+      const buscarStatsAniversario = async () => {
+        const anoAtual = new Date().getFullYear();
+        const inicioAno = `${anoAtual}-01-01`;
+
+        const [
+          { data: treinos },
+          { data: habitos },
+          { data: agua },
+          { data: passos },
+          { data: pesoInicio },
+          { data: pesoFim },
+          { data: sono },
+          { data: macros },
+        ] = await Promise.all([
+          supabase.from("treinos_finalizados").select("id, tempo_segundos, kcal").eq("user_id", user.id).gte("created_at", inicioAno),
+          supabase.from("habitos_check").select("data").eq("user_id", user.id).eq("concluido", true).gte("data", inicioAno),
+          supabase.from("agua_registro").select("ml").eq("user_id", user.id).gte("data", inicioAno),
+          supabase.from("passos_registro").select("passos").eq("user_id", user.id).gte("data", inicioAno),
+          supabase.from("peso_registro").select("peso").eq("user_id", user.id).gte("data", inicioAno).order("data", { ascending: true }).limit(1),
+          supabase.from("peso_registro").select("peso").eq("user_id", user.id).order("data", { ascending: false }).limit(1),
+          supabase.from("sono_registro").select("dormiu, acordou").eq("user_id", user.id).gte("data", inicioAno),
+          supabase.from("macros_registro").select("kcal, prot").eq("user_id", user.id).gte("data", inicioAno),
+        ]);
+
+        const totalTreinos = treinos?.length || 0;
+        const totalMinTreino = Math.round((treinos || []).reduce((s, t) => s + (t.tempo_segundos || 0), 0) / 60);
+        const totalHorasTreino = Math.round(totalMinTreino / 60);
+        const totalKcalTreino = (treinos || []).reduce((s, t) => s + (t.kcal || 0), 0);
+        const totalHabitos = habitos?.length || 0;
+        const totalAguaL = Math.round((agua || []).reduce((s, r) => s + r.ml, 0) / 1000);
+        const totalPassos = (passos || []).reduce((s, r) => s + r.passos, 0);
+        const totalKmPassos = Math.round(totalPassos * 0.0008);
+
+        const pesoInicioVal = pesoInicio?.[0]?.peso ? Number(pesoInicio[0].peso) : null;
+        const pesoFimVal = pesoFim?.[0]?.peso ? Number(pesoFim[0].peso) : null;
+        const diffPesoAno = pesoInicioVal && pesoFimVal ? (pesoFimVal - pesoInicioVal).toFixed(1) : null;
+
+        const mediaHorasSono = (() => {
+          if (!sono || sono.length === 0) return null;
+          const total = sono.reduce((s, r) => {
+            if (!r.dormiu || !r.acordou) return s;
+            const [hD, mD] = r.dormiu.split(":").map(Number);
+            const [hA, mA] = r.acordou.split(":").map(Number);
+            let min = hA * 60 + mA - (hD * 60 + mD);
+            if (min < 0) min += 24 * 60;
+            return s + min / 60;
+          }, 0);
+          return (total / sono.length).toFixed(1);
+        })();
+
+        const totalProtg = Math.round((macros || []).reduce((s, r) => s + (Number(r.prot) || 0), 0));
+
+        setStatsAniversario({
+          totalTreinos,
+          totalHorasTreino,
+          totalKcalTreino,
+          totalHabitos,
+          totalAguaL,
+          totalKmPassos,
+          diffPesoAno,
+          mediaHorasSono,
+          totalProtg,
+        });
+      };
 
   const [editandoHome, setEditandoHome] = useState(false);
   const [blocos, setBlocos] = useState(() => {
@@ -454,27 +521,87 @@ export default function Home({
             )}
 
             {/* Card aniversário */}
-            {isAniversario && (
-              <div style={{
-                background: "linear-gradient(135deg, #6366f122, #f59e0b22)",
-                border: "1px solid #f59e0b55",
-                borderRadius: 16,
-                padding: "18px 20px",
-                textAlign: "center",
-                animation: "fadeInUp 0.4s ease",
-              }}>
-                <div style={{ fontSize: 40, marginBottom: 8 }}>🎂</div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: "#f8fafc", marginBottom: 4 }}>
-                  Feliz aniversário, {nome}!
-                </div>
-                <div style={{ fontSize: 14, color: "#94a3b8", marginBottom: 12 }}>
-                  Hoje você completa {idadeAniversario} anos! 🎉
-                </div>
-                <div style={{ fontSize: 13, color: "#f59e0b", fontStyle: "italic" }}>
-                  "Que cada treino, cada hábito e cada conquista deste novo ano seja mais forte que o anterior. Bora forjar mais um ano incrível!"
-                </div>
-              </div>
-            )}
+                        {isAniversario && (
+                          <div style={{
+                            background: "#1a1d21",
+                            border: "1px solid #f59e0b55",
+                            borderRadius: 16,
+                            padding: "20px",
+                            animation: "fadeInUp 0.4s ease",
+                          }}>
+                            {/* Header */}
+                            <div style={{ textAlign: "center", marginBottom: 20 }}>
+                              <div style={{ fontSize: 44, marginBottom: 8 }}>🎂</div>
+                              <div style={{ fontSize: 20, fontWeight: 700, color: "#f8fafc", marginBottom: 4 }}>
+                                Feliz aniversário, {nome}!
+                              </div>
+                              <div style={{ fontSize: 14, color: "#94a3b8" }}>
+                                Hoje você completa {idadeAniversario} anos! 🎉
+                              </div>
+                            </div>
+
+                            {/* Stats do ano */}
+                            {statsAniversario && (
+                              <>
+                                <div style={{ fontSize: 10, color: "#f59e0b", fontWeight: 800, letterSpacing: "0.08em", marginBottom: 12, textAlign: "center" }}>
+                                  SEU ANO EM NÚMEROS 🏆
+                                </div>
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
+                                  {[
+                                    { icon: "🏋️", label: "Treinos", val: statsAniversario.totalTreinos, sub: `${statsAniversario.totalHorasTreino}h de treino` },
+                                    { icon: "✅", label: "Hábitos", val: statsAniversario.totalHabitos, sub: "check-ins no ano" },
+                                    { icon: "💧", label: "Água", val: `${statsAniversario.totalAguaL}L`, sub: "consumidos no ano" },
+                                    { icon: "👟", label: "Passos", val: `~${statsAniversario.totalKmPassos}km`, sub: "percorridos" },
+                                    statsAniversario.diffPesoAno !== null && {
+                                      icon: "⚖️",
+                                      label: "Peso",
+                                      val: `${Number(statsAniversario.diffPesoAno) < 0 ? "" : "+"}${statsAniversario.diffPesoAno}kg`,
+                                      sub: Number(statsAniversario.diffPesoAno) < 0 ? "perdidos no ano 🔥" : "ganhos no ano 💪",
+                                      cor: Number(statsAniversario.diffPesoAno) < 0 ? "#10b981" : "#6366f1",
+                                    },
+                                    statsAniversario.mediaHorasSono && {
+                                      icon: "😴",
+                                      label: "Sono",
+                                      val: `${statsAniversario.mediaHorasSono}h`,
+                                      sub: "média por noite",
+                                    },
+                                  ].filter(Boolean).map((s, i) => (
+                                    <div key={i} style={{
+                                      background: "#24282d",
+                                      borderRadius: 12,
+                                      padding: "12px 14px",
+                                      display: "flex",
+                                      gap: 10,
+                                      alignItems: "center",
+                                    }}>
+                                      <div style={{ fontSize: 22, flexShrink: 0 }}>{s.icon}</div>
+                                      <div>
+                                        <div style={{ fontSize: 9, color: "#64748b", fontWeight: 800, letterSpacing: "0.06em" }}>{s.label.toUpperCase()}</div>
+                                        <div style={{ fontSize: 16, fontWeight: 700, color: s.cor || "#f8fafc" }}>{s.val}</div>
+                                        <div style={{ fontSize: 10, color: "#475569" }}>{s.sub}</div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </>
+                            )}
+
+                            {/* Mensagem */}
+                            <div style={{
+                              background: "#f59e0b15",
+                              border: "1px solid #f59e0b33",
+                              borderRadius: 10,
+                              padding: "12px 14px",
+                              fontSize: 13,
+                              color: "#f59e0b",
+                              fontStyle: "italic",
+                              textAlign: "center",
+                              lineHeight: 1.6,
+                            }}>
+                              "Que cada treino, cada hábito e cada conquista deste novo ano seja mais forte que o anterior. Bora forjar mais um ano incrível!"
+                            </div>
+                          </div>
+                        )}
 
             {/* Banner stats fim de semana */}
       {(() => {
