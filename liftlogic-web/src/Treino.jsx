@@ -2220,41 +2220,44 @@ function Treino({ logout, user }) {
                   disabled={!perfilEditado}
                   style={{ opacity: perfilEditado ? 1 : 0.6 }}
                 />
-                <div className="row">
-                  <input
-                    type="number"
-                    placeholder="Peso (kg)"
-                    value={perfil.peso}
-                    onChange={(e) => {
-                      setPerfil({ ...perfil, peso: e.target.value });
-                      setPerfilEditado(true);
-                    }}
-                    disabled={!perfilEditado}
-                    style={{ opacity: perfilEditado ? 1 : 0.6 }}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Altura (cm)"
-                    value={perfil.altura}
-                    onChange={(e) => {
-                      setPerfil({ ...perfil, altura: e.target.value });
-                      setPerfilEditado(true);
-                    }}
-                    disabled={!perfilEditado}
-                    style={{ opacity: perfilEditado ? 1 : 0.6 }}
-                  />
-                  <input
-                                      type="date"
-                                      placeholder="Data de nascimento"
-                                      value={perfil.data_nascimento}
-                                      onChange={(e) => {
-                                        setPerfil({ ...perfil, data_nascimento: e.target.value });
-                                        setPerfilEditado(true);
-                                      }}
-                                      disabled={!perfilEditado}
-                                      style={{ opacity: perfilEditado ? 1 : 0.6, colorScheme: "dark" }}
-                                    />
-                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                                  <input
+                                    type="number"
+                                    placeholder="Peso (kg)"
+                                    value={perfil.peso}
+                                    onChange={(e) => {
+                                      setPerfil({ ...perfil, peso: e.target.value });
+                                      setPerfilEditado(true);
+                                    }}
+                                    disabled={!perfilEditado}
+                                    style={{ opacity: perfilEditado ? 1 : 0.6, textAlign: "center" }}
+                                  />
+                                  <input
+                                    type="number"
+                                    placeholder="Altura (cm)"
+                                    value={perfil.altura}
+                                    onChange={(e) => {
+                                      setPerfil({ ...perfil, altura: e.target.value });
+                                      setPerfilEditado(true);
+                                    }}
+                                    disabled={!perfilEditado}
+                                    style={{ opacity: perfilEditado ? 1 : 0.6, textAlign: "center" }}
+                                  />
+                                </div>
+                                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                                  <label style={{ fontSize: 10, color: "#64748b", fontWeight: 700, letterSpacing: "0.08em" }}>DATA DE NASCIMENTO</label>
+                                  <input
+                                    type="date"
+                                    value={perfil.data_nascimento || ""}
+                                    max={new Date().toISOString().split("T")[0]}
+                                    onChange={(e) => {
+                                      setPerfil({ ...perfil, data_nascimento: e.target.value });
+                                      setPerfilEditado(true);
+                                    }}
+                                    disabled={!perfilEditado}
+                                    style={{ opacity: perfilEditado ? 1 : 0.6, colorScheme: "dark", width: "100%" }}
+                                  />
+                                </div>
                 {perfilEditado ? (
                   <>
                     <div className="sexo-selector">

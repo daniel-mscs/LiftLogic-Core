@@ -28,7 +28,7 @@ function App() {
                   .select("nome, data_nascimento")
                   .eq("user_id", session.user.id)
                   .single();
-                if (!perfil?.nome || !perfil?.data_nascimento) setPrecisaOnboarding(true);
+                if (!perfil?.nome) setPrecisaOnboarding(true);
       }
       setCarregando(false);
     });
