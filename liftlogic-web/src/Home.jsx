@@ -19,6 +19,7 @@ import Habitos from "./Habitos";
 import Dieta from "./Dieta";
 import Suplementos from "./Suplementos";
 import { SkeletonStyle, SkeletonBox, SkeletonCard, SkeletonRow, SkeletonGrid } from "./lib/skeleton";
+import Confetti from "react-confetti";
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -76,6 +77,27 @@ export default function Home({
   const [kcalGasto, setKcalGasto] = useState({ treino: 0, passos: 0 });
   const [humor, setHumor] = useState(null);
   const [salvandoHumor, setSalvandoHumor] = useState(false);
+    const [showConfetti, setShowConfetti] = useState(false);
+
+    const isAniversario = (() => {
+      if (!perfil?.data_nascimento) return false;
+      const nasc = new Date(perfil.data_nascimento + "T00:00:00");
+      const hoje = new Date();
+      return nasc.getDate() === hoje.getDate() && nasc.getMonth() === hoje.getMonth();
+    })();
+
+    const idadeAniversario = (() => {
+      if (!perfil?.data_nascimento) return null;
+      const nasc = new Date(perfil.data_nascimento + "T00:00:00");
+      return new Date().getFullYear() - nasc.getFullYear();
+    })();
+
+    useEffect(() => {
+      if (isAniversario) {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 8000);
+      }
+    }, [isAniversario]);
 
   const [editandoHome, setEditandoHome] = useState(false);
   const [blocos, setBlocos] = useState(() => {
@@ -420,7 +442,41 @@ export default function Home({
         )}
       </div>
 
-      {/* Banner stats fim de semana */}
+      {/* Confete aniversário */}
+            {showConfetti && (
+              <Confetti
+                width={window.innerWidth}
+                height={window.innerHeight}
+                recycle={false}
+                numberOfPieces={300}
+                style={{ position: "fixed", top: 0, left: 0, zIndex: 9999, pointerEvents: "none" }}
+              />
+            )}
+
+            {/* Card aniversário */}
+            {isAniversario && (
+              <div style={{
+                background: "linear-gradient(135deg, #6366f122, #f59e0b22)",
+                border: "1px solid #f59e0b55",
+                borderRadius: 16,
+                padding: "18px 20px",
+                textAlign: "center",
+                animation: "fadeInUp 0.4s ease",
+              }}>
+                <div style={{ fontSize: 40, marginBottom: 8 }}>🎂</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: "#f8fafc", marginBottom: 4 }}>
+                  Feliz aniversário, {nome}!
+                </div>
+                <div style={{ fontSize: 14, color: "#94a3b8", marginBottom: 12 }}>
+                  Hoje você completa {idadeAniversario} anos! 🎉
+                </div>
+                <div style={{ fontSize: 13, color: "#f59e0b", fontStyle: "italic" }}>
+                  "Que cada treino, cada hábito e cada conquista deste novo ano seja mais forte que o anterior. Bora forjar mais um ano incrível!"
+                </div>
+              </div>
+            )}
+
+            {/* Banner stats fim de semana */}
       {(() => {
         const dow = new Date().getDay();
         if (dow !== 0 && dow !== 6) return null;

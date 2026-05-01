@@ -195,12 +195,13 @@ function Treino({ logout, user }) {
   const [inputDescanso, setInputDescanso] = useState("");
 
   const [perfil, setPerfil] = useState({
-    nome: "",
-    peso: "",
-    altura: "",
-    idade: "",
-    sexo: "M",
-  });
+      nome: "",
+      peso: "",
+      altura: "",
+      idade: "",
+      sexo: "M",
+      data_nascimento: "",
+    });
   const [perfilEditado, setPerfilEditado] = useState(false);
   const [perfilOriginal, setPerfilOriginal] = useState(null);
   const [salvandoPerfil, setSalvandoPerfil] = useState(false);
@@ -302,12 +303,13 @@ function Treino({ logout, user }) {
       console.error("Erro perfil:", error.message);
     if (data) {
       const p = {
-        nome: data.nome || "",
-        peso: data.peso || "",
-        altura: data.altura || "",
-        idade: data.idade || "",
-        sexo: data.sexo || "M",
-      };
+              nome: data.nome || "",
+              peso: data.peso || "",
+              altura: data.altura || "",
+              idade: data.idade || "",
+              sexo: data.sexo || "M",
+              data_nascimento: data.data_nascimento || "",
+            };
       setPerfil(p);
       setPerfilOriginal(p);
       setPerfilEditado(false);
@@ -336,14 +338,17 @@ function Treino({ logout, user }) {
     setSalvandoPerfil(true);
     setPerfilMsg("");
     const payload = {
-      user_id: user.id,
-      nome: perfil.nome,
-      peso: Number(perfil.peso),
-      altura: Number(perfil.altura),
-      idade: Number(perfil.idade),
-      sexo: perfil.sexo,
-      objetivo: perfil.objetivo || "manter",
-    };
+          user_id: user.id,
+          nome: perfil.nome,
+          peso: Number(perfil.peso),
+          altura: Number(perfil.altura),
+          idade: perfil.data_nascimento
+            ? new Date().getFullYear() - new Date(perfil.data_nascimento).getFullYear()
+            : Number(perfil.idade),
+          sexo: perfil.sexo,
+          objetivo: perfil.objetivo || "manter",
+          data_nascimento: perfil.data_nascimento || null,
+        };
     const { error } = await supabase
       .from("perfil")
       .upsert(payload, { onConflict: "user_id" });
@@ -2239,16 +2244,16 @@ function Treino({ logout, user }) {
                     style={{ opacity: perfilEditado ? 1 : 0.6 }}
                   />
                   <input
-                    type="number"
-                    placeholder="Idade"
-                    value={perfil.idade}
-                    onChange={(e) => {
-                      setPerfil({ ...perfil, idade: e.target.value });
-                      setPerfilEditado(true);
-                    }}
-                    disabled={!perfilEditado}
-                    style={{ opacity: perfilEditado ? 1 : 0.6 }}
-                  />
+                                      type="date"
+                                      placeholder="Data de nascimento"
+                                      value={perfil.data_nascimento}
+                                      onChange={(e) => {
+                                        setPerfil({ ...perfil, data_nascimento: e.target.value });
+                                        setPerfilEditado(true);
+                                      }}
+                                      disabled={!perfilEditado}
+                                      style={{ opacity: perfilEditado ? 1 : 0.6, colorScheme: "dark" }}
+                                    />
                 </div>
                 {perfilEditado ? (
                   <>
