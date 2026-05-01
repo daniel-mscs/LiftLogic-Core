@@ -3,7 +3,7 @@ import { supabase } from "./lib/supabase";
 import Login from "./pages/Login";
 import Treino from "./Treino";
 import Onboarding from "./Onboarding";
-import { ToastContainer } from './lib/toast'
+import { ToastContainer } from "./lib/toast";
 
 function App() {
   const [session, setSession] = useState(null);
@@ -24,11 +24,11 @@ function App() {
       setSession(session);
       if (session) {
         const { data: perfil } = await supabase
-                  .from("perfil")
-                  .select("nome, data_nascimento")
-                  .eq("user_id", session.user.id)
-                  .single();
-                if (!perfil?.nome) setPrecisaOnboarding(true);
+          .from("perfil")
+          .select("nome, data_nascimento")
+          .eq("user_id", session.user.id)
+          .single();
+        if (!perfil?.nome) setPrecisaOnboarding(true);
       }
       setCarregando(false);
     });
@@ -92,11 +92,11 @@ function App() {
   }
 
   return (
-      <>
-        <ToastContainer />
-        <Treino logout={logout} user={session.user} />
-      </>
-    );
+    <>
+      <ToastContainer />
+      <Treino logout={logout} user={session.user} />
+    </>
+  );
 }
 
 export default App;

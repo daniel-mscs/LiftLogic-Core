@@ -71,7 +71,14 @@ export function ToastContainer() {
             }}
           >
             <span style={{ fontSize: 18, flexShrink: 0 }}>{cor.icon}</span>
-            <span style={{ fontSize: 13, color: "#f8fafc", fontWeight: 500, flex: 1 }}>
+            <span
+              style={{
+                fontSize: 13,
+                color: "#f8fafc",
+                fontWeight: 500,
+                flex: 1,
+              }}
+            >
               {t.mensagem}
             </span>
           </div>

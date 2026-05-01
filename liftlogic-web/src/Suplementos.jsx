@@ -111,7 +111,12 @@ export default function Suplementos({
 
   const concluidosHoje = lista.filter((s) => checks[s.id]?.concluido).length;
 
-  if (carregando) return <div className="supl-section"><SkeletonSupl /></div>;
+  if (carregando)
+    return (
+      <div className="supl-section">
+        <SkeletonSupl />
+      </div>
+    );
 
   if (minimode) {
     return (
@@ -176,14 +181,25 @@ export default function Suplementos({
       {confirmDelete && (
         <div className="modal-overlay" style={{ zIndex: 1000 }}>
           <div className="modal-resumo" style={{ maxWidth: 320 }}>
-            <h2 style={{ fontSize: 18, marginBottom: 12 }}>Remover suplemento?</h2>
+            <h2 style={{ fontSize: 18, marginBottom: 12 }}>
+              Remover suplemento?
+            </h2>
             <p style={{ fontSize: 13, color: "#94a3b8", marginBottom: 20 }}>
               "{confirmDelete.nome}" será removido permanentemente.
             </p>
             <div className="modal-actions">
               <button
                 onClick={() => deletarSupl(confirmDelete.id)}
-                style={{ background: "#ef4444", border: "none", borderRadius: 10, color: "#fff", fontSize: 14, fontWeight: 700, padding: "12px 20px", cursor: "pointer" }}
+                style={{
+                  background: "#ef4444",
+                  border: "none",
+                  borderRadius: 10,
+                  color: "#fff",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  padding: "12px 20px",
+                  cursor: "pointer",
+                }}
               >
                 Remover
               </button>
@@ -198,19 +214,39 @@ export default function Suplementos({
         </div>
       )}
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <h2 className="title-divisao" style={{ margin: 0 }}>💊 Suplementação</h2>
-        <button className="ajuda-shortcut-btn" onClick={() => onAjuda("ajuda-geral")}>?</button>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 16,
+        }}
+      >
+        <h2 className="title-divisao" style={{ margin: 0 }}>
+          💊 Suplementação
+        </h2>
+        <button
+          className="ajuda-shortcut-btn"
+          onClick={() => onAjuda("ajuda-geral")}
+        >
+          ?
+        </button>
       </div>
 
       {lista.length > 0 && (
         <div className="supl-prog-card">
           <div className="supl-prog-top">
-            <span className="supl-prog-num">{concluidosHoje}<span>/{lista.length}</span></span>
+            <span className="supl-prog-num">
+              {concluidosHoje}
+              <span>/{lista.length}</span>
+            </span>
             <span className="supl-prog-label">suplementos hoje</span>
           </div>
           <div className="supl-prog-bar-bg">
-            <div className="supl-prog-bar-fill" style={{ width: `${(concluidosHoje / lista.length) * 100}%` }} />
+            <div
+              className="supl-prog-bar-fill"
+              style={{ width: `${(concluidosHoje / lista.length) * 100}%` }}
+            />
           </div>
         </div>
       )}
@@ -222,20 +258,37 @@ export default function Suplementos({
             const done = !!checks[s.id]?.concluido;
             const hora = checks[s.id]?.hora || null;
             return (
-              <div key={s.id} className={`supl-item-full ${done ? "done" : ""}`}>
-                <div className="supl-item-left" onClick={() => toggleCheck(s.id)}>
+              <div
+                key={s.id}
+                className={`supl-item-full ${done ? "done" : ""}`}
+              >
+                <div
+                  className="supl-item-left"
+                  onClick={() => toggleCheck(s.id)}
+                >
                   <span className="supl-check-big">{done ? "✅" : "💊"}</span>
                   <div className="supl-item-info">
                     <span className="supl-nome-full">{s.nome}</span>
                     <span className="supl-dose-full">
                       {s.dose}
-                      {hora ? <span style={{ color: "#6366f1", marginLeft: 6 }}>· {hora}</span> : ""}
+                      {hora ? (
+                        <span style={{ color: "#6366f1", marginLeft: 6 }}>
+                          · {hora}
+                        </span>
+                      ) : (
+                        ""
+                      )}
                     </span>
                   </div>
                 </div>
                 <div className="supl-item-right">
                   <span className="supl-toggle-big">{done ? "✓" : "○"}</span>
-                  <button className="supl-del-btn" onClick={() => setConfirmDelete(s)}>×</button>
+                  <button
+                    className="supl-del-btn"
+                    onClick={() => setConfirmDelete(s)}
+                  >
+                    ×
+                  </button>
                 </div>
               </div>
             );
@@ -246,14 +299,36 @@ export default function Suplementos({
       <div className="supl-card">
         <div className="supl-card-title">ADICIONAR SUPLEMENTO</div>
         <div className="supl-add-form">
-          <input type="text" placeholder="Nome (ex: Creatina)" value={nomeInput} onChange={(e) => setNomeInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") document.getElementById("dose-input").focus() }} />
-          <input id="dose-input" type="text" placeholder="Dose (ex: 5g, 1 cápsula)" value={doseInput} onChange={(e) => setDoseInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") adicionarSupl() }} />
-          <button className="supl-btn-add" onClick={adicionarSupl}>+ Adicionar</button>
+          <input
+            type="text"
+            placeholder="Nome (ex: Creatina)"
+            value={nomeInput}
+            onChange={(e) => setNomeInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter")
+                document.getElementById("dose-input").focus();
+            }}
+          />
+          <input
+            id="dose-input"
+            type="text"
+            placeholder="Dose (ex: 5g, 1 cápsula)"
+            value={doseInput}
+            onChange={(e) => setDoseInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") adicionarSupl();
+            }}
+          />
+          <button className="supl-btn-add" onClick={adicionarSupl}>
+            + Adicionar
+          </button>
         </div>
       </div>
 
       {lista.length === 0 && (
-        <p className="empty-msg" style={{ marginTop: 8, fontSize: 13 }}>Nenhum suplemento cadastrado ainda. Adicione acima! 💊</p>
+        <p className="empty-msg" style={{ marginTop: 8, fontSize: 13 }}>
+          Nenhum suplemento cadastrado ainda. Adicione acima! 💊
+        </p>
       )}
     </div>
   );

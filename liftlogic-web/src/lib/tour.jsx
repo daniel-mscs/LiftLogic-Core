@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
 
-
-
 const STEPS = [
   {
     title: "👋 Bem-vindo ao DayForge!",
@@ -41,8 +39,6 @@ const STEPS = [
   },
 ];
 
-
-
 export default function Tour({ onFechar, onNavegar }) {
   const [step, setStep] = useState(0);
   const [saindo, setSaindo] = useState(false);
@@ -80,7 +76,9 @@ export default function Tour({ onFechar, onNavegar }) {
         alignItems: "flex-end",
         justifyContent: "center",
         padding: "0 0 100px",
-        animation: saindo ? "tourFadeOut 0.3s ease forwards" : "tourFadeIn 0.3s ease",
+        animation: saindo
+          ? "tourFadeOut 0.3s ease forwards"
+          : "tourFadeIn 0.3s ease",
       }}
       onClick={() => fechar(false)}
     >
@@ -107,43 +105,93 @@ export default function Tour({ onFechar, onNavegar }) {
         {/* Progresso */}
         <div style={{ display: "flex", gap: 4, marginBottom: 18 }}>
           {STEPS.map((_, i) => (
-            <div key={i} style={{
-              flex: i === step ? 2 : 1,
-              height: 3,
-              borderRadius: 99,
-              background: i <= step ? "#6366f1" : "#334155",
-              transition: "all 0.3s",
-            }} />
+            <div
+              key={i}
+              style={{
+                flex: i === step ? 2 : 1,
+                height: 3,
+                borderRadius: 99,
+                background: i <= step ? "#6366f1" : "#334155",
+                transition: "all 0.3s",
+              }}
+            />
           ))}
         </div>
 
         {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-          <div style={{ fontSize: 17, fontWeight: 700, color: "#f8fafc", lineHeight: 1.3, flex: 1, paddingRight: 12 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: 10,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 17,
+              fontWeight: 700,
+              color: "#f8fafc",
+              lineHeight: 1.3,
+              flex: 1,
+              paddingRight: 12,
+            }}
+          >
             {s.title}
           </div>
-          <button onClick={() => fechar(false)} style={{ background: "none", border: "none", color: "#475569", fontSize: 22, cursor: "pointer", padding: 0, lineHeight: 1, flexShrink: 0 }}>×</button>
+          <button
+            onClick={() => fechar(false)}
+            style={{
+              background: "none",
+              border: "none",
+              color: "#475569",
+              fontSize: 22,
+              cursor: "pointer",
+              padding: 0,
+              lineHeight: 1,
+              flexShrink: 0,
+            }}
+          >
+            ×
+          </button>
         </div>
 
         {/* Descrição */}
-        <div style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.6, marginBottom: 16 }}>
+        <div
+          style={{
+            fontSize: 14,
+            color: "#94a3b8",
+            lineHeight: 1.6,
+            marginBottom: 16,
+          }}
+        >
           {s.desc}
         </div>
 
         {/* Ícones de destaque */}
         {s.destaque && (
-          <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 6,
+              marginBottom: 16,
+              flexWrap: "wrap",
+            }}
+          >
             {getIcones(s.destaque).map((ic, i) => (
-              <div key={i} style={{
-                background: "#24282d",
-                border: "1px solid #6366f144",
-                borderRadius: 8,
-                padding: "5px 10px",
-                fontSize: 11,
-                color: "#818cf8",
-                fontWeight: 600,
-                animation: `tourPulse 2s ease ${i * 0.15}s infinite`,
-              }}>
+              <div
+                key={i}
+                style={{
+                  background: "#24282d",
+                  border: "1px solid #6366f144",
+                  borderRadius: 8,
+                  padding: "5px 10px",
+                  fontSize: 11,
+                  color: "#818cf8",
+                  fontWeight: 600,
+                  animation: `tourPulse 2s ease ${i * 0.15}s infinite`,
+                }}
+              >
                 {ic}
               </div>
             ))}
@@ -177,12 +225,28 @@ export default function Tour({ onFechar, onNavegar }) {
         )}
 
         {/* Footer */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
           <div style={{ fontSize: 11, color: "#475569" }}>
             {step + 1} / {STEPS.length}
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <button onClick={() => fechar(false)} style={{ background: "none", border: "none", color: "#475569", fontSize: 12, cursor: "pointer", padding: "6px 4px" }}>
+            <button
+              onClick={() => fechar(false)}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#475569",
+                fontSize: 12,
+                cursor: "pointer",
+                padding: "6px 4px",
+              }}
+            >
               Pular
             </button>
             <button
@@ -209,10 +273,31 @@ export default function Tour({ onFechar, onNavegar }) {
 
 function getIcones(destaque) {
   const map = {
-    home:   ["🏠 Saudação", "💧 Água", "⚖️ Peso", "🔥 Kcal", "✅ Tarefas", "😄 Humor"],
-    treino: ["⏱️ Timer", "🏋️ Exercícios", "📊 Stats", "📜 Histórico", "🏃 Cardio"],
+    home: [
+      "🏠 Saudação",
+      "💧 Água",
+      "⚖️ Peso",
+      "🔥 Kcal",
+      "✅ Tarefas",
+      "😄 Humor",
+    ],
+    treino: [
+      "⏱️ Timer",
+      "🏋️ Exercícios",
+      "📊 Stats",
+      "📜 Histórico",
+      "🏃 Cardio",
+    ],
     rotina: ["📋 Tarefas", "🗓️ Calendário", "☀️ Períodos", "⧉ Clonar dias"],
-    mais:   ["💧 Água", "⚖️ Peso", "🍽️ Macros", "💊 Suplementos", "👟 Passos", "😴 Sono", "📊 Stats"],
+    mais: [
+      "💧 Água",
+      "⚖️ Peso",
+      "🍽️ Macros",
+      "💊 Suplementos",
+      "👟 Passos",
+      "😴 Sono",
+      "📊 Stats",
+    ],
     perfil: ["👤 Dados", "📏 Medidas", "🎯 Objetivo", "🔔 Alertas", "⚔️ RPG"],
   };
   return map[destaque] || [];

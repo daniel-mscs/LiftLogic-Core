@@ -170,7 +170,7 @@ function Treino({ logout, user }) {
   const [ajudaAncora, setAjudaAncora] = useState(null);
   const { ativo: tourAtivo, fechar: fecharTour } = useTour();
 
-    const [notifAtivas, setNotifAtivas] = useState(() => {
+  const [notifAtivas, setNotifAtivas] = useState(() => {
     const salvo = localStorage.getItem("df_notif_ativas");
     return salvo ? JSON.parse(salvo) : NOTIFICACOES.map((n) => n.id);
   });
@@ -195,13 +195,13 @@ function Treino({ logout, user }) {
   const [inputDescanso, setInputDescanso] = useState("");
 
   const [perfil, setPerfil] = useState({
-      nome: "",
-      peso: "",
-      altura: "",
-      idade: "",
-      sexo: "M",
-      data_nascimento: "",
-    });
+    nome: "",
+    peso: "",
+    altura: "",
+    idade: "",
+    sexo: "M",
+    data_nascimento: "",
+  });
   const [perfilEditado, setPerfilEditado] = useState(false);
   const [perfilOriginal, setPerfilOriginal] = useState(null);
   const [salvandoPerfil, setSalvandoPerfil] = useState(false);
@@ -303,13 +303,13 @@ function Treino({ logout, user }) {
       console.error("Erro perfil:", error.message);
     if (data) {
       const p = {
-              nome: data.nome || "",
-              peso: data.peso || "",
-              altura: data.altura || "",
-              idade: data.idade || "",
-              sexo: data.sexo || "M",
-              data_nascimento: data.data_nascimento || "",
-            };
+        nome: data.nome || "",
+        peso: data.peso || "",
+        altura: data.altura || "",
+        idade: data.idade || "",
+        sexo: data.sexo || "M",
+        data_nascimento: data.data_nascimento || "",
+      };
       setPerfil(p);
       setPerfilOriginal(p);
       setPerfilEditado(false);
@@ -338,17 +338,28 @@ function Treino({ logout, user }) {
     setSalvandoPerfil(true);
     setPerfilMsg("");
     const payload = {
-          user_id: user.id,
-          nome: perfil.nome,
-          peso: Number(perfil.peso),
-          altura: Number(perfil.altura),
-          idade: perfil.data_nascimento
-            ? new Date().getFullYear() - new Date(perfil.data_nascimento).getFullYear()
-            : Number(perfil.idade),
-          sexo: perfil.sexo,
-          objetivo: perfil.objetivo || "manter",
-          data_nascimento: perfil.data_nascimento || null,
-        };
+      user_id: user.id,
+      nome: perfil.nome,
+      peso: Number(perfil.peso),
+      altura: Number(perfil.altura),
+      idade: perfil.data_nascimento
+        ? (() => {
+            const nasc = new Date(perfil.data_nascimento + "T00:00:00");
+            const hoje = new Date();
+            let idade = hoje.getFullYear() - nasc.getFullYear();
+            if (
+              hoje.getMonth() < nasc.getMonth() ||
+              (hoje.getMonth() === nasc.getMonth() &&
+                hoje.getDate() < nasc.getDate())
+            )
+              idade--;
+            return idade;
+          })()
+        : Number(perfil.idade),
+      sexo: perfil.sexo,
+      objetivo: perfil.objetivo || "manter",
+      data_nascimento: perfil.data_nascimento || null,
+    };
     const { error } = await supabase
       .from("perfil")
       .upsert(payload, { onConflict: "user_id" });
@@ -625,9 +636,9 @@ function Treino({ logout, user }) {
       ])
       .select();
     if (error) {
-          toast("Erro ao salvar: " + error.message, "error");
-          return;
-        }
+      toast("Erro ao salvar: " + error.message, "error");
+      return;
+    }
     const registrosCarga = filtrados.map((ex) => ({
       user_id: user.id,
       exercicio_nome: ex.nome,
@@ -699,7 +710,7 @@ function Treino({ logout, user }) {
       .eq("id", id)
       .eq("user_id", user.id);
     if (error) toast(error.message, "error");
-        else buscarExercicios();
+    else buscarExercicios();
   };
 
   const toggleConcluido = (id) =>
@@ -727,16 +738,21 @@ function Treino({ logout, user }) {
   const tmb = calcularTMB();
 
   return (
-      <div className="container">
-        {tourAtivo && <Tour onFechar={fecharTour} onNavegar={(aba) => {
-          if (aba === "perfil") {
-            setAbaPrincipal("perfil");
-            setSubAbaPerfil("ajuda");
-          } else {
-            setAbaPrincipal(aba);
-          }
-        }} />}
-        {modalResumo && (
+    <div className="container">
+      {tourAtivo && (
+        <Tour
+          onFechar={fecharTour}
+          onNavegar={(aba) => {
+            if (aba === "perfil") {
+              setAbaPrincipal("perfil");
+              setSubAbaPerfil("ajuda");
+            } else {
+              setAbaPrincipal(aba);
+            }
+          }}
+        />
+      )}
+      {modalResumo && (
         <div className="modal-overlay">
           <div
             className="modal-resumo"
@@ -1850,7 +1866,7 @@ function Treino({ logout, user }) {
                 <button
                   onClick={async () => {
                     if (!cardioForm.duracao) {
-                                          toast("Informe a duração!", "warning");
+                      toast("Informe a duração!", "warning");
                       return;
                     }
                     const hoje = new Date();
@@ -1875,10 +1891,10 @@ function Treino({ logout, user }) {
                       ])
                       .select();
                     if (error) {
-                                          toast(error.message, "error");
-                                          return;
-                                        }
-                                        setCardioRegistros((prev) => [novo[0], ...prev]);
+                      toast(error.message, "error");
+                      return;
+                    }
+                    setCardioRegistros((prev) => [novo[0], ...prev]);
                     setCardioForm((p) => ({
                       ...p,
                       duracao: "",
@@ -2076,9 +2092,9 @@ function Treino({ logout, user }) {
                             if (!input) return;
                             const mins = parseInt(input);
                             if (!mins || mins <= 0) {
-                                                          toast("Tempo inválido!", "warning");
-                                                          return;
-                                                        }
+                              toast("Tempo inválido!", "warning");
+                              return;
+                            }
                             const novosSeg = mins * 60;
                             const novaKcal = perfil.peso
                               ? Math.round(
@@ -2086,17 +2102,20 @@ function Treino({ logout, user }) {
                                 )
                               : t.kcal;
                             supabase
-                                                          .from("treinos_finalizados")
-                                                          .update({
-                                                            tempo_segundos: novosSeg,
-                                                            kcal: novaKcal,
-                                                          })
-                                                          .eq("id", t.id)
-                                                          .then(({ error }) => {
-                                                            if (error) {
-                                                              toast("Erro ao salvar: " + error.message, "error");
-                                                              return;
-                                                            }
+                              .from("treinos_finalizados")
+                              .update({
+                                tempo_segundos: novosSeg,
+                                kcal: novaKcal,
+                              })
+                              .eq("id", t.id)
+                              .then(({ error }) => {
+                                if (error) {
+                                  toast(
+                                    "Erro ao salvar: " + error.message,
+                                    "error",
+                                  );
+                                  return;
+                                }
                                 setHistorico((prev) =>
                                   prev.map((h) =>
                                     h.id === t.id
@@ -2220,44 +2239,71 @@ function Treino({ logout, user }) {
                   disabled={!perfilEditado}
                   style={{ opacity: perfilEditado ? 1 : 0.6 }}
                 />
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                                  <input
-                                    type="number"
-                                    placeholder="Peso (kg)"
-                                    value={perfil.peso}
-                                    onChange={(e) => {
-                                      setPerfil({ ...perfil, peso: e.target.value });
-                                      setPerfilEditado(true);
-                                    }}
-                                    disabled={!perfilEditado}
-                                    style={{ opacity: perfilEditado ? 1 : 0.6, textAlign: "center" }}
-                                  />
-                                  <input
-                                    type="number"
-                                    placeholder="Altura (cm)"
-                                    value={perfil.altura}
-                                    onChange={(e) => {
-                                      setPerfil({ ...perfil, altura: e.target.value });
-                                      setPerfilEditado(true);
-                                    }}
-                                    disabled={!perfilEditado}
-                                    style={{ opacity: perfilEditado ? 1 : 0.6, textAlign: "center" }}
-                                  />
-                                </div>
-                                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                                  <label style={{ fontSize: 10, color: "#64748b", fontWeight: 700, letterSpacing: "0.08em" }}>DATA DE NASCIMENTO</label>
-                                  <input
-                                    type="date"
-                                    value={perfil.data_nascimento || ""}
-                                    max={new Date().toISOString().split("T")[0]}
-                                    onChange={(e) => {
-                                      setPerfil({ ...perfil, data_nascimento: e.target.value });
-                                      setPerfilEditado(true);
-                                    }}
-                                    disabled={!perfilEditado}
-                                    style={{ opacity: perfilEditado ? 1 : 0.6, colorScheme: "dark", width: "100%" }}
-                                  />
-                                </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 8,
+                  }}
+                >
+                  <input
+                    type="number"
+                    placeholder="Peso (kg)"
+                    value={perfil.peso}
+                    onChange={(e) => {
+                      setPerfil({ ...perfil, peso: e.target.value });
+                      setPerfilEditado(true);
+                    }}
+                    disabled={!perfilEditado}
+                    style={{
+                      opacity: perfilEditado ? 1 : 0.6,
+                      textAlign: "center",
+                    }}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Altura (cm)"
+                    value={perfil.altura}
+                    onChange={(e) => {
+                      setPerfil({ ...perfil, altura: e.target.value });
+                      setPerfilEditado(true);
+                    }}
+                    disabled={!perfilEditado}
+                    style={{
+                      opacity: perfilEditado ? 1 : 0.6,
+                      textAlign: "center",
+                    }}
+                  />
+                </div>
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 4 }}
+                >
+                  <label
+                    style={{
+                      fontSize: 10,
+                      color: "#64748b",
+                      fontWeight: 700,
+                      letterSpacing: "0.08em",
+                    }}
+                  >
+                    DATA DE NASCIMENTO
+                  </label>
+                  <input
+                    type="date"
+                    value={perfil.data_nascimento || ""}
+                    max={new Date().toISOString().split("T")[0]}
+                    onChange={(e) => {
+                      setPerfil({ ...perfil, data_nascimento: e.target.value });
+                      setPerfilEditado(true);
+                    }}
+                    disabled={!perfilEditado}
+                    style={{
+                      opacity: perfilEditado ? 1 : 0.6,
+                      colorScheme: "dark",
+                      width: "100%",
+                    }}
+                  />
+                </div>
                 {perfilEditado ? (
                   <>
                     <div className="sexo-selector">
@@ -2564,10 +2610,13 @@ function Treino({ logout, user }) {
                       );
                       const ok = await agendarNotificacoes(ativas);
                       if (ok) {
-                                              setNotifPermissao("granted");
-                                              toast("Notificações ativadas!", "success");
-                                            } else {
-                                              toast("Permissão negada. Ative nas configurações do navegador.", "error");
+                        setNotifPermissao("granted");
+                        toast("Notificações ativadas!", "success");
+                      } else {
+                        toast(
+                          "Permissão negada. Ative nas configurações do navegador.",
+                          "error",
+                        );
                       }
                     }}
                     style={{
@@ -2587,7 +2636,7 @@ function Treino({ logout, user }) {
                   <button
                     onClick={() => {
                       cancelarNotificacoes();
-                                            toast("Notificações desativadas!", "info");
+                      toast("Notificações desativadas!", "info");
                     }}
                     style={{
                       background: "transparent",

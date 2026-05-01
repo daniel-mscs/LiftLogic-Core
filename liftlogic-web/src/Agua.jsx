@@ -66,7 +66,9 @@ export default function Agua({ user, onAjuda }) {
       ]);
 
     const hist = {};
-    ultimos7.forEach((d) => { hist[d] = []; });
+    ultimos7.forEach((d) => {
+      hist[d] = [];
+    });
     (regs || []).forEach((r) => {
       if (!hist[r.data]) hist[r.data] = [];
       hist[r.data].push(r);
@@ -80,14 +82,19 @@ export default function Agua({ user, onAjuda }) {
     setCarregando(false);
   }, [user.id]);
 
-  useEffect(() => { buscarTudo(); }, [buscarTudo]);
+  useEffect(() => {
+    buscarTudo();
+  }, [buscarTudo]);
 
   const totalHoje = registros.reduce((sum, r) => sum + r.ml, 0);
   const pct = Math.min(100, Math.round((totalHoje / meta) * 100));
 
   const adicionarAgua = async (ml) => {
     if (!ml || ml <= 0) return;
-    const hora = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    const hora = new Date().toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
     const { data, error } = await supabase
       .from("agua_registro")
       .insert([{ user_id: user.id, data: hoje, ml: Number(ml), hora }])
@@ -102,14 +109,20 @@ export default function Agua({ user, onAjuda }) {
       await ganharXP(user.id, "meta_agua");
     }
     setRegistros((prev) => [data[0], ...prev]);
-    setHistorico((prev) => ({ ...prev, [hoje]: [data[0], ...(prev[hoje] || [])] }));
+    setHistorico((prev) => ({
+      ...prev,
+      [hoje]: [data[0], ...(prev[hoje] || [])],
+    }));
     setCustomMl("");
   };
 
   const deletarRegistro = async (id) => {
     await supabase.from("agua_registro").delete().eq("id", id);
     setRegistros((prev) => prev.filter((r) => r.id !== id));
-    setHistorico((prev) => ({ ...prev, [hoje]: (prev[hoje] || []).filter((r) => r.id !== id) }));
+    setHistorico((prev) => ({
+      ...prev,
+      [hoje]: (prev[hoje] || []).filter((r) => r.id !== id),
+    }));
   };
 
   const salvarMeta = async (novoMl) => {
@@ -131,58 +144,119 @@ export default function Agua({ user, onAjuda }) {
       toast("Cadastre seu peso no perfil primeiro!", "warning");
       return;
     }
-    const ml = tipo === "sedentario"
-      ? Math.round(perfil.peso * 35)
-      : Math.round(perfil.peso * 50);
+    const ml =
+      tipo === "sedentario"
+        ? Math.round(perfil.peso * 35)
+        : Math.round(perfil.peso * 50);
     salvarMeta(ml);
   };
 
-  if (carregando) return <div className="agua-section"><SkeletonAgua /></div>;
+  if (carregando)
+    return (
+      <div className="agua-section">
+        <SkeletonAgua />
+      </div>
+    );
 
   return (
     <div className="agua-section">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <h2 className="title-divisao" style={{ margin: 0 }}>💧 Controle de Água</h2>
-        <button className="ajuda-shortcut-btn" onClick={() => onAjuda("ajuda-hidratacao")}>?</button>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 16,
+        }}
+      >
+        <h2 className="title-divisao" style={{ margin: 0 }}>
+          💧 Controle de Água
+        </h2>
+        <button
+          className="ajuda-shortcut-btn"
+          onClick={() => onAjuda("ajuda-hidratacao")}
+        >
+          ?
+        </button>
       </div>
 
       <div className="agua-main-card">
         <div className="agua-main-top">
           <div>
             <div className="agua-main-label">CONSUMIDO HOJE</div>
-            <div className="agua-main-val">{totalHoje.toLocaleString("pt-BR")} <span>ml</span></div>
+            <div className="agua-main-val">
+              {totalHoje.toLocaleString("pt-BR")} <span>ml</span>
+            </div>
           </div>
           <div style={{ textAlign: "right" }}>
             <div className="agua-main-label">META</div>
-            <div className="agua-main-meta">{meta.toLocaleString("pt-BR")} ml</div>
+            <div className="agua-main-meta">
+              {meta.toLocaleString("pt-BR")} ml
+            </div>
           </div>
         </div>
         <div className="agua-bar-bg">
-          <div className="agua-bar-fill" style={{ width: `${pct}%`, background: pct >= 100 ? "#10b981" : "#3b82f6" }} />
+          <div
+            className="agua-bar-fill"
+            style={{
+              width: `${pct}%`,
+              background: pct >= 100 ? "#10b981" : "#3b82f6",
+            }}
+          />
         </div>
-        <div className="agua-bar-pct">{pct}% da meta {pct >= 100 ? "✅" : ""}</div>
+        <div className="agua-bar-pct">
+          {pct}% da meta {pct >= 100 ? "✅" : ""}
+        </div>
       </div>
 
       {(() => (
         <div className="agua-card">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div className="agua-card-title" style={{ margin: 0 }}>Meta diária: {(meta / 1000).toFixed(1)}L</div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <div className="agua-card-title" style={{ margin: 0 }}>
+              Meta diária: {(meta / 1000).toFixed(1)}L
+            </div>
             {!editandoMetaAgua && (
-              <button className="peso-btn-alterar" onClick={() => setEditandoMetaAgua(true)}>Alterar</button>
+              <button
+                className="peso-btn-alterar"
+                onClick={() => setEditandoMetaAgua(true)}
+              >
+                Alterar
+              </button>
             )}
           </div>
           {editandoMetaAgua && (
             <>
               {perfil?.peso && (
                 <div className="agua-sugestoes" style={{ marginTop: 12 }}>
-                  <button className="agua-sug-btn" onClick={() => { sugerirMeta("sedentario"); setEditandoMetaAgua(false); }}>
+                  <button
+                    className="agua-sug-btn"
+                    onClick={() => {
+                      sugerirMeta("sedentario");
+                      setEditandoMetaAgua(false);
+                    }}
+                  >
                     <span>🧘 Sedentário</span>
-                    <strong>{Math.round(perfil.peso * 35).toLocaleString("pt-BR")} ml</strong>
+                    <strong>
+                      {Math.round(perfil.peso * 35).toLocaleString("pt-BR")} ml
+                    </strong>
                     <small>peso × 35ml</small>
                   </button>
-                  <button className="agua-sug-btn" onClick={() => { sugerirMeta("ativo"); setEditandoMetaAgua(false); }}>
+                  <button
+                    className="agua-sug-btn"
+                    onClick={() => {
+                      sugerirMeta("ativo");
+                      setEditandoMetaAgua(false);
+                    }}
+                  >
                     <span>🏋️ Ativo</span>
-                    <strong>{Math.round(perfil.peso * 50).toLocaleString("pt-BR")} ml</strong>
+                    <strong>
+                      {Math.round(perfil.peso * 50).toLocaleString("pt-BR")} ml
+                    </strong>
                     <small>peso × 50ml</small>
                   </button>
                 </div>
@@ -193,11 +267,32 @@ export default function Agua({ user, onAjuda }) {
                   placeholder="Meta personalizada (ml)"
                   value={metaInput}
                   onChange={(e) => setMetaInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") { salvarMeta(); setEditandoMetaAgua(false); } }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      salvarMeta();
+                      setEditandoMetaAgua(false);
+                    }
+                  }}
                   autoFocus
                 />
-                <button className="agua-btn-salvar" onClick={() => { salvarMeta(); setEditandoMetaAgua(false); }}>Salvar</button>
-                <button className="peso-btn-cancelar" onClick={() => { setEditandoMetaAgua(false); setMetaInput(""); }}>✕</button>
+                <button
+                  className="agua-btn-salvar"
+                  onClick={() => {
+                    salvarMeta();
+                    setEditandoMetaAgua(false);
+                  }}
+                >
+                  Salvar
+                </button>
+                <button
+                  className="peso-btn-cancelar"
+                  onClick={() => {
+                    setEditandoMetaAgua(false);
+                    setMetaInput("");
+                  }}
+                >
+                  ✕
+                </button>
               </div>
             </>
           )}
@@ -208,8 +303,13 @@ export default function Agua({ user, onAjuda }) {
         <div className="agua-card-title">Registrar consumo</div>
         <div className="agua-quick-grid">
           {[180, 300, 500, 1000].map((ml) => (
-            <button key={ml} className="agua-quick-btn" onClick={() => adicionarAgua(ml)}>
-              {ml >= 1000 ? "🫙" : ml >= 500 ? "🍶" : ml >= 300 ? "🥤" : "🥃"} {ml}ml
+            <button
+              key={ml}
+              className="agua-quick-btn"
+              onClick={() => adicionarAgua(ml)}
+            >
+              {ml >= 1000 ? "🫙" : ml >= 500 ? "🍶" : ml >= 300 ? "🥤" : "🥃"}{" "}
+              {ml}ml
             </button>
           ))}
         </div>
@@ -219,16 +319,25 @@ export default function Agua({ user, onAjuda }) {
             placeholder="Outro valor (ml)"
             value={customMl}
             onChange={(e) => setCustomMl(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") adicionarAgua(customMl); }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") adicionarAgua(customMl);
+            }}
           />
-          <button className="agua-btn-salvar" onClick={() => adicionarAgua(customMl)}>+ Adicionar</button>
+          <button
+            className="agua-btn-salvar"
+            onClick={() => adicionarAgua(customMl)}
+          >
+            + Adicionar
+          </button>
         </div>
       </div>
 
       <div className="agua-card">
         <div className="agua-card-title">Registros de hoje</div>
         {registros.length === 0 ? (
-          <p className="empty-msg" style={{ marginTop: 8, fontSize: 13 }}>Nenhum registro ainda.</p>
+          <p className="empty-msg" style={{ marginTop: 8, fontSize: 13 }}>
+            Nenhum registro ainda.
+          </p>
         ) : (
           <div className="agua-log">
             {registros.map((r) => (
@@ -237,7 +346,12 @@ export default function Agua({ user, onAjuda }) {
                   <span className="agua-log-ml">+{r.ml} ml</span>
                   <span className="agua-log-hora">{r.hora}</span>
                 </div>
-                <button className="agua-log-del" onClick={() => deletarRegistro(r.id)}>✕</button>
+                <button
+                  className="agua-log-del"
+                  onClick={() => deletarRegistro(r.id)}
+                >
+                  ✕
+                </button>
               </div>
             ))}
           </div>
@@ -247,27 +361,56 @@ export default function Agua({ user, onAjuda }) {
       <div className="agua-card">
         <div className="agua-card-title">Últimos 7 dias</div>
         <ResponsiveContainer width="100%" height={140}>
-          <BarChart data={ultimos7.map((data) => {
-            const regs = historico[data] || [];
-            const total = regs.reduce((s, r) => s + r.ml, 0);
-            const d = new Date(data + "T00:00:00");
-            return { name: d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }), ml: total };
-          })}>
+          <BarChart
+            data={ultimos7.map((data) => {
+              const regs = historico[data] || [];
+              const total = regs.reduce((s, r) => s + r.ml, 0);
+              const d = new Date(data + "T00:00:00");
+              return {
+                name: d.toLocaleDateString("pt-BR", {
+                  day: "2-digit",
+                  month: "2-digit",
+                }),
+                ml: total,
+              };
+            })}
+          >
             <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
             <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 10 }} />
-            <YAxis tick={{ fill: "#64748b", fontSize: 10 }} tickFormatter={(v) => `${(v / 1000).toFixed(1)}L`} />
-            <Tooltip contentStyle={{ background: "#1a1d21", border: "1px solid #ffffff0d", borderRadius: 8, color: "#f8fafc", fontSize: 12 }} formatter={(v) => [`${(v / 1000).toFixed(1)}L`]} />
+            <YAxis
+              tick={{ fill: "#64748b", fontSize: 10 }}
+              tickFormatter={(v) => `${(v / 1000).toFixed(1)}L`}
+            />
+            <Tooltip
+              contentStyle={{
+                background: "#1a1d21",
+                border: "1px solid #ffffff0d",
+                borderRadius: 8,
+                color: "#f8fafc",
+                fontSize: 12,
+              }}
+              formatter={(v) => [`${(v / 1000).toFixed(1)}L`]}
+            />
             <ReferenceLine y={meta} stroke="#10b98166" strokeDasharray="4 4" />
-            <Bar dataKey="ml" radius={[4, 4, 0, 0]} fill="#3b82f6" label={false}>
+            <Bar
+              dataKey="ml"
+              radius={[4, 4, 0, 0]}
+              fill="#3b82f6"
+              label={false}
+            >
               {ultimos7.map((data, i) => {
                 const regs = historico[data] || [];
                 const total = regs.reduce((s, r) => s + r.ml, 0);
-                return <Cell key={i} fill={total >= meta ? "#10b981" : "#3b82f6"} />;
+                return (
+                  <Cell key={i} fill={total >= meta ? "#10b981" : "#3b82f6"} />
+                );
               })}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
-        <div style={{ fontSize: 11, color: "#10b981", marginTop: 4 }}>— meta: {(meta / 1000).toFixed(1)}L</div>
+        <div style={{ fontSize: 11, color: "#10b981", marginTop: 4 }}>
+          — meta: {(meta / 1000).toFixed(1)}L
+        </div>
       </div>
     </div>
   );

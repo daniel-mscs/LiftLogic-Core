@@ -273,14 +273,14 @@ export default function Macros({ user, onAjuda }) {
 
   const adicionarAlimento = async () => {
     if (!foodSel) {
-          toast("Selecione um alimento!", "warning");
-          return;
-        }
-        const g = parseFloat(gramas);
-        if (!g || g <= 0) {
-          toast("Digite a quantidade em gramas!", "warning");
-          return;
-        }
+      toast("Selecione um alimento!", "warning");
+      return;
+    }
+    const g = parseFloat(gramas);
+    if (!g || g <= 0) {
+      toast("Digite a quantidade em gramas!", "warning");
+      return;
+    }
     const m = calcMacros(foodSel, g);
     const { data, error } = await supabase
       .from("macros_registro")
@@ -296,16 +296,16 @@ export default function Macros({ user, onAjuda }) {
       ])
       .select();
     if (error) {
-          toast("Erro: " + error.message, "error");
-          return;
-        }
-        setRegistros((prev) => [...prev, data[0]]);
-        setQuery("");
-        setGramas("");
-        setFoodSel(null);
-        setSugestoes([]);
-        toast("Alimento adicionado!", "success");
-        await ganharXP(user.id, "macros_registrado");
+      toast("Erro: " + error.message, "error");
+      return;
+    }
+    setRegistros((prev) => [...prev, data[0]]);
+    setQuery("");
+    setGramas("");
+    setFoodSel(null);
+    setSugestoes([]);
+    toast("Alimento adicionado!", "success");
+    await ganharXP(user.id, "macros_registrado");
   };
 
   const deletarRegistro = async (id) => {
@@ -316,9 +316,9 @@ export default function Macros({ user, onAjuda }) {
   const salvarMeta = async () => {
     const val = parseInt(metaInput);
     if (!val || val < 500) {
-          toast("Meta inválida!", "warning");
-          return;
-        }
+      toast("Meta inválida!", "warning");
+      return;
+    }
     await supabase
       .from("macros_meta")
       .upsert({ user_id: user.id, meta_kcal: val }, { onConflict: "user_id" });
@@ -330,9 +330,9 @@ export default function Macros({ user, onAjuda }) {
   const salvarCustom = async () => {
     const { nome, kcal, prot, carb, gord } = novoAlimento;
     if (!nome || !kcal) {
-          toast("Preencha nome e calorias!", "warning");
-          return;
-        }
+      toast("Preencha nome e calorias!", "warning");
+      return;
+    }
     const { data, error } = await supabase
       .from("alimentos_custom")
       .insert([
@@ -347,13 +347,13 @@ export default function Macros({ user, onAjuda }) {
       ])
       .select();
     if (error) {
-          toast("Erro: " + error.message, "error");
-          return;
-        }
-        setCustomFoods((prev) => [...prev, data[0]]);
-        setNovoAlimento({ nome: "", kcal: "", prot: "", carb: "", gord: "" });
-        setShowCustomForm(false);
-        toast("Alimento salvo!", "success");
+      toast("Erro: " + error.message, "error");
+      return;
+    }
+    setCustomFoods((prev) => [...prev, data[0]]);
+    setNovoAlimento({ nome: "", kcal: "", prot: "", carb: "", gord: "" });
+    setShowCustomForm(false);
+    toast("Alimento salvo!", "success");
   };
 
   const buscarHistoricoDia = async (data) => {
@@ -390,9 +390,9 @@ export default function Macros({ user, onAjuda }) {
   const clonarAlimento = async (r) => {
     const g = parseFloat(gramasClonar[r.id] ?? r.gramas);
     if (!g || g <= 0) {
-          toast("Digite uma quantidade válida!", "warning");
-          return;
-        }
+      toast("Digite uma quantidade válida!", "warning");
+      return;
+    }
     const food = todosAlimentos.find(
       (a) => normalizar(a.nome) === normalizar(r.nome),
     );
@@ -423,12 +423,12 @@ export default function Macros({ user, onAjuda }) {
       ])
       .select();
     if (error) {
-          toast("Erro: " + error.message, "error");
-          return;
-        }
-        setRegistros((prev) => [...prev, data[0]]);
-        toast("Alimento clonado!", "success");
-        await ganharXP(user.id, "macros_registrado");
+      toast("Erro: " + error.message, "error");
+      return;
+    }
+    setRegistros((prev) => [...prev, data[0]]);
+    toast("Alimento clonado!", "success");
+    await ganharXP(user.id, "macros_registrado");
   };
 
   const total = registros.reduce(
@@ -468,7 +468,12 @@ export default function Macros({ user, onAjuda }) {
     return acc;
   }, {});
 
-  if (carregando) return <div className="macros-section"><SkeletonMacros /></div>;
+  if (carregando)
+    return (
+      <div className="macros-section">
+        <SkeletonMacros />
+      </div>
+    );
 
   return (
     <div className="macros-section">

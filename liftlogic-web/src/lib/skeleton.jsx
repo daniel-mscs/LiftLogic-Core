@@ -18,36 +18,67 @@ export function SkeletonStyle() {
   );
 }
 
-export function SkeletonBox({ width = "100%", height = 14, radius = 8, style = {} }) {
+export function SkeletonBox({
+  width = "100%",
+  height = 14,
+  radius = 8,
+  style = {},
+}) {
   return (
-    <div style={{ ...shimmerStyle, width, height, borderRadius: radius, flexShrink: 0, ...style }} />
+    <div
+      style={{
+        ...shimmerStyle,
+        width,
+        height,
+        borderRadius: radius,
+        flexShrink: 0,
+        ...style,
+      }}
+    />
   );
 }
 
 export function SkeletonCard({ children, style = {} }) {
   return (
-    <div style={{
-      background: "#1a1d21",
-      border: "1px solid #ffffff0d",
-      borderRadius: 16,
-      padding: 16,
-      marginBottom: 12,
-      display: "flex",
-      flexDirection: "column",
-      gap: 10,
-      ...style,
-    }}>
+    <div
+      style={{
+        background: "#1a1d21",
+        border: "1px solid #ffffff0d",
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 12,
+        display: "flex",
+        flexDirection: "column",
+        gap: 10,
+        ...style,
+      }}
+    >
       {children}
     </div>
   );
 }
 
 export function SkeletonRow({ gap = 8, children, style = {} }) {
-  return <div style={{ display: "flex", gap, alignItems: "center", ...style }}>{children}</div>;
+  return (
+    <div style={{ display: "flex", gap, alignItems: "center", ...style }}>
+      {children}
+    </div>
+  );
 }
 
 export function SkeletonGrid({ cols = 3, gap = 10, children, style = {} }) {
-  return <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap, ...style }}>{children}</div>;
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: `repeat(${cols}, 1fr)`,
+        gap,
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  );
 }
 
 // Skeletons prontos por tela
@@ -84,8 +115,11 @@ export function SkeletonMacros() {
       {/* Refeições */}
       <SkeletonCard>
         <SkeletonBox width="55%" height={11} />
-        {[1, 2, 3].map(i => (
-          <div key={i} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            style={{ display: "flex", flexDirection: "column", gap: 6 }}
+          >
             <SkeletonBox width="40%" height={11} />
             <SkeletonBox height={44} radius={10} />
           </div>
@@ -101,15 +135,25 @@ export function SkeletonTreino() {
       <SkeletonStyle />
       {/* Timer */}
       <SkeletonCard>
-        <SkeletonBox width="50%" height={56} radius={10} style={{ margin: "0 auto" }} />
+        <SkeletonBox
+          width="50%"
+          height={56}
+          radius={10}
+          style={{ margin: "0 auto" }}
+        />
       </SkeletonCard>
 
       {/* Exercícios */}
-      {[1, 2, 3].map(i => (
+      {[1, 2, 3].map((i) => (
         <SkeletonCard key={i}>
           <SkeletonRow>
             <SkeletonBox width={60} height={20} radius={6} />
-            <SkeletonBox width={40} height={20} radius={6} style={{ marginLeft: "auto" }} />
+            <SkeletonBox
+              width={40}
+              height={20}
+              radius={6}
+              style={{ marginLeft: "auto" }}
+            />
           </SkeletonRow>
           <SkeletonBox width="70%" height={18} />
           <SkeletonRow gap={8}>
@@ -216,10 +260,17 @@ export function SkeletonSupl() {
 
       <SkeletonCard>
         <SkeletonBox width="30%" height={11} />
-        {[1, 2, 3].map(i => (
+        {[1, 2, 3].map((i) => (
           <SkeletonRow key={i} gap={12}>
             <SkeletonBox width={32} height={32} radius={99} />
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                gap: 6,
+              }}
+            >
               <SkeletonBox width="60%" height={13} />
               <SkeletonBox width="40%" height={11} />
             </div>
