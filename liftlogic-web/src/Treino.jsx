@@ -42,6 +42,7 @@ import SmartPocket from "./SmartPocket";
 import RPG from "./RPG";
 import Sono from "./Sono";
 import { ganharXP } from "./lib/rpg";
+import { toast } from "./lib/toast";
 import {
   NOTIFICACOES,
   agendarNotificacoes,
@@ -615,9 +616,9 @@ function Treino({ logout, user }) {
       ])
       .select();
     if (error) {
-      alert("Erro ao salvar: " + error.message);
-      return;
-    }
+          toast("Erro ao salvar: " + error.message, "error");
+          return;
+        }
     const registrosCarga = filtrados.map((ex) => ({
       user_id: user.id,
       exercicio_nome: ex.nome,
@@ -653,7 +654,7 @@ function Treino({ logout, user }) {
         equipamento: novoExercicio.equipamento,
       },
     ]);
-    if (error) alert(error.message);
+    if (error) toast(error.message, "error");
     else {
       buscarExercicios();
       setNovoExercicio({
@@ -688,8 +689,8 @@ function Treino({ logout, user }) {
       .delete()
       .eq("id", id)
       .eq("user_id", user.id);
-    if (error) alert(error.message);
-    else buscarExercicios();
+    if (error) toast(error.message, "error");
+        else buscarExercicios();
   };
 
   const toggleConcluido = (id) =>
@@ -1832,7 +1833,7 @@ function Treino({ logout, user }) {
                 <button
                   onClick={async () => {
                     if (!cardioForm.duracao) {
-                      alert("Informe a duração!");
+                                          toast("Informe a duração!", "warning");
                       return;
                     }
                     const hoje = new Date();
@@ -1857,10 +1858,10 @@ function Treino({ logout, user }) {
                       ])
                       .select();
                     if (error) {
-                      alert(error.message);
-                      return;
-                    }
-                    setCardioRegistros((prev) => [novo[0], ...prev]);
+                                          toast(error.message, "error");
+                                          return;
+                                        }
+                                        setCardioRegistros((prev) => [novo[0], ...prev]);
                     setCardioForm((p) => ({
                       ...p,
                       duracao: "",
@@ -2058,9 +2059,9 @@ function Treino({ logout, user }) {
                             if (!input) return;
                             const mins = parseInt(input);
                             if (!mins || mins <= 0) {
-                              alert("Tempo inválido!");
-                              return;
-                            }
+                                                          toast("Tempo inválido!", "warning");
+                                                          return;
+                                                        }
                             const novosSeg = mins * 60;
                             const novaKcal = perfil.peso
                               ? Math.round(
@@ -2068,17 +2069,17 @@ function Treino({ logout, user }) {
                                 )
                               : t.kcal;
                             supabase
-                              .from("treinos_finalizados")
-                              .update({
-                                tempo_segundos: novosSeg,
-                                kcal: novaKcal,
-                              })
-                              .eq("id", t.id)
-                              .then(({ error }) => {
-                                if (error) {
-                                  alert("Erro ao salvar: " + error.message);
-                                  return;
-                                }
+                                                          .from("treinos_finalizados")
+                                                          .update({
+                                                            tempo_segundos: novosSeg,
+                                                            kcal: novaKcal,
+                                                          })
+                                                          .eq("id", t.id)
+                                                          .then(({ error }) => {
+                                                            if (error) {
+                                                              toast("Erro ao salvar: " + error.message, "error");
+                                                              return;
+                                                            }
                                 setHistorico((prev) =>
                                   prev.map((h) =>
                                     h.id === t.id
@@ -2543,12 +2544,10 @@ function Treino({ logout, user }) {
                       );
                       const ok = await agendarNotificacoes(ativas);
                       if (ok) {
-                        setNotifPermissao("granted");
-                        alert("✅ Notificações ativadas!");
-                      } else {
-                        alert(
-                          "❌ Permissão negada. Ative nas configurações do navegador.",
-                        );
+                                              setNotifPermissao("granted");
+                                              toast("Notificações ativadas!", "success");
+                                            } else {
+                                              toast("Permissão negada. Ative nas configurações do navegador.", "error");
                       }
                     }}
                     style={{
@@ -2568,7 +2567,7 @@ function Treino({ logout, user }) {
                   <button
                     onClick={() => {
                       cancelarNotificacoes();
-                      alert("🔕 Notificações desativadas!");
+                                            toast("Notificações desativadas!", "info");
                     }}
                     style={{
                       background: "transparent",

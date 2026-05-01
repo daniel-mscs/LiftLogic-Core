@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "./lib/supabase";
+import { toast } from "./lib/toast";
 
 function formatarData(date) {
   return date.toISOString().split("T")[0];
@@ -16,6 +17,7 @@ export default function Suplementos({
   const [carregando, setCarregando] = useState(true);
   const [nomeInput, setNomeInput] = useState("");
   const [doseInput, setDoseInput] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const buscarTudo = useCallback(async () => {
     const hoje = formatarData(new Date());
@@ -70,7 +72,7 @@ export default function Suplementos({
 
   const adicionarSupl = async () => {
     if (!nomeInput.trim() || !doseInput.trim()) {
-      alert("Preencha nome e dose!");
+      toast("Preencha nome e dose!", "warning");
       return;
     }
     const { data, error } = await supabase
@@ -85,16 +87,16 @@ export default function Suplementos({
       ])
       .select();
     if (error) {
-      alert("Erro: " + error.message);
+      toast("Erro: " + error.message, "error");
       return;
     }
     setLista((prev) => [...prev, data[0]]);
     setNomeInput("");
     setDoseInput("");
+    toast("Suplemento adicionado!", "success");
   };
 
   const deletarSupl = async (id) => {
-    if (!confirm("Remover este suplemento?")) return;
     await supabase.from("suplementos").delete().eq("id", id);
     setLista((prev) => prev.filter((s) => s.id !== id));
     setChecks((prev) => {
@@ -102,6 +104,8 @@ export default function Suplementos({
       delete n[id];
       return n;
     });
+    setConfirmDelete(null);
+    toast("Suplemento removido!", "info");
   };
 
   const concluidosHoje = lista.filter((s) => checks[s.id]?.concluido).length;
@@ -136,7 +140,6 @@ export default function Suplementos({
     );
   }
 
-  // MODO COMPACTO — usado na Home
   if (compact) {
     if (lista.length === 0) return null;
     return (
@@ -171,48 +174,51 @@ export default function Suplementos({
     );
   }
 
-  // MODO COMPLETO
   return (
     <div className="supl-section">
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 16,
-        }}
-      >
-        <h2 className="title-divisao" style={{ margin: 0 }}>
-          💊 Suplementação
-        </h2>
-        <button
-          className="ajuda-shortcut-btn"
-          onClick={() => onAjuda("ajuda-geral")}
-        >
-          ?
-        </button>
-      </div>
-
-      {/* Progresso do dia */}
-      {lista.length > 0 && (
-        <div className="supl-prog-card">
-          <div className="supl-prog-top">
-            <span className="supl-prog-num">
-              {concluidosHoje}
-              <span>/{lista.length}</span>
-            </span>
-            <span className="supl-prog-label">suplementos hoje</span>
-          </div>
-          <div className="supl-prog-bar-bg">
-            <div
-              className="supl-prog-bar-fill"
-              style={{ width: `${(concluidosHoje / lista.length) * 100}%` }}
-            />
+      {/* Modal de confirmação de delete */}
+      {confirmDelete && (
+        <div className="modal-overlay" style={{ zIndex: 1000 }}>
+          <div className="modal-resumo" style={{ maxWidth: 320 }}>
+            <h2 style={{ fontSize: 18, marginBottom: 12 }}>Remover suplemento?</h2>
+            <p style={{ fontSize: 13, color: "#94a3b8", marginBottom: 20 }}>
+              "{confirmDelete.nome}" será removido permanentemente.
+            </p>
+            <div className="modal-actions">
+              <button
+                onClick={() => deletarSupl(confirmDelete.id)}
+                style={{ background: "#ef4444", border: "none", borderRadius: 10, color: "#fff", fontSize: 14, fontWeight: 700, padding: "12px 20px", cursor: "pointer" }}
+              >
+                Remover
+              </button>
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="btn-cancel-rest"
+              >
+                Cancelar
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Lista com check */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <h2 className="title-divisao" style={{ margin: 0 }}>💊 Suplementação</h2>
+        <button className="ajuda-shortcut-btn" onClick={() => onAjuda("ajuda-geral")}>?</button>
+      </div>
+
+      {lista.length > 0 && (
+        <div className="supl-prog-card">
+          <div className="supl-prog-top">
+            <span className="supl-prog-num">{concluidosHoje}<span>/{lista.length}</span></span>
+            <span className="supl-prog-label">suplementos hoje</span>
+          </div>
+          <div className="supl-prog-bar-bg">
+            <div className="supl-prog-bar-fill" style={{ width: `${(concluidosHoje / lista.length) * 100}%` }} />
+          </div>
+        </div>
+      )}
+
       {lista.length > 0 && (
         <div className="supl-card">
           <div className="supl-card-title">HOJE</div>
@@ -220,37 +226,20 @@ export default function Suplementos({
             const done = !!checks[s.id]?.concluido;
             const hora = checks[s.id]?.hora || null;
             return (
-              <div
-                key={s.id}
-                className={`supl-item-full ${done ? "done" : ""}`}
-              >
-                <div
-                  className="supl-item-left"
-                  onClick={() => toggleCheck(s.id)}
-                >
+              <div key={s.id} className={`supl-item-full ${done ? "done" : ""}`}>
+                <div className="supl-item-left" onClick={() => toggleCheck(s.id)}>
                   <span className="supl-check-big">{done ? "✅" : "💊"}</span>
                   <div className="supl-item-info">
                     <span className="supl-nome-full">{s.nome}</span>
                     <span className="supl-dose-full">
                       {s.dose}
-                      {hora ? (
-                        <span style={{ color: "#6366f1", marginLeft: 6 }}>
-                          · {hora}
-                        </span>
-                      ) : (
-                        ""
-                      )}
+                      {hora ? <span style={{ color: "#6366f1", marginLeft: 6 }}>· {hora}</span> : ""}
                     </span>
                   </div>
                 </div>
                 <div className="supl-item-right">
                   <span className="supl-toggle-big">{done ? "✓" : "○"}</span>
-                  <button
-                    className="supl-del-btn"
-                    onClick={() => deletarSupl(s.id)}
-                  >
-                    ×
-                  </button>
+                  <button className="supl-del-btn" onClick={() => setConfirmDelete(s)}>×</button>
                 </div>
               </div>
             );
@@ -258,40 +247,17 @@ export default function Suplementos({
         </div>
       )}
 
-      {/* Adicionar */}
       <div className="supl-card">
         <div className="supl-card-title">ADICIONAR SUPLEMENTO</div>
         <div className="supl-add-form">
-          <input
-            type="text"
-            placeholder="Nome (ex: Creatina)"
-            value={nomeInput}
-            onChange={(e) => setNomeInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter")
-                document.getElementById("dose-input").focus();
-            }}
-          />
-          <input
-            id="dose-input"
-            type="text"
-            placeholder="Dose (ex: 5g, 1 cápsula)"
-            value={doseInput}
-            onChange={(e) => setDoseInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") adicionarSupl();
-            }}
-          />
-          <button className="supl-btn-add" onClick={adicionarSupl}>
-            + Adicionar
-          </button>
+          <input type="text" placeholder="Nome (ex: Creatina)" value={nomeInput} onChange={(e) => setNomeInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") document.getElementById("dose-input").focus() }} />
+          <input id="dose-input" type="text" placeholder="Dose (ex: 5g, 1 cápsula)" value={doseInput} onChange={(e) => setDoseInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") adicionarSupl() }} />
+          <button className="supl-btn-add" onClick={adicionarSupl}>+ Adicionar</button>
         </div>
       </div>
 
       {lista.length === 0 && (
-        <p className="empty-msg" style={{ marginTop: 8, fontSize: 13 }}>
-          Nenhum suplemento cadastrado ainda. Adicione acima! 💊
-        </p>
+        <p className="empty-msg" style={{ marginTop: 8, fontSize: 13 }}>Nenhum suplemento cadastrado ainda. Adicione acima! 💊</p>
       )}
     </div>
   );

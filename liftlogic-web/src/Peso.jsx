@@ -10,6 +10,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { ganharXP } from "./lib/rpg";
+import { toast } from "./lib/toast";
 
 function formatarData(date) {
   const offset = date.getTimezoneOffset();
@@ -241,7 +242,7 @@ export default function Peso({ user, onAjuda }) {
   const registrarPeso = async () => {
     const val = parseFloat(pesoInput);
     if (!val || val < 30 || val > 300) {
-      alert("Digite um peso válido!");
+          toast("Digite um peso válido!", "warning");
       return;
     }
     const existing = registros.find((r) => r.data === hoje);
@@ -252,22 +253,22 @@ export default function Peso({ user, onAjuda }) {
         .update({ peso: val })
         .eq("id", existing.id);
       if (error) {
-        alert("Erro: " + error.message);
-        return;
-      }
-      setRegistros((prev) =>
-        prev.map((r) => (r.id === existing.id ? { ...r, peso: val } : r)),
-      );
+              toast("Erro: " + error.message, "error");
+              return;
+            }
+            setRegistros((prev) =>
+              prev.map((r) => (r.id === existing.id ? { ...r, peso: val } : r)),
+            );
     } else {
       const { data, error } = await supabase
         .from("peso_registro")
         .insert([{ user_id: user.id, data: hoje, peso: val }])
         .select();
       if (error) {
-        alert("Erro: " + error.message);
-        return;
-      }
-      setRegistros((prev) => [data[0], ...prev]);
+              toast("Erro: " + error.message, "error");
+              return;
+            }
+            setRegistros((prev) => [data[0], ...prev]);
     }
     await supabase
       .from("perfil")
@@ -285,7 +286,7 @@ export default function Peso({ user, onAjuda }) {
   const salvarMeta = async () => {
     const val = parseFloat(metaInput);
     if (!val || val < 30) {
-      alert("Meta inválida!");
+          toast("Meta inválida!", "warning");
       return;
     }
     await supabase
@@ -679,7 +680,7 @@ export default function Peso({ user, onAjuda }) {
                       (v) => v !== "",
                     );
                     if (!algum) {
-                      alert("Preencha ao menos uma medida!");
+                                          toast("Preencha ao menos uma medida!", "warning");
                       return;
                     }
                     const payload = { user_id: user.id, data: hoje };
@@ -692,7 +693,7 @@ export default function Peso({ user, onAjuda }) {
                       .insert([payload])
                       .select();
                     if (error) {
-                      alert(error.message);
+                                          toast(error.message, "error");
                       return;
                     }
                     setMedidas((prev) => [novo[0], ...prev]);
