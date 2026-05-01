@@ -3,6 +3,7 @@ import { supabase } from "./lib/supabase";
 import Login from "./pages/Login";
 import Treino from "./Treino";
 import Onboarding from "./Onboarding";
+import { ToastContainer } from './lib/toast'
 
 function App() {
   const [session, setSession] = useState(null);
@@ -90,7 +91,12 @@ function App() {
     );
   }
 
-  return <Treino logout={logout} user={session.user} />;
+  return (
+      <>
+        <ToastContainer />
+        <Treino logout={logout} user={session.user} />
+      </>
+    );
 }
 
 export default App;
