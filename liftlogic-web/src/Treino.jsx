@@ -2065,9 +2065,24 @@ function Treino({ logout, user }) {
             <div className="historico-section">
               <h1 className="title-divisao">Histórico 📜</h1>
               {historico.length === 0 ? (
-                <p className="empty-msg">
-                  Nenhum treino registrado ainda. Bora treinar! 💪
-                </p>
+                <div style={{ textAlign: "center", padding: "40px 0" }}>
+                  <div style={{ fontSize: 40, marginBottom: 10 }}>📜</div>
+                  <div
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 700,
+                      color: "#f8fafc",
+                      marginBottom: 6,
+                    }}
+                  >
+                    Nenhum treino finalizado
+                  </div>
+                  <div
+                    style={{ fontSize: 13, color: "#475569", lineHeight: 1.6 }}
+                  >
+                    Conclua seu primeiro treino para ver o histórico aqui.
+                  </div>
+                </div>
               ) : (
                 historico.map((t) => (
                   <div key={t.id} className="card-historico">

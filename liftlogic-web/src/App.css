@@ -3492,3 +3492,76 @@ input::-webkit-inner-spin-button {
 .dashboard-section {
   animation: fadeInUp 0.22s ease both;
 }
+
+/* ══════════════════════════════════════
+   LOGIN — ANIMAÇÃO DE ENTRADA
+══════════════════════════════════════ */
+@keyframes loginCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(32px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes loginBlobPulse {
+  0%, 100% { transform: scale(1); opacity: 0.15; }
+  50%       { transform: scale(1.15); opacity: 0.22; }
+}
+
+@keyframes loginLogoSpin {
+  from { transform: rotate(-8deg) scale(0.8); opacity: 0; }
+  to   { transform: rotate(0deg) scale(1); opacity: 1; }
+}
+
+.login-card {
+  animation: loginCardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.login-blob-1 {
+  animation: loginBlobPulse 6s ease-in-out infinite;
+}
+
+.login-blob-2 {
+  animation: loginBlobPulse 8s ease-in-out 2s infinite;
+}
+
+.login-logo {
+  animation: loginLogoSpin 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+  display: inline-block;
+}
+
+/* ══════════════════════════════════════
+   ANIVERSÁRIO — BRILHO E ESTRELAS
+══════════════════════════════════════ */
+@keyframes birthdayGlow {
+  0%, 100% { box-shadow: 0 0 20px rgba(245,197,24,0.15), 0 0 40px rgba(99,102,241,0.1); }
+  50%       { box-shadow: 0 0 30px rgba(245,197,24,0.35), 0 0 60px rgba(99,102,241,0.2); }
+}
+
+@keyframes starFloat {
+  0%   { transform: translateY(0px) rotate(0deg); opacity: 0.7; }
+  50%  { transform: translateY(-8px) rotate(180deg); opacity: 1; }
+  100% { transform: translateY(0px) rotate(360deg); opacity: 0.7; }
+}
+
+@keyframes birthdayPulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.04); }
+}
+
+.birthday-card {
+  animation: birthdayGlow 2.5s ease-in-out infinite, birthdayPulse 3s ease-in-out infinite;
+}
+
+.birthday-star {
+  display: inline-block;
+  animation: starFloat 2s ease-in-out infinite;
+}
+
+.birthday-star:nth-child(2) { animation-delay: 0.3s; }
+.birthday-star:nth-child(3) { animation-delay: 0.6s; }
+.birthday-star:nth-child(4) { animation-delay: 0.9s; }

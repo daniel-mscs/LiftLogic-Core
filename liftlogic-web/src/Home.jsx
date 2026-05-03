@@ -596,17 +596,26 @@ export default function Home({
       {/* Card aniversário */}
       {isAniversario && (
         <div
+          className="birthday-card"
           style={{
             background: "#1a1d21",
             border: "1px solid #f59e0b55",
             borderRadius: 16,
             padding: "20px",
             animation: "fadeInUp 0.4s ease",
+            position: "relative",
+            overflow: "hidden",
           }}
         >
           {/* Header */}
           <div style={{ textAlign: "center", marginBottom: 20 }}>
             <div style={{ fontSize: 44, marginBottom: 8 }}>🎂</div>
+            <div style={{ fontSize: 18, marginBottom: 4 }}>
+              <span className="birthday-star">⭐</span>
+              <span className="birthday-star">✨</span>
+              <span className="birthday-star">🌟</span>
+              <span className="birthday-star">✨</span>
+            </div>
             <div
               style={{
                 fontSize: 20,

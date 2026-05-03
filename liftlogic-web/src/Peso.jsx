@@ -1818,9 +1818,22 @@ export default function Peso({ user, onAjuda }) {
           <div className="peso-card">
             <div className="peso-card-title">HISTÓRICO</div>
             {registros.length === 0 ? (
-              <p className="empty-msg" style={{ marginTop: 8, fontSize: 13 }}>
-                Nenhum registro ainda.
-              </p>
+              <div style={{ textAlign: "center", padding: "20px 0" }}>
+                <div style={{ fontSize: 36, marginBottom: 8 }}>⚖️</div>
+                <div
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: "#f8fafc",
+                    marginBottom: 4,
+                  }}
+                >
+                  Nenhum peso registrado
+                </div>
+                <div style={{ fontSize: 12, color: "#475569" }}>
+                  Registre seu peso diariamente para acompanhar sua evolução.
+                </div>
+              </div>
             ) : (
               <div className="peso-log">
                 {registros.map((r, idx) => {

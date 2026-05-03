@@ -377,12 +377,34 @@ export default function Stats({ user }) {
       day: "2-digit",
     });
   const tooltipStyle = {
-    background: "#1a1d21",
-    border: "1px solid #ffffff0d",
-    borderRadius: 8,
+    background: "#1e2126",
+    border: "1px solid #6366f133",
+    borderRadius: 10,
     color: "#f8fafc",
     fontSize: 12,
+    boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
   };
+
+  const GradientDefs = () => (
+    <defs>
+      <linearGradient id="gradPurple" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#6366f1" stopOpacity={1} />
+        <stop offset="100%" stopColor="#4f46e5" stopOpacity={0.6} />
+      </linearGradient>
+      <linearGradient id="gradOrange" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#f59e0b" stopOpacity={1} />
+        <stop offset="100%" stopColor="#d97706" stopOpacity={0.6} />
+      </linearGradient>
+      <linearGradient id="gradGreen" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#10b981" stopOpacity={1} />
+        <stop offset="100%" stopColor="#059669" stopOpacity={0.6} />
+      </linearGradient>
+      <linearGradient id="gradBlue" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#3b82f6" stopOpacity={1} />
+        <stop offset="100%" stopColor="#2563eb" stopOpacity={0.6} />
+      </linearGradient>
+    </defs>
+  );
 
   // Cálculos mensais
   const totalTreinosMes = treinosMes.length;
@@ -637,6 +659,7 @@ export default function Stats({ user }) {
                     min: Math.round((t.tempo_segundos || 0) / 60),
                   }))}
                 >
+                  <GradientDefs />
                   <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
                   <XAxis
                     dataKey="name"
@@ -645,9 +668,14 @@ export default function Stats({ user }) {
                   <YAxis tick={{ fill: "#64748b", fontSize: 9 }} />
                   <Tooltip
                     contentStyle={tooltipStyle}
-                    formatter={(v) => [`${v} min`]}
+                    formatter={(v) => [`${v} min`, "Duração"]}
+                    cursor={{ fill: "#ffffff08" }}
                   />
-                  <Bar dataKey="min" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                  <Bar
+                    dataKey="min"
+                    fill="url(#gradPurple)"
+                    radius={[6, 6, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -674,14 +702,20 @@ export default function Stats({ user }) {
                   />
                   <Tooltip
                     contentStyle={tooltipStyle}
-                    formatter={(v) => [`${v} kg`]}
+                    formatter={(v) => [`${v} kg`, "Peso"]}
                   />
                   <Line
                     type="monotone"
                     dataKey="peso"
                     stroke="#6366f1"
-                    strokeWidth={2}
-                    dot={{ fill: "#6366f1", r: 3 }}
+                    strokeWidth={2.5}
+                    dot={{
+                      fill: "#6366f1",
+                      r: 4,
+                      strokeWidth: 2,
+                      stroke: "#0f1113",
+                    }}
+                    activeDot={{ r: 6, fill: "#818cf8" }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -706,9 +740,15 @@ export default function Stats({ user }) {
                   <YAxis tick={{ fill: "#64748b", fontSize: 9 }} />
                   <Tooltip
                     contentStyle={tooltipStyle}
-                    formatter={(v) => [`${v} kcal`]}
+                    formatter={(v) => [`${v} kcal`, "Ingerido"]}
+                    cursor={{ fill: "#ffffff08" }}
                   />
-                  <Bar dataKey="kcal" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                  <GradientDefs />
+                  <Bar
+                    dataKey="kcal"
+                    fill="url(#gradOrange)"
+                    radius={[6, 6, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -730,9 +770,15 @@ export default function Stats({ user }) {
                   />
                   <Tooltip
                     contentStyle={tooltipStyle}
-                    formatter={(v) => [`${v}h`]}
+                    formatter={(v) => [`${v}h`, "Dormido"]}
+                    cursor={{ fill: "#ffffff08" }}
                   />
-                  <Bar dataKey="horas" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                  <GradientDefs />
+                  <Bar
+                    dataKey="horas"
+                    fill="url(#gradBlue)"
+                    radius={[6, 6, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -1204,8 +1250,14 @@ export default function Stats({ user }) {
                         type="monotone"
                         dataKey="peso"
                         stroke="#6366f1"
-                        strokeWidth={2}
-                        dot={{ fill: "#6366f1", r: 3 }}
+                        strokeWidth={2.5}
+                        dot={{
+                          fill: "#6366f1",
+                          r: 4,
+                          strokeWidth: 2,
+                          stroke: "#0f1113",
+                        }}
+                        activeDot={{ r: 6, fill: "#818cf8" }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
@@ -1238,10 +1290,11 @@ export default function Stats({ user }) {
                         contentStyle={tooltipStyle}
                         formatter={(v) => [`${v}h`]}
                       />
+                      <GradientDefs />
                       <Bar
                         dataKey="horas"
-                        fill="#6366f1"
-                        radius={[4, 4, 0, 0]}
+                        fill="url(#gradBlue)"
+                        radius={[6, 6, 0, 0]}
                       />
                     </BarChart>
                   </ResponsiveContainer>

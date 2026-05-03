@@ -335,9 +335,22 @@ export default function Agua({ user, onAjuda }) {
       <div className="agua-card">
         <div className="agua-card-title">Registros de hoje</div>
         {registros.length === 0 ? (
-          <p className="empty-msg" style={{ marginTop: 8, fontSize: 13 }}>
-            Nenhum registro ainda.
-          </p>
+          <div style={{ textAlign: "center", padding: "20px 0" }}>
+            <div style={{ fontSize: 36, marginBottom: 8 }}>💧</div>
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                color: "#f8fafc",
+                marginBottom: 4,
+              }}
+            >
+              Nenhum registro hoje
+            </div>
+            <div style={{ fontSize: 12, color: "#475569" }}>
+              Use os botões acima para registrar seu consumo de água.
+            </div>
+          </div>
         ) : (
           <div className="agua-log">
             {registros.map((r) => (
