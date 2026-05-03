@@ -131,6 +131,17 @@ export default function Stats({ user }) {
 
   const ultimos7 = getLast7Days();
   const inicio = ultimos7[0];
+  const [semanaAnterior, setSemanaAnterior] = useState(null);
+
+  const getPrev7Days = () =>
+    Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (13 - i));
+      return formatarData(d);
+    });
+  const prev7 = getPrev7Days();
+  const inicioPrev = prev7[0];
+  const fimPrev = prev7[6];
 
   const buscarTudo = useCallback(async () => {
     setCarregando(true);
@@ -209,6 +220,71 @@ export default function Stats({ user }) {
     setRpg(rpgData || null);
     setPerfil(perfilData || null);
     setSono(sonoData || []);
+
+    // Semana anterior
+    const [
+      { data: treinosPrev },
+      { data: aguaPrev },
+      { data: passosPrev },
+      { data: sonoPrev },
+    ] = await Promise.all([
+      supabase
+        .from("treinos_finalizados")
+        .select("*")
+        .eq("user_id", user.id)
+        .gte("created_at", inicioPrev)
+        .lte("created_at", fimPrev + "T23:59:59"),
+      supabase
+        .from("agua_registro")
+        .select("*")
+        .eq("user_id", user.id)
+        .gte("data", inicioPrev)
+        .lte("data", fimPrev),
+      supabase
+        .from("passos_registro")
+        .select("*")
+        .eq("user_id", user.id)
+        .gte("data", inicioPrev)
+        .lte("data", fimPrev),
+      supabase
+        .from("sono_registro")
+        .select("*")
+        .eq("user_id", user.id)
+        .gte("data", inicioPrev)
+        .lte("data", fimPrev),
+    ]);
+
+    const aguaPrevPorDia = prev7.map((d) => ({
+      total: (aguaPrev || [])
+        .filter((r) => r.data === d)
+        .reduce((s, r) => s + r.ml, 0),
+    }));
+    const diasMetaAguaPrev = aguaPrevPorDia.filter(
+      (d) => d.total >= (aguaMetaData?.meta_ml || 2500),
+    ).length;
+    const diasMetaPassosPrev = (passosPrev || []).filter(
+      (r) => r.passos >= (passosMetaData?.meta_passos || 10000),
+    ).length;
+    const sonoFiltradoPrev = (sonoPrev || []).filter((r) =>
+      prev7.includes(r.data),
+    );
+    const mediaHorasSonoPrev =
+      sonoFiltradoPrev.length > 0
+        ? (
+            sonoFiltradoPrev.reduce(
+              (s, r) => s + calcularHoras(r.dormiu, r.acordou),
+              0,
+            ) / sonoFiltradoPrev.length
+          ).toFixed(1)
+        : null;
+
+    setSemanaAnterior({
+      treinos: (treinosPrev || []).length,
+      diasAgua: diasMetaAguaPrev,
+      diasPassos: diasMetaPassosPrev,
+      horasSono: mediaHorasSonoPrev,
+    });
+
     setCarregando(false);
   }, [user.id]);
 
@@ -612,6 +688,127 @@ export default function Stats({ user }) {
               cor="#f59e0b"
             />
           </div>
+
+          {/* Comparativo semana anterior */}
+          {semanaAnterior && (
+            <div
+              style={{
+                background: "#1a1d21",
+                border: "1px solid #ffffff0d",
+                borderRadius: 14,
+                padding: 16,
+                marginBottom: 10,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 10,
+                  color: "#64748b",
+                  fontWeight: 800,
+                  letterSpacing: "0.08em",
+                  marginBottom: 12,
+                }}
+              >
+                📊 ESTA SEMANA VS SEMANA ANTERIOR
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {[
+                  {
+                    icon: "⚔️",
+                    label: "Treinos",
+                    atual: totalTreinos,
+                    prev: semanaAnterior.treinos,
+                    unidade: "x",
+                    maisMelhor: true,
+                  },
+                  {
+                    icon: "💧",
+                    label: "Meta Água",
+                    atual: diasMetaAgua,
+                    prev: semanaAnterior.diasAgua,
+                    unidade: "/7 dias",
+                    maisMelhor: true,
+                  },
+                  {
+                    icon: "👟",
+                    label: "Meta Passos",
+                    atual: diasMetaPassos,
+                    prev: semanaAnterior.diasPassos,
+                    unidade: "/7 dias",
+                    maisMelhor: true,
+                  },
+                  {
+                    icon: "😴",
+                    label: "Sono médio",
+                    atual: parseFloat(mediaHorasSono) || 0,
+                    prev: parseFloat(semanaAnterior.horasSono) || 0,
+                    unidade: "h",
+                    maisMelhor: true,
+                  },
+                ].map((item, i) => {
+                  const diff = item.atual - item.prev;
+                  const melhorou = item.maisMelhor ? diff > 0 : diff < 0;
+                  const piorou = item.maisMelhor ? diff < 0 : diff > 0;
+                  const cor =
+                    diff === 0 ? "#64748b" : melhorou ? "#10b981" : "#ef4444";
+                  const seta = diff === 0 ? "=" : melhorou ? "▲" : "▼";
+                  return (
+                    <div
+                      key={i}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "6px 0",
+                        borderBottom: "1px solid #ffffff05",
+                      }}
+                    >
+                      <span style={{ fontSize: 13, color: "#94a3b8" }}>
+                        {item.icon} {item.label}
+                      </span>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                        }}
+                      >
+                        <span style={{ fontSize: 11, color: "#475569" }}>
+                          {item.prev}
+                          {item.unidade}
+                        </span>
+                        <span style={{ fontSize: 11, color: "#334155" }}>
+                          →
+                        </span>
+                        <span
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: "#f8fafc",
+                          }}
+                        >
+                          {item.atual}
+                          {item.unidade}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: cor,
+                            minWidth: 28,
+                            textAlign: "right",
+                          }}
+                        >
+                          {seta}{" "}
+                          {diff !== 0 ? Math.abs(item.atual - item.prev) : ""}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* RPG strip */}
           <div

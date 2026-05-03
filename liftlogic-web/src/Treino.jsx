@@ -169,6 +169,9 @@ function Treino({ logout, user }) {
   const [subAbaPerfil, setSubAbaPerfil] = useState("perfil");
   const [ajudaAncora, setAjudaAncora] = useState(null);
   const { ativo: tourAtivo, fechar: fecharTour } = useTour();
+  const [celebrando, setCelebrando] = useState(false);
+  const [xpGanho, setXpGanho] = useState(0);
+  const [mensagemCelebracao, setMensagemCelebracao] = useState("");
 
   const [notifAtivas, setNotifAtivas] = useState(() => {
     const salvo = localStorage.getItem("df_notif_ativas");
@@ -653,6 +656,21 @@ function Treino({ logout, user }) {
     setConcluidos({});
     await buscarHistorico();
     await ganharXP(user.id, "treino_finalizado");
+    const mensagens = [
+      "Mais um tijolo na forja. Continue assim! 💪",
+      "Sem desculpas, só resultado. Você mandou bem! 🔥",
+      "Enquanto outros dormiam, você estava aqui. Respeito! ⚔️",
+      "Consistência é o segredo. Você tá provando isso! 🏆",
+      "Seu eu do futuro agradece esse treino hoje. 🚀",
+      "Dor passa, fraqueza vai embora, orgulho fica! 💥",
+      "Mais forte do que ontem. Sempre. 🧱",
+      "Cada rep conta. Cada treino forja quem você é! ⭐",
+    ];
+    const msg = mensagens[Math.floor(Math.random() * mensagens.length)];
+    setMensagemCelebracao(msg);
+    setXpGanho(50);
+    setCelebrando(true);
+    setTimeout(() => setCelebrando(false), 3500);
   };
 
   const salvarExercicio = async (e) => {
@@ -752,6 +770,114 @@ function Treino({ logout, user }) {
           }}
         />
       )}
+      {celebrando && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(0,0,0,0.85)",
+            animation: "tourFadeIn 0.3s ease",
+            pointerEvents: "none",
+          }}
+        >
+          <style>{`
+                  @keyframes celebPop {
+                    0%   { transform: scale(0.5) rotate(-10deg); opacity: 0; }
+                    60%  { transform: scale(1.15) rotate(5deg); opacity: 1; }
+                    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+                  }
+                  @keyframes celebFloat {
+                    0%   { transform: translateY(0px); opacity: 1; }
+                    100% { transform: translateY(-40px); opacity: 0; }
+                  }
+                  @keyframes xpBadge {
+                    0%   { transform: scale(0) translateY(20px); opacity: 0; }
+                    50%  { transform: scale(1.2) translateY(-5px); opacity: 1; }
+                    100% { transform: scale(1) translateY(0); opacity: 1; }
+                  }
+                `}</style>
+
+          <div
+            style={{
+              animation: "celebPop 0.5s cubic-bezier(0.16,1,0.3,1)",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: 80, lineHeight: 1, marginBottom: 16 }}>
+              🏆
+            </div>
+            <div
+              style={{
+                fontSize: 26,
+                fontWeight: 800,
+                color: "#f8fafc",
+                marginBottom: 8,
+              }}
+            >
+              Treino Concluído!
+            </div>
+            <div
+              style={{
+                fontSize: 15,
+                color: "#94a3b8",
+                marginBottom: 24,
+                maxWidth: 280,
+                lineHeight: 1.6,
+              }}
+            >
+              {mensagemCelebracao}
+            </div>
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                background: "#6366f122",
+                border: "1px solid #6366f144",
+                borderRadius: 99,
+                padding: "10px 24px",
+                animation: "xpBadge 0.5s cubic-bezier(0.16,1,0.3,1) 0.3s both",
+              }}
+            >
+              <span style={{ fontSize: 20 }}>⭐</span>
+              <span style={{ fontSize: 20, fontWeight: 800, color: "#818cf8" }}>
+                +{xpGanho} XP
+              </span>
+            </div>
+
+            {/* Partículas */}
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                pointerEvents: "none",
+                overflow: "hidden",
+              }}
+            >
+              {["🎉", "✨", "🌟", "💥", "🎊", "⚡", "🔥"].map((e, i) => (
+                <div
+                  key={i}
+                  style={{
+                    position: "absolute",
+                    left: `${10 + i * 13}%`,
+                    top: `${20 + (i % 3) * 20}%`,
+                    fontSize: 24 + (i % 3) * 8,
+                    animation: `celebFloat ${1.5 + i * 0.2}s ease ${i * 0.1}s infinite`,
+                  }}
+                >
+                  {e}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {modalResumo && (
         <div className="modal-overlay">
           <div
