@@ -82,6 +82,7 @@ export default function Home({
   const [kcalMeta, setKcalMeta] = useState(2000);
   const [kcalGasto, setKcalGasto] = useState({ treino: 0, passos: 0 });
   const [humor, setHumor] = useState(null);
+  const [sonoHoje, setSonoHoje] = useState(null);
   const [salvandoHumor, setSalvandoHumor] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [statsAniversario, setStatsAniversario] = useState(null);
@@ -247,7 +248,14 @@ export default function Home({
         const novo = [
           ...parsed,
           { id: "humor", label: "Humor + Energia", visivel: true },
+          { id: "sono", label: "Sono", visivel: true },
         ];
+        localStorage.setItem("home_blocos", JSON.stringify(novo));
+        return novo;
+      }
+      const temSono = parsed.find((b) => b.id === "sono");
+      if (!temSono) {
+        const novo = [...parsed, { id: "sono", label: "Sono", visivel: true }];
         localStorage.setItem("home_blocos", JSON.stringify(novo));
         return novo;
       }
@@ -261,6 +269,7 @@ export default function Home({
       { id: "passos_supl", label: "Passos + Suplementos", visivel: true },
       { id: "habitos", label: "Hábitos", visivel: true },
       { id: "humor", label: "Humor + Energia", visivel: true },
+      { id: "sono", label: "Sono", visivel: true },
     ];
   });
 
@@ -293,6 +302,7 @@ export default function Home({
       { data: macrosMetaData },
       { data: treinoHoje },
       { data: humorHoje },
+      { data: sonoHoje },
     ] = await Promise.all([
       supabase.from("perfil").select("*").eq("user_id", user.id).single(),
       supabase
@@ -361,6 +371,12 @@ export default function Home({
         .eq("user_id", user.id)
         .eq("data", hoje)
         .single(),
+      supabase
+        .from("sono_registro")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("data", hoje)
+        .single(),
     ]);
     if (p) setPerfil(p);
     if (h) setHistorico(h);
@@ -405,6 +421,7 @@ export default function Home({
     }
 
     if (humorHoje) setHumor(humorHoje);
+    if (sonoHoje) setSonoHoje(sonoHoje);
     setCarregando(false);
   }, [user.id]);
 
@@ -1176,6 +1193,57 @@ export default function Home({
                       >
                         registrado hoje ✓
                       </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {bloco.id === "sono" && (
+                <div
+                  className="home-mini-card"
+                  onClick={() => !editandoHome && onNavegar("sono")}
+                  style={{ cursor: "pointer" }}
+                >
+                  <div className="home-mini-icon">😴</div>
+                  <div className="home-mini-info">
+                    <div className="home-mini-label">SONO HOJE</div>
+                    {sonoHoje ? (
+                      (() => {
+                        const [hD, mD] = sonoHoje.dormiu.split(":").map(Number);
+                        const [hA, mA] = sonoHoje.acordou
+                          .split(":")
+                          .map(Number);
+                        let min = hA * 60 + mA - (hD * 60 + mD);
+                        if (min < 0) min += 24 * 60;
+                        const horas = (min / 60).toFixed(1);
+                        const qualLabels = [
+                          "",
+                          "Péssimo",
+                          "Ruim",
+                          "Regular",
+                          "Bom",
+                          "Ótimo",
+                        ];
+                        return (
+                          <>
+                            <div className="home-mini-val">{horas}h</div>
+                            <div
+                              className="home-mini-sub"
+                              style={{
+                                color:
+                                  parseFloat(horas) >= 7
+                                    ? "#10b981"
+                                    : "#f97316",
+                              }}
+                            >
+                              {qualLabels[sonoHoje.qualidade] || ""}{" "}
+                              {parseFloat(horas) >= 7 ? "✓" : "⚠️"}
+                            </div>
+                          </>
+                        );
+                      })()
+                    ) : (
+                      <div className="home-mini-sub">Registre seu sono</div>
                     )}
                   </div>
                 </div>

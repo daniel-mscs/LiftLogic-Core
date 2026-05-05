@@ -40,8 +40,13 @@ export default function ModalResumo({
 
   return (
     <div className="modal-overlay">
-      <div className="modal-resumo" style={{ maxHeight: "90vh", overflowY: "auto" }}>
-        <h2>🏁 Treino {modalResumo.treinoIniciado || treinoAtivo} Concluído!</h2>
+      <div
+        className="modal-resumo"
+        style={{ maxHeight: "90vh", overflowY: "auto" }}
+      >
+        <h2>
+          🏁 Treino {modalResumo.treinoIniciado || treinoAtivo} Concluído!
+        </h2>
 
         {/* Stats principais */}
         <div className="stats-grid" style={{ marginBottom: 16 }}>
@@ -51,7 +56,9 @@ export default function ModalResumo({
           </div>
           <div className="stat-card">
             <span>EXERCÍCIOS</span>
-            <strong>{modalResumo.concluídosCount}/{modalResumo.total}</strong>
+            <strong>
+              {modalResumo.concluídosCount}/{modalResumo.total}
+            </strong>
             <small>concluídos</small>
           </div>
           {modalResumo.kcal > 0 && (
@@ -73,17 +80,42 @@ export default function ModalResumo({
         {/* Gráfico de cargas */}
         {filtrados.length > 0 && (
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 10, color: "#64748b", fontWeight: 800, letterSpacing: "0.08em", marginBottom: 10 }}>
+            <div
+              style={{
+                fontSize: 10,
+                color: "#64748b",
+                fontWeight: 800,
+                letterSpacing: "0.08em",
+                marginBottom: 10,
+              }}
+            >
               VOLUME POR EXERCÍCIO (séries × reps × kg)
             </div>
             <ResponsiveContainer width="100%" height={160}>
-              <BarChart data={dadosGrafico} margin={{ top: 4, right: 4, left: -20, bottom: 40 }}>
+              <BarChart
+                data={dadosGrafico}
+                margin={{ top: 4, right: 4, left: -20, bottom: 40 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
-                <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 9 }} angle={-35} textAnchor="end" />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fill: "#64748b", fontSize: 9 }}
+                  angle={-35}
+                  textAnchor="end"
+                />
                 <YAxis tick={{ fill: "#64748b", fontSize: 9 }} />
                 <Tooltip
-                  contentStyle={{ background: "#1a1d21", border: "1px solid #ffffff0d", borderRadius: 8, color: "#f8fafc", fontSize: 12 }}
-                  formatter={(v, n) => [v, n === "volume" ? "Volume (kg total)" : "Carga (kg)"]}
+                  contentStyle={{
+                    background: "#1a1d21",
+                    border: "1px solid #ffffff0d",
+                    borderRadius: 8,
+                    color: "#f8fafc",
+                    fontSize: 12,
+                  }}
+                  formatter={(v, n) => [
+                    v,
+                    n === "volume" ? "Volume (kg total)" : "Carga (kg)",
+                  ]}
                 />
                 <Bar dataKey="volume" fill="#6366f1" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -93,7 +125,15 @@ export default function ModalResumo({
 
         {/* Lista de exercícios */}
         <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 10, color: "#64748b", fontWeight: 800, letterSpacing: "0.08em", marginBottom: 10 }}>
+          <div
+            style={{
+              fontSize: 10,
+              color: "#64748b",
+              fontWeight: 800,
+              letterSpacing: "0.08em",
+              marginBottom: 10,
+            }}
+          >
             EXERCÍCIOS DO TREINO
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -111,15 +151,24 @@ export default function ModalResumo({
                 }}
               >
                 <div>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: concluidos[ex.id] ? "#10b981" : "#f8fafc" }}>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: concluidos[ex.id] ? "#10b981" : "#f8fafc",
+                    }}
+                  >
                     {concluidos[ex.id] ? "✅" : "⭕"} {ex.nome}
                   </div>
                   <div style={{ fontSize: 10, color: "#64748b" }}>
                     {ex.series}x{ex.repeticoes} · {ex.carga}kg
                   </div>
                 </div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#6366f1" }}>
-                  {Number(ex.series) * Number(ex.repeticoes) * Number(ex.carga)} vol
+                <div
+                  style={{ fontSize: 12, fontWeight: 700, color: "#6366f1" }}
+                >
+                  {Number(ex.series) * Number(ex.repeticoes) * Number(ex.carga)}{" "}
+                  vol
                 </div>
               </div>
             ))}
@@ -127,7 +176,10 @@ export default function ModalResumo({
         </div>
 
         <div className="modal-actions">
-          <button className="btn-stop-workout" onClick={confirmarFinalizarTreino}>
+          <button
+            className="btn-stop-workout"
+            onClick={confirmarFinalizarTreino}
+          >
             💾 Salvar Treino
           </button>
           <button
