@@ -541,6 +541,58 @@ export default function Stats({ user }) {
     };
   });
 
+  // ── Insights semanais ──
+  const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+  const treinoPorDia = treinos.reduce((acc, t) => {
+    const dow = new Date(t.created_at).getDay();
+    acc[dow] = (acc[dow] || 0) + 1;
+    return acc;
+  }, {});
+  const diaMaisTreino = Object.entries(treinoPorDia).sort(
+    (a, b) => b[1] - a[1],
+  )[0];
+  const mediaDuracaoTreino =
+    treinos.length > 0
+      ? Math.round(
+          treinos.reduce((s, t) => s + (t.tempo_segundos || 0), 0) /
+            treinos.length /
+            60,
+        )
+      : null;
+  const volumeTotal = treinos.reduce((s, t) => s + (t.volume_total || 0), 0);
+  const horaMediaDorme =
+    sonoComRegistro.length > 0
+      ? (() => {
+          const total =
+            sonoComRegistro.reduce((s, r) => {
+              const [h, m] = r.dormiu.split(":").map(Number);
+              // Normaliza horários noturnos (antes de 12h = dia seguinte)
+              const min = h < 12 ? h * 60 + m + 24 * 60 : h * 60 + m;
+              return s + min;
+            }, 0) / sonoComRegistro.length;
+          const normalizado = total >= 24 * 60 ? total - 24 * 60 : total;
+          return `${String(Math.floor(normalizado / 60)).padStart(2, "0")}:${String(Math.round(normalizado % 60)).padStart(2, "0")}`;
+        })()
+      : null;
+  const horaMédiaAcorda =
+    sonoComRegistro.length > 0
+      ? (() => {
+          const total =
+            sonoComRegistro.reduce((s, r) => {
+              const [h, m] = r.acordou.split(":").map(Number);
+              return s + h * 60 + m;
+            }, 0) / sonoComRegistro.length;
+          return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(Math.round(total % 60)).padStart(2, "0")}`;
+        })()
+      : null;
+  const diasBatiuKcal = macrosPorDia.filter(
+    (d) => d.kcal > 0 && d.kcal <= kcalTotal * 1.1,
+  ).length;
+  const totalPassosSemana = passosPorDia.reduce((s, d) => s + d.passos, 0);
+  const kmSemana = Math.round(
+    passosPorDia.reduce((s, d) => s + d.passos, 0) * 0.0008,
+  );
+
   if (carregando)
     return (
       <div style={{ textAlign: "center", color: "#64748b", paddingTop: 40 }}>
@@ -740,8 +792,12 @@ export default function Stats({ user }) {
                   {
                     icon: "😴",
                     label: "Sono médio",
-                    atual: parseFloat(mediaHorasSono) || 0,
-                    prev: parseFloat(semanaAnterior.horasSono) || 0,
+                    atual:
+                      parseFloat(parseFloat(mediaHorasSono).toFixed(1)) || 0,
+                    prev:
+                      parseFloat(
+                        parseFloat(semanaAnterior.horasSono || 0).toFixed(1),
+                      ) || 0,
                     unidade: "h",
                     maisMelhor: true,
                   },
@@ -800,7 +856,11 @@ export default function Stats({ user }) {
                           }}
                         >
                           {seta}{" "}
-                          {diff !== 0 ? Math.abs(item.atual - item.prev) : ""}
+                          {diff !== 0
+                            ? parseFloat(
+                                Math.abs(item.atual - item.prev).toFixed(1),
+                              )
+                            : ""}
                         </span>
                       </div>
                     </div>
@@ -842,6 +902,89 @@ export default function Stats({ user }) {
                 Nv. {rpg?.nivel || 1}
               </div>
               <div style={{ fontSize: 10, color: "#64748b" }}>nível atual</div>
+            </div>
+          </div>
+
+          {/* Insights da semana */}
+          <div
+            style={{
+              background: "#1a1d21",
+              border: "1px solid #ffffff0d",
+              borderRadius: 14,
+              padding: 16,
+              marginBottom: 10,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 10,
+                color: "#64748b",
+                fontWeight: 800,
+                letterSpacing: "0.08em",
+                marginBottom: 12,
+              }}
+            >
+              🧠 INSIGHTS DA SEMANA
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+              {[
+                mediaDuracaoTreino && {
+                  icon: "⏱️",
+                  label: "Duração média por treino",
+                  val: `${mediaDuracaoTreino} min`,
+                },
+                volumeTotal > 0 && {
+                  icon: "📦",
+                  label: "Volume total levantado",
+                  val: `${volumeTotal.toLocaleString("pt-BR")} kg`,
+                },
+                diaMaisTreino && {
+                  icon: "📅",
+                  label: "Dia que mais treinou",
+                  val: diasSemana[diaMaisTreino[0]],
+                },
+                horaMediaDorme && {
+                  icon: "🌙",
+                  label: "Horário médio que dorme",
+                  val: horaMediaDorme,
+                },
+                horaMédiaAcorda && {
+                  icon: "☀️",
+                  label: "Horário médio que acorda",
+                  val: horaMédiaAcorda,
+                },
+                totalPassosSemana > 0 && {
+                  icon: "👟",
+                  label: "Total de passos na semana",
+                  val: totalPassosSemana.toLocaleString("pt-BR"),
+                },
+                mediaProt > 0 && {
+                  icon: "💪",
+                  label: "Proteína média diária",
+                  val: `${mediaProt}g`,
+                },
+              ]
+                .filter(Boolean)
+                .map((item, i, arr) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "8px 0",
+                      borderBottom:
+                        i < arr.length - 1 ? "1px solid #ffffff06" : "none",
+                    }}
+                  >
+                    <span style={{ fontSize: 13, color: "#94a3b8" }}>
+                      {item.icon} {item.label}
+                    </span>
+                    <strong style={{ fontSize: 13, color: "#f8fafc" }}>
+                      {item.val}
+                    </strong>
+                  </div>
+                ))}
             </div>
           </div>
 
@@ -1365,6 +1508,131 @@ export default function Stats({ user }) {
                   }
                 />
               </div>
+
+              {/* Insights do mês */}
+              {(totalTreinosMes > 0 ||
+                sonoMes.length > 0 ||
+                passosMes.length > 0) &&
+                (() => {
+                  const mediaDuracaoMes =
+                    totalTreinosMes > 0
+                      ? Math.round(
+                          treinosMes.reduce(
+                            (s, t) => s + (t.tempo_segundos || 0),
+                            0,
+                          ) /
+                            totalTreinosMes /
+                            60,
+                        )
+                      : null;
+                  const volumeTotalMes = treinosMes.reduce(
+                    (s, t) => s + (t.volume_total || 0),
+                    0,
+                  );
+                  const totalPassosMes = passosMes.reduce(
+                    (s, r) => s + r.passos,
+                    0,
+                  );
+                  const kmMes = Math.round(totalPassosMes * 0.0008);
+                  const mediaPassosMes =
+                    passosMes.length > 0
+                      ? Math.round(totalPassosMes / diasNoMes)
+                      : null;
+                  const qualMes = mediaQualidadeSonoMes;
+                  return (
+                    <div
+                      style={{
+                        background: "#1a1d21",
+                        border: "1px solid #ffffff0d",
+                        borderRadius: 14,
+                        padding: 16,
+                        marginBottom: 10,
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 10,
+                          color: "#64748b",
+                          fontWeight: 800,
+                          letterSpacing: "0.08em",
+                          marginBottom: 12,
+                        }}
+                      >
+                        🧠 INSIGHTS DO MÊS
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 0,
+                        }}
+                      >
+                        {[
+                          mediaDuracaoMes && {
+                            icon: "⏱️",
+                            label: "Duração média por treino",
+                            val: `${mediaDuracaoMes} min`,
+                          },
+                          volumeTotalMes > 0 && {
+                            icon: "📦",
+                            label: "Volume total levantado",
+                            val: `${volumeTotalMes.toLocaleString("pt-BR")} kg`,
+                          },
+                          kmMes > 0 && {
+                            icon: "🗺️",
+                            label: "Km percorridos (passos)",
+                            val: `~${kmMes} km`,
+                          },
+                          mediaPassosMes && {
+                            icon: "👟",
+                            label: "Média de passos/dia",
+                            val: mediaPassosMes.toLocaleString("pt-BR"),
+                          },
+                          qualMes && {
+                            icon: "😴",
+                            label: "Qualidade média do sono",
+                            val: `${qualMes}/5`,
+                          },
+                          diasSono7hMes > 0 && {
+                            icon: "✅",
+                            label: "Noites ≥7h de sono",
+                            val: `${diasSono7hMes}/${diasNoMes} dias`,
+                          },
+                          kcalTotalMes > 0 && {
+                            icon: "🔥",
+                            label: "Kcal queimadas (treino)",
+                            val: kcalTotalMes.toLocaleString("pt-BR"),
+                          },
+                        ]
+                          .filter(Boolean)
+                          .map((item, i, arr) => (
+                            <div
+                              key={i}
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                padding: "8px 0",
+                                borderBottom:
+                                  i < arr.length - 1
+                                    ? "1px solid #ffffff06"
+                                    : "none",
+                              }}
+                            >
+                              <span style={{ fontSize: 13, color: "#94a3b8" }}>
+                                {item.icon} {item.label}
+                              </span>
+                              <strong
+                                style={{ fontSize: 13, color: "#f8fafc" }}
+                              >
+                                {item.val}
+                              </strong>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  );
+                })()}
 
               {/* Divisões */}
               {Object.keys(divisoesMes).length > 0 && (
