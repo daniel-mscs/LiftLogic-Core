@@ -10,6 +10,8 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
+  Area,
+  AreaChart,
 } from "recharts";
 
 function formatarData(date) {
@@ -39,66 +41,241 @@ function calcularHoras(dormiu, acordou) {
   return parseFloat((minutos / 60).toFixed(1));
 }
 
-function qualidadeLabel(q) {
-  const map = { 1: "Péssimo", 2: "Ruim", 3: "Regular", 4: "Bom", 5: "Ótimo" };
-  return map[q] || "—";
+const CSS_VARS = `
+  :root {
+    --bg: #080a0e;
+    --surface: #0f1218;
+    --surface2: #151920;
+    --border: rgba(255,255,255,0.06);
+    --border2: rgba(255,255,255,0.1);
+    --text: #f0f2f7;
+    --text2: #8892a4;
+    --text3: #4a5568;
+    --accent: #5b7fff;
+    --accent2: #7c3aed;
+    --green: #00d97e;
+    --orange: #ff8c42;
+    --red: #ff4d6d;
+    --yellow: #ffd166;
+  }
+`;
+
+const tooltipStyle = {
+  background: "#151920",
+  border: "1px solid rgba(91,127,255,0.2)",
+  borderRadius: 10,
+  color: "#f0f2f7",
+  fontSize: 12,
+  boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+};
+
+function RingProgress({ value, max, color, size = 56, stroke = 5 }) {
+  const r = (size - stroke * 2) / 2;
+  const circ = 2 * Math.PI * r;
+  const pct = Math.min(value / max, 1);
+  const dash = circ * pct;
+  return (
+    <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke="rgba(255,255,255,0.06)"
+        strokeWidth={stroke}
+      />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke={color}
+        strokeWidth={stroke}
+        strokeDasharray={`${dash} ${circ}`}
+        strokeLinecap="round"
+        style={{ transition: "stroke-dasharray 0.6s ease" }}
+      />
+    </svg>
+  );
 }
 
-// Mini card de stat com número grande
-function StatCard({ icon, label, val, sub, cor }) {
+function MetricRing({ icon, label, value, sub, color, pct }) {
   return (
     <div
       style={{
-        background: "#1a1d21",
-        border: "1px solid #ffffff0d",
-        borderRadius: 14,
-        padding: "14px 12px",
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        borderRadius: 20,
+        padding: "18px 14px",
         display: "flex",
         flexDirection: "column",
-        gap: 4,
+        alignItems: "center",
+        gap: 8,
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 2,
+          background: color,
+          opacity: 0.6,
+        }}
+      />
+      <div style={{ position: "relative" }}>
+        <RingProgress value={pct} max={1} color={color} size={60} stroke={5} />
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 20,
+          }}
+        >
+          {icon}
+        </div>
+      </div>
+      <div
+        style={{
+          fontSize: 20,
+          fontWeight: 800,
+          color: "var(--text)",
+          lineHeight: 1,
+        }}
+      >
+        {value}
+      </div>
+      <div
+        style={{
+          fontSize: 9,
+          color: "var(--text2)",
+          fontWeight: 700,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          textAlign: "center",
+        }}
+      >
+        {label}
+      </div>
+      {sub && (
+        <div
+          style={{
+            fontSize: 10,
+            color: "var(--text3)",
+            textAlign: "center",
+            lineHeight: 1.4,
+          }}
+        >
+          {sub}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SectionHeader({ title }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        marginBottom: 12,
+        marginTop: 8,
       }}
     >
       <div
         style={{
           fontSize: 11,
-          color: "#64748b",
-          fontWeight: 700,
-          letterSpacing: "0.06em",
+          fontWeight: 800,
+          letterSpacing: "0.12em",
+          color: "var(--text3)",
+          textTransform: "uppercase",
         }}
       >
-        {icon} {label}
+        {title}
       </div>
       <div
         style={{
-          fontSize: 24,
-          fontWeight: 800,
-          color: cor || "#f8fafc",
-          lineHeight: 1.1,
+          flex: 1,
+          height: 1,
+          background: "var(--border)",
         }}
-      >
-        {val}
-      </div>
-      {sub && <div style={{ fontSize: 11, color: "#475569" }}>{sub}</div>}
+      />
     </div>
   );
 }
 
-// Linha de stat horizontal
-function StatRow({ icon, label, val, cor }) {
+function CompareRow({ icon, label, prev, atual, unit, maisMelhor = true }) {
+  const diff = atual - prev;
+  const melhorou = maisMelhor ? diff > 0 : diff < 0;
+  const cor =
+    diff === 0 ? "var(--text3)" : melhorou ? "var(--green)" : "var(--red)";
+  const seta = diff === 0 ? null : melhorou ? "↑" : "↓";
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "10px 0",
+        borderBottom: "1px solid var(--border)",
+      }}
+    >
+      <span style={{ fontSize: 13, color: "var(--text2)" }}>
+        {icon} {label}
+      </span>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <span style={{ fontSize: 12, color: "var(--text3)" }}>
+          {prev}
+          {unit}
+        </span>
+        <span style={{ fontSize: 10, color: "var(--text3)" }}>→</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>
+          {atual}
+          {unit}
+        </span>
+        {seta && (
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 800,
+              color: cor,
+              minWidth: 32,
+              textAlign: "right",
+            }}
+          >
+            {seta} {parseFloat(Math.abs(diff).toFixed(1))}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function InsightRow({ icon, label, value }) {
   return (
     <div
       style={{
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        padding: "8px 0",
-        borderBottom: "1px solid #ffffff06",
+        padding: "9px 0",
+        borderBottom: "1px solid var(--border)",
       }}
     >
-      <span style={{ fontSize: 13, color: "#94a3b8" }}>
+      <span style={{ fontSize: 13, color: "var(--text2)" }}>
         {icon} {label}
       </span>
-      <strong style={{ fontSize: 13, color: cor || "#f8fafc" }}>{val}</strong>
+      <strong style={{ fontSize: 13, color: "var(--text)", fontWeight: 700 }}>
+        {value}
+      </strong>
     </div>
   );
 }
@@ -117,6 +294,7 @@ export default function Stats({ user }) {
   const [perfil, setPerfil] = useState(null);
   const [compartilhando, setCompartilhando] = useState(false);
   const [aba, setAba] = useState("semana");
+  const [semanaAnterior, setSemanaAnterior] = useState(null);
 
   const [treinosMes, setTreinosMes] = useState([]);
   const [aguaMes, setAguaMes] = useState([]);
@@ -131,7 +309,6 @@ export default function Stats({ user }) {
 
   const ultimos7 = getLast7Days();
   const inicio = ultimos7[0];
-  const [semanaAnterior, setSemanaAnterior] = useState(null);
 
   const getPrev7Days = () =>
     Array.from({ length: 7 }, (_, i) => {
@@ -221,12 +398,13 @@ export default function Stats({ user }) {
     setPerfil(perfilData || null);
     setSono(sonoData || []);
 
-    // Semana anterior
     const [
       { data: treinosPrev },
       { data: aguaPrev },
       { data: passosPrev },
       { data: sonoPrev },
+      { data: aguaMetaPrev },
+      { data: passosMetaPrev },
     ] = await Promise.all([
       supabase
         .from("treinos_finalizados")
@@ -252,18 +430,30 @@ export default function Stats({ user }) {
         .eq("user_id", user.id)
         .gte("data", inicioPrev)
         .lte("data", fimPrev),
+      supabase
+        .from("agua_meta")
+        .select("meta_ml")
+        .eq("user_id", user.id)
+        .single(),
+      supabase
+        .from("passos_meta")
+        .select("meta_passos")
+        .eq("user_id", user.id)
+        .single(),
     ]);
 
+    const metaAguaVal = aguaMetaPrev?.meta_ml || 2500;
+    const metaPassosVal = passosMetaPrev?.meta_passos || 10000;
     const aguaPrevPorDia = prev7.map((d) => ({
       total: (aguaPrev || [])
         .filter((r) => r.data === d)
         .reduce((s, r) => s + r.ml, 0),
     }));
     const diasMetaAguaPrev = aguaPrevPorDia.filter(
-      (d) => d.total >= (aguaMetaData?.meta_ml || 2500),
+      (d) => d.total >= metaAguaVal,
     ).length;
     const diasMetaPassosPrev = (passosPrev || []).filter(
-      (r) => r.passos >= (passosMetaData?.meta_passos || 10000),
+      (r) => r.passos >= metaPassosVal,
     ).length;
     const sonoFiltradoPrev = (sonoPrev || []).filter((r) =>
       prev7.includes(r.data),
@@ -350,13 +540,10 @@ export default function Stats({ user }) {
     if (aba === "mes") buscarMes(mesSel);
   }, [aba, mesSel, buscarMes]);
 
-  // Cálculos semanais
+  // ── Cálculos semanais ──
   const totalTreinos = treinos.length;
-  const treinosLetras = [...new Set(treinos.map((t) => t.treino))]
-    .sort()
-    .join(", ");
   const tempoTotal = treinos.reduce((s, t) => s + (t.tempo_segundos || 0), 0);
-  const kcalTotal = treinos.reduce((s, t) => s + (t.kcal || 0), 0);
+  const kcalTreinoSemana = treinos.reduce((s, t) => s + (t.kcal || 0), 0);
 
   const formatarTempo = (s) => {
     const h = Math.floor(s / 3600);
@@ -366,15 +553,27 @@ export default function Stats({ user }) {
 
   const aguaPorDia = ultimos7.map((data) => ({
     data,
+    name: new Date(data + "T00:00:00").toLocaleDateString("pt-BR", {
+      weekday: "short",
+    }),
     total: agua.filter((r) => r.data === data).reduce((s, r) => s + r.ml, 0),
   }));
-  const mediaAgua = Math.round(aguaPorDia.reduce((s, d) => s + d.total, 0) / 7);
+  const mediaAgua = Math.round(
+    aguaPorDia.reduce((s, d) => s + d.total, 0) / 7,
+  );
   const diasMetaAgua = aguaPorDia.filter((d) => d.total >= aguaMeta).length;
 
   const pesoDados = ultimos7
     .map((data) => {
       const reg = pesos.find((r) => r.data === data);
-      return { data, peso: reg ? Number(reg.peso) : null };
+      return {
+        data,
+        name: new Date(data + "T00:00:00").toLocaleDateString("pt-BR", {
+          weekday: "short",
+          day: "2-digit",
+        }),
+        peso: reg ? Number(reg.peso) : null,
+      };
     })
     .filter((d) => d.peso !== null);
   const variacaoPeso =
@@ -386,6 +585,9 @@ export default function Stats({ user }) {
     const regs = macros.filter((r) => r.data === data);
     return {
       data,
+      name: new Date(data + "T00:00:00").toLocaleDateString("pt-BR", {
+        weekday: "short",
+      }),
       kcal: Math.round(regs.reduce((s, r) => s + r.kcal, 0)),
       prot: round1(regs.reduce((s, r) => s + Number(r.prot), 0)),
     };
@@ -406,7 +608,13 @@ export default function Stats({ user }) {
 
   const passosPorDia = ultimos7.map((data) => {
     const reg = passos.find((r) => r.data === data);
-    return { data, passos: reg?.passos || 0 };
+    return {
+      data,
+      name: new Date(data + "T00:00:00").toLocaleDateString("pt-BR", {
+        weekday: "short",
+      }),
+      passos: reg?.passos || 0,
+    };
   });
   const mediaPassos = Math.round(
     passosPorDia.reduce((s, d) => s + d.passos, 0) / 7,
@@ -414,6 +622,7 @@ export default function Stats({ user }) {
   const diasMetaPassos = passosPorDia.filter(
     (d) => d.passos >= passosMeta,
   ).length;
+  const totalPassosSemana = passosPorDia.reduce((s, d) => s + d.passos, 0);
 
   const sonoComRegistro = sono.filter((r) => ultimos7.includes(r.data));
   const mediaHorasSono =
@@ -435,54 +644,36 @@ export default function Stats({ user }) {
           sonoComRegistro.length
         ).toFixed(1)
       : null;
-
   const sonoPorDia = ultimos7.map((data) => {
     const reg = sono.find((r) => r.data === data);
     return {
       name: new Date(data + "T00:00:00").toLocaleDateString("pt-BR", {
         weekday: "short",
-        day: "2-digit",
       }),
       horas: reg ? calcularHoras(reg.dormiu, reg.acordou) : 0,
     };
   });
 
-  const labelDia = (data) =>
-    new Date(data + "T00:00:00").toLocaleDateString("pt-BR", {
-      weekday: "short",
-      day: "2-digit",
-    });
-  const tooltipStyle = {
-    background: "#1e2126",
-    border: "1px solid #6366f133",
-    borderRadius: 10,
-    color: "#f8fafc",
-    fontSize: 12,
-    boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
-  };
+  const volumeTotal = treinos.reduce((s, t) => s + (t.volume_total || 0), 0);
+  const mediaDuracaoTreino =
+    treinos.length > 0
+      ? Math.round(
+          treinos.reduce((s, t) => s + (t.tempo_segundos || 0), 0) /
+            treinos.length /
+            60,
+        )
+      : null;
+  const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+  const treinoPorDia = treinos.reduce((acc, t) => {
+    const dow = new Date(t.created_at).getDay();
+    acc[dow] = (acc[dow] || 0) + 1;
+    return acc;
+  }, {});
+  const diaMaisTreino = Object.entries(treinoPorDia).sort(
+    (a, b) => b[1] - a[1],
+  )[0];
 
-  const GradientDefs = () => (
-    <defs>
-      <linearGradient id="gradPurple" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#6366f1" stopOpacity={1} />
-        <stop offset="100%" stopColor="#4f46e5" stopOpacity={0.6} />
-      </linearGradient>
-      <linearGradient id="gradOrange" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#f59e0b" stopOpacity={1} />
-        <stop offset="100%" stopColor="#d97706" stopOpacity={0.6} />
-      </linearGradient>
-      <linearGradient id="gradGreen" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#10b981" stopOpacity={1} />
-        <stop offset="100%" stopColor="#059669" stopOpacity={0.6} />
-      </linearGradient>
-      <linearGradient id="gradBlue" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#3b82f6" stopOpacity={1} />
-        <stop offset="100%" stopColor="#2563eb" stopOpacity={0.6} />
-      </linearGradient>
-    </defs>
-  );
-
-  // Cálculos mensais
+  // ── Cálculos mensais ──
   const totalTreinosMes = treinosMes.length;
   const tempoTotalMes = treinosMes.reduce(
     (s, t) => s + (t.tempo_segundos || 0),
@@ -541,634 +732,201 @@ export default function Stats({ user }) {
     };
   });
 
-  // ── Insights semanais ──
-  const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-  const treinoPorDia = treinos.reduce((acc, t) => {
-    const dow = new Date(t.created_at).getDay();
-    acc[dow] = (acc[dow] || 0) + 1;
-    return acc;
-  }, {});
-  const diaMaisTreino = Object.entries(treinoPorDia).sort(
-    (a, b) => b[1] - a[1],
-  )[0];
-  const mediaDuracaoTreino =
-    treinos.length > 0
-      ? Math.round(
-          treinos.reduce((s, t) => s + (t.tempo_segundos || 0), 0) /
-            treinos.length /
-            60,
-        )
-      : null;
-  const volumeTotal = treinos.reduce((s, t) => s + (t.volume_total || 0), 0);
-  const horaMediaDorme =
-    sonoComRegistro.length > 0
-      ? (() => {
-          const total =
-            sonoComRegistro.reduce((s, r) => {
-              const [h, m] = r.dormiu.split(":").map(Number);
-              // Normaliza horários noturnos (antes de 12h = dia seguinte)
-              const min = h < 12 ? h * 60 + m + 24 * 60 : h * 60 + m;
-              return s + min;
-            }, 0) / sonoComRegistro.length;
-          const normalizado = total >= 24 * 60 ? total - 24 * 60 : total;
-          return `${String(Math.floor(normalizado / 60)).padStart(2, "0")}:${String(Math.round(normalizado % 60)).padStart(2, "0")}`;
-        })()
-      : null;
-  const horaMédiaAcorda =
-    sonoComRegistro.length > 0
-      ? (() => {
-          const total =
-            sonoComRegistro.reduce((s, r) => {
-              const [h, m] = r.acordou.split(":").map(Number);
-              return s + h * 60 + m;
-            }, 0) / sonoComRegistro.length;
-          return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(Math.round(total % 60)).padStart(2, "0")}`;
-        })()
-      : null;
-  const diasBatiuKcal = macrosPorDia.filter(
-    (d) => d.kcal > 0 && d.kcal <= kcalTotal * 1.1,
-  ).length;
-  const totalPassosSemana = passosPorDia.reduce((s, d) => s + d.passos, 0);
-  const kmSemana = Math.round(
-    passosPorDia.reduce((s, d) => s + d.passos, 0) * 0.0008,
-  );
-
   if (carregando)
     return (
-      <div style={{ textAlign: "center", color: "#64748b", paddingTop: 40 }}>
-        Carregando seus stats... 📊
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          height: 300,
+          gap: 12,
+          color: "var(--text3)",
+        }}
+      >
+        <div style={{ fontSize: 32 }}>📊</div>
+        <div style={{ fontSize: 13 }}>Carregando seus stats...</div>
       </div>
     );
 
   return (
-    <div className="stats-section">
-      <h2 className="title-divisao">📊 Stats</h2>
-
+    <>
+      <style>{CSS_VARS}</style>
       <div
         style={{
           display: "flex",
-          gap: 6,
-          background: "#1a1d21",
-          padding: 5,
-          borderRadius: 12,
-          marginBottom: 16,
+          flexDirection: "column",
+          gap: 0,
+          paddingBottom: 80,
+          background: "transparent",
         }}
       >
-        {[
-          { id: "semana", label: "📅 Semana" },
-          { id: "mes", label: "📆 Mês" },
-        ].map((a) => (
-          <button
-            key={a.id}
-            onClick={() => setAba(a.id)}
+        {/* Hero header */}
+        <div
+          style={{
+            padding: "24px 0 20px",
+            position: "relative",
+          }}
+        >
+          <div
             style={{
-              flex: 1,
-              background: aba === a.id ? "#24282d" : "transparent",
-              border: "none",
-              borderRadius: 8,
-              color: aba === a.id ? "#f8fafc" : "#64748b",
-              fontSize: 13,
-              fontWeight: 600,
-              padding: "8px 2px",
-              cursor: "pointer",
+              position: "absolute",
+              top: 0,
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: 200,
+              height: 200,
+              background:
+                "radial-gradient(circle, rgba(91,127,255,0.12) 0%, transparent 70%)",
+              pointerEvents: "none",
+            }}
+          />
+          <div
+            style={{
+              fontSize: 11,
+              fontWeight: 800,
+              letterSpacing: "0.2em",
+              color: "var(--text3)",
+              textTransform: "uppercase",
+              marginBottom: 4,
             }}
           >
-            {a.label}
-          </button>
-        ))}
-      </div>
-
-      {/* ABA SEMANA */}
-      {aba === "semana" && (
-        <>
-          <p
+            DayForge
+          </div>
+          <div
             style={{
-              fontSize: 12,
-              color: "#64748b",
-              marginTop: -8,
-              marginBottom: 16,
+              fontSize: 28,
+              fontWeight: 900,
+              color: "var(--text)",
+              lineHeight: 1.1,
+              marginBottom: 4,
             }}
           >
+            {perfil?.nome
+              ? `${perfil.nome.split(" ")[0]}'s Stats`
+              : "Seus Stats"}
+          </div>
+          <div style={{ fontSize: 12, color: "var(--text3)" }}>
             {new Date(inicio + "T00:00:00").toLocaleDateString("pt-BR", {
               day: "2-digit",
-              month: "2-digit",
+              month: "short",
             })}{" "}
             —{" "}
             {new Date().toLocaleDateString("pt-BR", {
               day: "2-digit",
-              month: "2-digit",
+              month: "short",
             })}
-          </p>
-
-          {/* Grid de highlights */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 10,
-              marginBottom: 10,
-            }}
-          >
-            <StatCard
-              icon="⚔️"
-              label="TREINOS"
-              val={totalTreinos}
-              sub={
-                totalTreinos > 0
-                  ? `${treinosLetras} · ${formatarTempo(tempoTotal)}`
-                  : "nenhum essa semana"
-              }
-              cor={totalTreinos >= 3 ? "#10b981" : "#f8fafc"}
-            />
-            <StatCard
-              icon="⚖️"
-              label="PESO"
-              val={
-                pesoDados.length > 0
-                  ? `${pesoDados[pesoDados.length - 1].peso}kg`
-                  : "—"
-              }
-              sub={
-                variacaoPeso !== null
-                  ? `${variacaoPeso > 0 ? "▲" : "▼"} ${Math.abs(variacaoPeso)}kg na semana`
-                  : "sem registros"
-              }
-              cor={
-                variacaoPeso !== null
-                  ? variacaoPeso < 0
-                    ? "#10b981"
-                    : variacaoPeso > 0
-                      ? "#ef4444"
-                      : "#64748b"
-                  : "#64748b"
-              }
-            />
-            <StatCard
-              icon="💧"
-              label="ÁGUA"
-              val={`${diasMetaAgua}/7`}
-              sub={`meta ${(aguaMeta / 1000).toFixed(1)}L · média ${mediaAgua > 0 ? (mediaAgua / 1000).toFixed(1) + "L" : "—"}`}
-              cor={diasMetaAgua >= 5 ? "#10b981" : "#f97316"}
-            />
-            <StatCard
-              icon="👟"
-              label="PASSOS"
-              val={`${diasMetaPassos}/7`}
-              sub={`média ${mediaPassos > 0 ? mediaPassos.toLocaleString("pt-BR") : "—"}/dia`}
-              cor={diasMetaPassos >= 5 ? "#10b981" : "#f97316"}
-            />
-            <StatCard
-              icon="😴"
-              label="SONO"
-              val={mediaHorasSono ? `${mediaHorasSono}h` : "—"}
-              sub={
-                mediaHorasSono
-                  ? `${diasSono7h}/7 dias ≥7h · qualidade ${mediaQualidadeSono}/5`
-                  : "sem registros"
-              }
-              cor={parseFloat(mediaHorasSono) >= 7 ? "#10b981" : "#f97316"}
-            />
-            <StatCard
-              icon="🍽️"
-              label="MACROS"
-              val={mediaKcal > 0 ? `${mediaKcal}` : "—"}
-              sub={
-                mediaKcal > 0
-                  ? `kcal média · ${mediaProt}g prot`
-                  : "sem registros"
-              }
-              cor="#f59e0b"
-            />
           </div>
+        </div>
 
-          {/* Comparativo semana anterior */}
-          {semanaAnterior && (
-            <div
+        {/* Tab switcher */}
+        <div
+          style={{
+            display: "flex",
+            background: "var(--surface)",
+            borderRadius: 14,
+            padding: 4,
+            marginBottom: 20,
+            border: "1px solid var(--border)",
+          }}
+        >
+          {[
+            { id: "semana", label: "Semana" },
+            { id: "mes", label: "Mês" },
+          ].map((a) => (
+            <button
+              key={a.id}
+              onClick={() => setAba(a.id)}
               style={{
-                background: "#1a1d21",
-                border: "1px solid #ffffff0d",
-                borderRadius: 14,
-                padding: 16,
-                marginBottom: 10,
+                flex: 1,
+                background:
+                  aba === a.id
+                    ? "linear-gradient(135deg, var(--accent), var(--accent2))"
+                    : "transparent",
+                border: "none",
+                borderRadius: 10,
+                color: aba === a.id ? "#fff" : "var(--text3)",
+                fontSize: 13,
+                fontWeight: 700,
+                padding: "10px 0",
+                cursor: "pointer",
+                transition: "all 0.2s",
+                boxShadow:
+                  aba === a.id ? "0 4px 16px rgba(91,127,255,0.3)" : "none",
               }}
             >
-              <div
-                style={{
-                  fontSize: 10,
-                  color: "#64748b",
-                  fontWeight: 800,
-                  letterSpacing: "0.08em",
-                  marginBottom: 12,
-                }}
-              >
-                📊 ESTA SEMANA VS SEMANA ANTERIOR
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {[
-                  {
-                    icon: "⚔️",
-                    label: "Treinos",
-                    atual: totalTreinos,
-                    prev: semanaAnterior.treinos,
-                    unidade: "x",
-                    maisMelhor: true,
-                  },
-                  {
-                    icon: "💧",
-                    label: "Meta Água",
-                    atual: diasMetaAgua,
-                    prev: semanaAnterior.diasAgua,
-                    unidade: "/7 dias",
-                    maisMelhor: true,
-                  },
-                  {
-                    icon: "👟",
-                    label: "Meta Passos",
-                    atual: diasMetaPassos,
-                    prev: semanaAnterior.diasPassos,
-                    unidade: "/7 dias",
-                    maisMelhor: true,
-                  },
-                  {
-                    icon: "😴",
-                    label: "Sono médio",
-                    atual:
-                      parseFloat(parseFloat(mediaHorasSono).toFixed(1)) || 0,
-                    prev:
-                      parseFloat(
-                        parseFloat(semanaAnterior.horasSono || 0).toFixed(1),
-                      ) || 0,
-                    unidade: "h",
-                    maisMelhor: true,
-                  },
-                ].map((item, i) => {
-                  const diff = item.atual - item.prev;
-                  const melhorou = item.maisMelhor ? diff > 0 : diff < 0;
-                  const piorou = item.maisMelhor ? diff < 0 : diff > 0;
-                  const cor =
-                    diff === 0 ? "#64748b" : melhorou ? "#10b981" : "#ef4444";
-                  const seta = diff === 0 ? "=" : melhorou ? "▲" : "▼";
-                  return (
-                    <div
-                      key={i}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        padding: "6px 0",
-                        borderBottom: "1px solid #ffffff05",
-                      }}
-                    >
-                      <span style={{ fontSize: 13, color: "#94a3b8" }}>
-                        {item.icon} {item.label}
-                      </span>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 10,
-                        }}
-                      >
-                        <span style={{ fontSize: 11, color: "#475569" }}>
-                          {item.prev}
-                          {item.unidade}
-                        </span>
-                        <span style={{ fontSize: 11, color: "#334155" }}>
-                          →
-                        </span>
-                        <span
-                          style={{
-                            fontSize: 13,
-                            fontWeight: 700,
-                            color: "#f8fafc",
-                          }}
-                        >
-                          {item.atual}
-                          {item.unidade}
-                        </span>
-                        <span
-                          style={{
-                            fontSize: 11,
-                            fontWeight: 700,
-                            color: cor,
-                            minWidth: 28,
-                            textAlign: "right",
-                          }}
-                        >
-                          {seta}{" "}
-                          {diff !== 0
-                            ? parseFloat(
-                                Math.abs(item.atual - item.prev).toFixed(1),
-                              )
-                            : ""}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+              {a.label}
+            </button>
+          ))}
+        </div>
 
-          {/* RPG strip */}
-          <div
-            style={{
-              background: "#1a1d21",
-              border: "1px solid #6366f122",
-              borderRadius: 14,
-              padding: "12px 16px",
-              display: "flex",
-              justifyContent: "space-around",
-              marginBottom: 10,
-            }}
-          >
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 20 }}>🔥</div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: "#f8fafc" }}>
-                {rpg?.streak || 0}
-              </div>
-              <div style={{ fontSize: 10, color: "#64748b" }}>streak dias</div>
-            </div>
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 20 }}>⭐</div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: "#6366f1" }}>
-                {(rpg?.xp || 0).toLocaleString("pt-BR")}
-              </div>
-              <div style={{ fontSize: 10, color: "#64748b" }}>XP total</div>
-            </div>
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 20 }}>🏆</div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: "#f8fafc" }}>
-                Nv. {rpg?.nivel || 1}
-              </div>
-              <div style={{ fontSize: 10, color: "#64748b" }}>nível atual</div>
-            </div>
-          </div>
-
-          {/* Insights da semana */}
-          <div
-            style={{
-              background: "#1a1d21",
-              border: "1px solid #ffffff0d",
-              borderRadius: 14,
-              padding: 16,
-              marginBottom: 10,
-            }}
-          >
+        {/* ══ ABA SEMANA ══ */}
+        {aba === "semana" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            {/* XP / RPG strip */}
             <div
               style={{
-                fontSize: 10,
-                color: "#64748b",
-                fontWeight: 800,
-                letterSpacing: "0.08em",
-                marginBottom: 12,
-              }}
-            >
-              🧠 INSIGHTS DA SEMANA
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-              {[
-                mediaDuracaoTreino && {
-                  icon: "⏱️",
-                  label: "Duração média por treino",
-                  val: `${mediaDuracaoTreino} min`,
-                },
-                volumeTotal > 0 && {
-                  icon: "📦",
-                  label: "Volume total levantado",
-                  val: `${volumeTotal.toLocaleString("pt-BR")} kg`,
-                },
-                diaMaisTreino && {
-                  icon: "📅",
-                  label: "Dia que mais treinou",
-                  val: diasSemana[diaMaisTreino[0]],
-                },
-                horaMediaDorme && {
-                  icon: "🌙",
-                  label: "Horário médio que dorme",
-                  val: horaMediaDorme,
-                },
-                horaMédiaAcorda && {
-                  icon: "☀️",
-                  label: "Horário médio que acorda",
-                  val: horaMédiaAcorda,
-                },
-                totalPassosSemana > 0 && {
-                  icon: "👟",
-                  label: "Total de passos na semana",
-                  val: totalPassosSemana.toLocaleString("pt-BR"),
-                },
-                mediaProt > 0 && {
-                  icon: "💪",
-                  label: "Proteína média diária",
-                  val: `${mediaProt}g`,
-                },
-              ]
-                .filter(Boolean)
-                .map((item, i, arr) => (
-                  <div
-                    key={i}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      padding: "8px 0",
-                      borderBottom:
-                        i < arr.length - 1 ? "1px solid #ffffff06" : "none",
-                    }}
-                  >
-                    <span style={{ fontSize: 13, color: "#94a3b8" }}>
-                      {item.icon} {item.label}
-                    </span>
-                    <strong style={{ fontSize: 13, color: "#f8fafc" }}>
-                      {item.val}
-                    </strong>
-                  </div>
-                ))}
-            </div>
-          </div>
-
-          {/* Gráficos colapsáveis */}
-          {treinos.length > 0 && (
-            <div className="stats-card">
-              <div className="stats-card-title">⚔️ EVOLUÇÃO TREINOS</div>
-              <ResponsiveContainer width="100%" height={100}>
-                <BarChart
-                  data={treinos.map((t) => ({
-                    name: `${t.treino} ${new Date(t.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}`,
-                    min: Math.round((t.tempo_segundos || 0) / 60),
-                  }))}
-                >
-                  <GradientDefs />
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
-                  <XAxis
-                    dataKey="name"
-                    tick={{ fill: "#64748b", fontSize: 9 }}
-                  />
-                  <YAxis tick={{ fill: "#64748b", fontSize: 9 }} />
-                  <Tooltip
-                    contentStyle={tooltipStyle}
-                    formatter={(v) => [`${v} min`, "Duração"]}
-                    cursor={{ fill: "#ffffff08" }}
-                  />
-                  <Bar
-                    dataKey="min"
-                    fill="url(#gradPurple)"
-                    radius={[6, 6, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-
-          {pesoDados.length >= 2 && (
-            <div className="stats-card">
-              <div className="stats-card-title">⚖️ EVOLUÇÃO PESO</div>
-              <ResponsiveContainer width="100%" height={90}>
-                <LineChart
-                  data={pesoDados.map((d) => ({
-                    name: labelDia(d.data),
-                    peso: d.peso,
-                  }))}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
-                  <XAxis
-                    dataKey="name"
-                    tick={{ fill: "#64748b", fontSize: 9 }}
-                  />
-                  <YAxis
-                    tick={{ fill: "#64748b", fontSize: 9 }}
-                    domain={["auto", "auto"]}
-                  />
-                  <Tooltip
-                    contentStyle={tooltipStyle}
-                    formatter={(v) => [`${v} kg`, "Peso"]}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="peso"
-                    stroke="#6366f1"
-                    strokeWidth={2.5}
-                    dot={{
-                      fill: "#6366f1",
-                      r: 4,
-                      strokeWidth: 2,
-                      stroke: "#0f1113",
-                    }}
-                    activeDot={{ r: 6, fill: "#818cf8" }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-
-          {diasComMacros.length > 0 && (
-            <div className="stats-card">
-              <div className="stats-card-title">🍽️ KCAL DIÁRIA</div>
-              <ResponsiveContainer width="100%" height={90}>
-                <BarChart
-                  data={macrosPorDia.map((d) => ({
-                    name: labelDia(d.data),
-                    kcal: d.kcal,
-                  }))}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
-                  <XAxis
-                    dataKey="name"
-                    tick={{ fill: "#64748b", fontSize: 9 }}
-                  />
-                  <YAxis tick={{ fill: "#64748b", fontSize: 9 }} />
-                  <Tooltip
-                    contentStyle={tooltipStyle}
-                    formatter={(v) => [`${v} kcal`, "Ingerido"]}
-                    cursor={{ fill: "#ffffff08" }}
-                  />
-                  <GradientDefs />
-                  <Bar
-                    dataKey="kcal"
-                    fill="url(#gradOrange)"
-                    radius={[6, 6, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-
-          {sonoComRegistro.length > 0 && (
-            <div className="stats-card">
-              <div className="stats-card-title">😴 HORAS DE SONO</div>
-              <ResponsiveContainer width="100%" height={90}>
-                <BarChart data={sonoPorDia}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
-                  <XAxis
-                    dataKey="name"
-                    tick={{ fill: "#64748b", fontSize: 9 }}
-                  />
-                  <YAxis
-                    tick={{ fill: "#64748b", fontSize: 9 }}
-                    domain={[0, 10]}
-                  />
-                  <Tooltip
-                    contentStyle={tooltipStyle}
-                    formatter={(v) => [`${v}h`, "Dormido"]}
-                    cursor={{ fill: "#ffffff08" }}
-                  />
-                  <GradientDefs />
-                  <Bar
-                    dataKey="horas"
-                    fill="url(#gradBlue)"
-                    radius={[6, 6, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-
-          {/* Card compartilhável */}
-          <div style={{ borderRadius: 20, overflow: "hidden" }}>
-            <div
-              id="share-card"
-              style={{
-                background: "linear-gradient(135deg, #0f1113 0%, #1a1d21 100%)",
-                border: "1px solid #ffffff0d",
-                borderRadius: 20,
-                padding: 24,
+                background:
+                  "linear-gradient(135deg, rgba(91,127,255,0.1), rgba(124,58,237,0.1))",
+                border: "1px solid rgba(91,127,255,0.2)",
+                borderRadius: 18,
+                padding: "16px 20px",
                 display: "flex",
-                flexDirection: "column",
-                gap: 16,
+                justifyContent: "space-around",
+                alignItems: "center",
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <div>
-                  <div
-                    style={{
-                      fontSize: 10,
-                      color: "#64748b",
-                      fontWeight: 800,
-                      letterSpacing: "0.1em",
-                    }}
-                  >
-                    RELATÓRIO SEMANAL
+              {[
+                {
+                  icon: "🔥",
+                  val: rpg?.streak || 0,
+                  label: "dias streak",
+                  cor: "#ff8c42",
+                },
+                {
+                  icon: "⭐",
+                  val: (rpg?.xp || 0).toLocaleString("pt-BR"),
+                  label: "XP total",
+                  cor: "#5b7fff",
+                },
+                {
+                  icon: "🏆",
+                  val: `Nv. ${rpg?.nivel || 1}`,
+                  label: "nível",
+                  cor: "#ffd166",
+                },
+              ].map((item, i) => (
+                <div key={i} style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 22, marginBottom: 2 }}>
+                    {item.icon}
                   </div>
                   <div
                     style={{
                       fontSize: 18,
-                      fontWeight: 800,
-                      color: "#f8fafc",
+                      fontWeight: 900,
+                      color: item.cor,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {item.val}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 10,
+                      color: "var(--text3)",
                       marginTop: 2,
                     }}
                   >
-                    {perfil?.nome || "DayForge"}
+                    {item.label}
                   </div>
                 </div>
-                <div style={{ fontSize: 28 }}>⚔️</div>
-              </div>
+              ))}
+            </div>
+
+            {/* Ring metrics grid */}
+            <div>
+              <SectionHeader title="Esta semana" />
               <div
                 style={{
                   display: "grid",
@@ -1176,615 +934,1144 @@ export default function Stats({ user }) {
                   gap: 8,
                 }}
               >
-                {[
-                  {
-                    icon: "🏋️",
-                    label: "Treinos",
-                    val: totalTreinos,
-                    sub:
-                      totalTreinos > 0 ? formatarTempo(tempoTotal) : "nenhum",
-                  },
-                  {
-                    icon: "⚖️",
-                    label: "Peso",
-                    val:
-                      pesoDados.length > 0
-                        ? `${pesoDados[pesoDados.length - 1].peso}kg`
-                        : "—",
-                    sub:
-                      variacaoPeso !== null
-                        ? `${variacaoPeso > 0 ? "+" : ""}${variacaoPeso}kg`
-                        : "sem reg.",
-                  },
-                  {
-                    icon: "💧",
-                    label: "Água",
-                    val: `${diasMetaAgua}/7`,
-                    sub: "dias meta",
-                  },
-                  {
-                    icon: "👟",
-                    label: "Passos",
-                    val:
-                      mediaPassos > 0
-                        ? mediaPassos.toLocaleString("pt-BR")
-                        : "—",
-                    sub: "média/dia",
-                  },
-                  {
-                    icon: "😴",
-                    label: "Sono",
-                    val: mediaHorasSono ? `${mediaHorasSono}h` : "—",
-                    sub: `${diasSono7h}/7 ≥7h`,
-                  },
-                  {
-                    icon: "🔥",
-                    label: "Streak",
-                    val: `${rpg?.streak || 0}d`,
-                    sub: "consecutivos",
-                  },
-                  {
-                    icon: "⭐",
-                    label: "XP",
-                    val: (rpg?.xp || 0).toLocaleString("pt-BR"),
-                    sub: `Nível ${rpg?.nivel || 1}`,
-                  },
-                  {
-                    icon: "🎯",
-                    label: "Kcal",
-                    val: mediaKcal > 0 ? `${mediaKcal}` : "—",
-                    sub: "média kcal",
-                  },
-                  {
-                    icon: "💪",
-                    label: "Proteína",
-                    val: mediaProt > 0 ? `${mediaProt}g` : "—",
-                    sub: "média/dia",
-                  },
-                ].map((item, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      background: "#24282d",
-                      borderRadius: 10,
-                      padding: "10px 8px",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      gap: 4,
-                      textAlign: "center",
-                    }}
-                  >
-                    <span style={{ fontSize: 18 }}>{item.icon}</span>
-                    <div
-                      style={{
-                        fontSize: 14,
-                        fontWeight: 800,
-                        color: "#f8fafc",
-                        lineHeight: 1.2,
-                      }}
-                    >
-                      {item.val}
-                    </div>
-                    <div
-                      style={{ fontSize: 9, color: "#64748b", lineHeight: 1.3 }}
-                    >
-                      {item.label}
-                    </div>
-                    <div
-                      style={{ fontSize: 9, color: "#475569", lineHeight: 1.3 }}
-                    >
-                      {item.sub}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div
-                style={{
-                  textAlign: "center",
-                  fontSize: 10,
-                  color: "#475569",
-                  marginTop: 4,
-                }}
-              >
-                dayforge-web.vercel.app ·{" "}
-                {new Date().toLocaleDateString("pt-BR")}
-              </div>
-            </div>
-          </div>
-
-          <button
-            onClick={async () => {
-              setCompartilhando(true);
-              try {
-                const html2canvas = (await import("html2canvas")).default;
-                const el = document.getElementById("share-card");
-                const canvasRaw = await html2canvas(el, {
-                  backgroundColor: null,
-                  scale: 2,
-                  useCORS: true,
-                });
-                const pad = 20;
-                const finalCanvas = document.createElement("canvas");
-                finalCanvas.width = canvasRaw.width + pad * 2;
-                finalCanvas.height = canvasRaw.height + pad * 2;
-                const ctx = finalCanvas.getContext("2d");
-                ctx.fillStyle = "#0f1113";
-                ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
-                const r = 40;
-                ctx.beginPath();
-                ctx.moveTo(pad + r, pad);
-                ctx.lineTo(finalCanvas.width - pad - r, pad);
-                ctx.quadraticCurveTo(
-                  finalCanvas.width - pad,
-                  pad,
-                  finalCanvas.width - pad,
-                  pad + r,
-                );
-                ctx.lineTo(
-                  finalCanvas.width - pad,
-                  finalCanvas.height - pad - r,
-                );
-                ctx.quadraticCurveTo(
-                  finalCanvas.width - pad,
-                  finalCanvas.height - pad,
-                  finalCanvas.width - pad - r,
-                  finalCanvas.height - pad,
-                );
-                ctx.lineTo(pad + r, finalCanvas.height - pad);
-                ctx.quadraticCurveTo(
-                  pad,
-                  finalCanvas.height - pad,
-                  pad,
-                  finalCanvas.height - pad - r,
-                );
-                ctx.lineTo(pad, pad + r);
-                ctx.quadraticCurveTo(pad, pad, pad + r, pad);
-                ctx.closePath();
-                ctx.clip();
-                ctx.drawImage(canvasRaw, pad, pad);
-                finalCanvas.toBlob(async (blob) => {
-                  if (
-                    navigator.share &&
-                    navigator.canShare({
-                      files: [
-                        new File([blob], "dayforge.png", { type: "image/png" }),
-                      ],
-                    })
-                  ) {
-                    await navigator.share({
-                      title: "Meu relatório semanal — DayForge",
-                      files: [
-                        new File([blob], "dayforge.png", { type: "image/png" }),
-                      ],
-                    });
-                  } else {
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = "dayforge-semana.png";
-                    a.click();
-                    URL.revokeObjectURL(url);
-                  }
-                });
-              } catch (e) {
-                alert("Erro ao gerar imagem: " + e.message);
-              }
-              setCompartilhando(false);
-            }}
-            style={{
-              width: "100%",
-              background: "#6366f1",
-              border: "none",
-              borderRadius: 12,
-              color: "#fff",
-              fontSize: 15,
-              fontWeight: 700,
-              padding: 14,
-              cursor: "pointer",
-              opacity: compartilhando ? 0.7 : 1,
-            }}
-          >
-            {compartilhando ? "Gerando..." : "📤 Compartilhar Semana"}
-          </button>
-        </>
-      )}
-
-      {/* ABA MÊS */}
-      {aba === "mes" && (
-        <>
-          <select
-            value={mesSel}
-            onChange={(e) => setMesSel(e.target.value)}
-            style={{
-              width: "100%",
-              background: "#1a1d21",
-              border: "1px solid #ffffff0d",
-              borderRadius: 10,
-              color: "#f8fafc",
-              fontSize: 13,
-              padding: "10px 12px",
-              marginBottom: 16,
-            }}
-          >
-            {mesesOpts.map((o) => (
-              <option key={o.val} value={o.val}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-
-          {carregandoMes ? (
-            <div
-              style={{ textAlign: "center", color: "#64748b", paddingTop: 20 }}
-            >
-              Carregando... 📊
-            </div>
-          ) : (
-            <>
-              {/* Grid highlights mensal */}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 10,
-                  marginBottom: 10,
-                }}
-              >
-                <StatCard
+                <MetricRing
                   icon="🏋️"
-                  label="TREINOS"
-                  val={totalTreinosMes}
+                  label="Treinos"
+                  value={totalTreinos}
                   sub={
-                    totalTreinosMes > 0
-                      ? formatarTempo(tempoTotalMes) + " total"
-                      : "nenhum"
+                    totalTreinos > 0 ? formatarTempo(tempoTotal) : "nenhum"
                   }
-                  cor={totalTreinosMes >= 10 ? "#10b981" : "#f8fafc"}
+                  color="#5b7fff"
+                  pct={totalTreinos / 5}
                 />
-                <StatCard
-                  icon="🔥"
-                  label="KCAL TREINO"
-                  val={
-                    kcalTotalMes > 0
-                      ? kcalTotalMes.toLocaleString("pt-BR")
-                      : "—"
-                  }
-                  sub="queimadas no mês"
-                  cor="#f97316"
-                />
-                <StatCard
+                <MetricRing
                   icon="💧"
-                  label="META ÁGUA"
-                  val={`${diasMetaAguaMes}/${diasNoMes}`}
-                  sub="dias atingidos"
-                  cor={
-                    diasMetaAguaMes >= diasNoMes * 0.7 ? "#10b981" : "#f97316"
-                  }
+                  label="Meta Água"
+                  value={`${diasMetaAgua}/7`}
+                  sub={`${(aguaMeta / 1000).toFixed(1)}L/dia`}
+                  color="#00d97e"
+                  pct={diasMetaAgua / 7}
                 />
-                <StatCard
+                <MetricRing
                   icon="👟"
-                  label="META PASSOS"
-                  val={`${diasMetaPassosMes}/${diasNoMes}`}
-                  sub="dias atingidos"
-                  cor={
-                    diasMetaPassosMes >= diasNoMes * 0.7 ? "#10b981" : "#f97316"
-                  }
+                  label="Meta Passos"
+                  value={`${diasMetaPassos}/7`}
+                  sub={`${(mediaPassos / 1000).toFixed(1)}k/dia`}
+                  color="#ff8c42"
+                  pct={diasMetaPassos / 7}
                 />
-                <StatCard
+                <MetricRing
+                  icon="😴"
+                  label="Sono"
+                  value={mediaHorasSono ? `${mediaHorasSono}h` : "—"}
+                  sub={
+                    mediaHorasSono
+                      ? `${diasSono7h}/7 ≥ 7h`
+                      : "sem dados"
+                  }
+                  color="#7c3aed"
+                  pct={mediaHorasSono ? parseFloat(mediaHorasSono) / 9 : 0}
+                />
+                <MetricRing
                   icon="⚖️"
-                  label="PESO"
-                  val={
-                    variacaoPesoMes !== null
-                      ? `${variacaoPesoMes > 0 ? "+" : ""}${variacaoPesoMes} kg`
+                  label="Peso"
+                  value={
+                    pesoDados.length > 0
+                      ? `${pesoDados[pesoDados.length - 1].peso}kg`
                       : "—"
                   }
                   sub={
-                    pesoInicioMes
-                      ? `${pesoInicioMes}kg → ${pesoFimMes}kg`
-                      : "sem registro"
+                    variacaoPeso !== null
+                      ? `${variacaoPeso > 0 ? "+" : ""}${variacaoPeso}kg`
+                      : "sem dados"
                   }
-                  cor={
-                    variacaoPesoMes !== null
-                      ? variacaoPesoMes < 0
-                        ? "#10b981"
-                        : variacaoPesoMes > 0
-                          ? "#ef4444"
-                          : "#64748b"
-                      : "#64748b"
+                  color={
+                    variacaoPeso !== null
+                      ? variacaoPeso <= 0
+                        ? "#00d97e"
+                        : "#ff4d6d"
+                      : "#5b7fff"
                   }
+                  pct={0.6}
                 />
-                <StatCard
-                  icon="😴"
-                  label="SONO"
-                  val={mediaHorasSonoMes ? `${mediaHorasSonoMes}h` : "—"}
-                  sub={
-                    mediaHorasSonoMes
-                      ? `${diasSono7hMes}/${diasNoMes} dias ≥7h`
-                      : "sem registros"
-                  }
-                  cor={
-                    parseFloat(mediaHorasSonoMes) >= 7 ? "#10b981" : "#f97316"
-                  }
+                <MetricRing
+                  icon="🍽️"
+                  label="Kcal"
+                  value={mediaKcal > 0 ? `${mediaKcal}` : "—"}
+                  sub={mediaProt > 0 ? `${mediaProt}g prot` : "sem dados"}
+                  color="#ffd166"
+                  pct={mediaKcal > 0 ? 0.7 : 0}
                 />
               </div>
+            </div>
 
-              {/* Insights do mês */}
-              {(totalTreinosMes > 0 ||
-                sonoMes.length > 0 ||
-                passosMes.length > 0) &&
-                (() => {
-                  const mediaDuracaoMes =
-                    totalTreinosMes > 0
-                      ? Math.round(
-                          treinosMes.reduce(
-                            (s, t) => s + (t.tempo_segundos || 0),
-                            0,
-                          ) /
-                            totalTreinosMes /
-                            60,
-                        )
-                      : null;
-                  const volumeTotalMes = treinosMes.reduce(
-                    (s, t) => s + (t.volume_total || 0),
-                    0,
-                  );
-                  const totalPassosMes = passosMes.reduce(
-                    (s, r) => s + r.passos,
-                    0,
-                  );
-                  const kmMes = Math.round(totalPassosMes * 0.0008);
-                  const mediaPassosMes =
-                    passosMes.length > 0
-                      ? Math.round(totalPassosMes / diasNoMes)
-                      : null;
-                  const qualMes = mediaQualidadeSonoMes;
-                  return (
-                    <div
-                      style={{
-                        background: "#1a1d21",
-                        border: "1px solid #ffffff0d",
-                        borderRadius: 14,
-                        padding: 16,
-                        marginBottom: 10,
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: 10,
-                          color: "#64748b",
-                          fontWeight: 800,
-                          letterSpacing: "0.08em",
-                          marginBottom: 12,
-                        }}
-                      >
-                        🧠 INSIGHTS DO MÊS
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 0,
-                        }}
-                      >
-                        {[
-                          mediaDuracaoMes && {
-                            icon: "⏱️",
-                            label: "Duração média por treino",
-                            val: `${mediaDuracaoMes} min`,
-                          },
-                          volumeTotalMes > 0 && {
-                            icon: "📦",
-                            label: "Volume total levantado",
-                            val: `${volumeTotalMes.toLocaleString("pt-BR")} kg`,
-                          },
-                          kmMes > 0 && {
-                            icon: "🗺️",
-                            label: "Km percorridos (passos)",
-                            val: `~${kmMes} km`,
-                          },
-                          mediaPassosMes && {
-                            icon: "👟",
-                            label: "Média de passos/dia",
-                            val: mediaPassosMes.toLocaleString("pt-BR"),
-                          },
-                          qualMes && {
-                            icon: "😴",
-                            label: "Qualidade média do sono",
-                            val: `${qualMes}/5`,
-                          },
-                          diasSono7hMes > 0 && {
-                            icon: "✅",
-                            label: "Noites ≥7h de sono",
-                            val: `${diasSono7hMes}/${diasNoMes} dias`,
-                          },
-                          kcalTotalMes > 0 && {
-                            icon: "🔥",
-                            label: "Kcal queimadas (treino)",
-                            val: kcalTotalMes.toLocaleString("pt-BR"),
-                          },
-                        ]
-                          .filter(Boolean)
-                          .map((item, i, arr) => (
-                            <div
-                              key={i}
-                              style={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                                padding: "8px 0",
-                                borderBottom:
-                                  i < arr.length - 1
-                                    ? "1px solid #ffffff06"
-                                    : "none",
-                              }}
-                            >
-                              <span style={{ fontSize: 13, color: "#94a3b8" }}>
-                                {item.icon} {item.label}
-                              </span>
-                              <strong
-                                style={{ fontSize: 13, color: "#f8fafc" }}
-                              >
-                                {item.val}
-                              </strong>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  );
-                })()}
-
-              {/* Divisões */}
-              {Object.keys(divisoesMes).length > 0 && (
-                <div className="stats-card">
-                  <div className="stats-card-title">🏋️ TREINOS POR DIVISÃO</div>
-                  {Object.entries(divisoesMes)
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([div, qtd]) => (
-                      <div
-                        key={div}
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          padding: "7px 0",
-                          borderBottom: "1px solid #ffffff06",
-                        }}
-                      >
-                        <span style={{ fontSize: 13, color: "#94a3b8" }}>
-                          Treino {div}
-                        </span>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                          }}
-                        >
-                          <div
-                            style={{
-                              height: 5,
-                              width: Math.round((qtd / totalTreinosMes) * 80),
-                              background: "#6366f1",
-                              borderRadius: 99,
-                            }}
-                          />
-                          <span
-                            style={{
-                              fontSize: 13,
-                              fontWeight: 700,
-                              color: "#6366f1",
-                              minWidth: 24,
-                            }}
-                          >
-                            {qtd}x
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              )}
-
-              {pesosMes.length >= 2 && (
-                <div className="stats-card">
-                  <div className="stats-card-title">⚖️ EVOLUÇÃO DO PESO</div>
+            {/* Gráficos */}
+            {treinos.length > 0 && (
+              <div>
+                <SectionHeader title="Treinos na semana" />
+                <div
+                  style={{
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 18,
+                    padding: 16,
+                  }}
+                >
                   <ResponsiveContainer width="100%" height={110}>
-                    <LineChart
-                      data={pesosMes.map((p) => ({
-                        name: new Date(p.data + "T00:00:00").toLocaleDateString(
-                          "pt-BR",
-                          { day: "2-digit", month: "2-digit" },
-                        ),
-                        peso: Number(p.peso),
+                    <BarChart
+                      data={treinos.map((t) => ({
+                        name: `${t.treino} ${new Date(t.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}`,
+                        min: Math.round((t.tempo_segundos || 0) / 60),
                       }))}
                     >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
+                      <defs>
+                        <linearGradient
+                          id="gTreino"
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1"
+                        >
+                          <stop
+                            offset="0%"
+                            stopColor="#5b7fff"
+                            stopOpacity={1}
+                          />
+                          <stop
+                            offset="100%"
+                            stopColor="#7c3aed"
+                            stopOpacity={0.8}
+                          />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="rgba(255,255,255,0.04)"
+                      />
                       <XAxis
                         dataKey="name"
-                        tick={{ fill: "#64748b", fontSize: 9 }}
+                        tick={{ fill: "#4a5568", fontSize: 9 }}
+                      />
+                      <YAxis tick={{ fill: "#4a5568", fontSize: 9 }} />
+                      <Tooltip
+                        contentStyle={tooltipStyle}
+                        formatter={(v) => [`${v} min`, "Duração"]}
+                        cursor={{ fill: "rgba(255,255,255,0.03)" }}
+                      />
+                      <Bar
+                        dataKey="min"
+                        fill="url(#gTreino)"
+                        radius={[8, 8, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {pesoDados.length >= 2 && (
+              <div>
+                <SectionHeader title="Evolução do peso" />
+                <div
+                  style={{
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 18,
+                    padding: 16,
+                  }}
+                >
+                  <ResponsiveContainer width="100%" height={100}>
+                    <AreaChart data={pesoDados}>
+                      <defs>
+                        <linearGradient
+                          id="gPeso"
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1"
+                        >
+                          <stop
+                            offset="0%"
+                            stopColor="#00d97e"
+                            stopOpacity={0.3}
+                          />
+                          <stop
+                            offset="100%"
+                            stopColor="#00d97e"
+                            stopOpacity={0}
+                          />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="rgba(255,255,255,0.04)"
+                      />
+                      <XAxis
+                        dataKey="name"
+                        tick={{ fill: "#4a5568", fontSize: 9 }}
                       />
                       <YAxis
-                        tick={{ fill: "#64748b", fontSize: 9 }}
+                        tick={{ fill: "#4a5568", fontSize: 9 }}
                         domain={["auto", "auto"]}
                       />
                       <Tooltip
                         contentStyle={tooltipStyle}
-                        formatter={(v) => [`${v} kg`]}
+                        formatter={(v) => [`${v} kg`, "Peso"]}
                       />
-                      <Line
+                      <Area
                         type="monotone"
                         dataKey="peso"
-                        stroke="#6366f1"
+                        stroke="#00d97e"
                         strokeWidth={2.5}
-                        dot={{
-                          fill: "#6366f1",
-                          r: 4,
-                          strokeWidth: 2,
-                          stroke: "#0f1113",
-                        }}
-                        activeDot={{ r: 6, fill: "#818cf8" }}
+                        fill="url(#gPeso)"
+                        dot={{ fill: "#00d97e", r: 4, stroke: "#080a0e", strokeWidth: 2 }}
+                        activeDot={{ r: 6 }}
                       />
-                    </LineChart>
+                    </AreaChart>
                   </ResponsiveContainer>
                 </div>
-              )}
+              </div>
+            )}
 
-              {sonoMes.length >= 2 && (
-                <div className="stats-card">
-                  <div className="stats-card-title">😴 EVOLUÇÃO DO SONO</div>
-                  <ResponsiveContainer width="100%" height={110}>
-                    <BarChart
-                      data={sonoMes.map((r) => ({
-                        name: new Date(r.data + "T00:00:00").toLocaleDateString(
-                          "pt-BR",
-                          { day: "2-digit", month: "2-digit" },
-                        ),
-                        horas: calcularHoras(r.dormiu, r.acordou),
-                      }))}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
+            {aguaPorDia.some((d) => d.total > 0) && (
+              <div>
+                <SectionHeader title="Hidratação diária" />
+                <div
+                  style={{
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 18,
+                    padding: 16,
+                  }}
+                >
+                  <ResponsiveContainer width="100%" height={100}>
+                    <BarChart data={aguaPorDia}>
+                      <defs>
+                        <linearGradient
+                          id="gAgua"
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1"
+                        >
+                          <stop
+                            offset="0%"
+                            stopColor="#00d97e"
+                            stopOpacity={1}
+                          />
+                          <stop
+                            offset="100%"
+                            stopColor="#00d97e"
+                            stopOpacity={0.4}
+                          />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="rgba(255,255,255,0.04)"
+                      />
                       <XAxis
                         dataKey="name"
-                        tick={{ fill: "#64748b", fontSize: 9 }}
+                        tick={{ fill: "#4a5568", fontSize: 9 }}
                       />
-                      <YAxis
-                        tick={{ fill: "#64748b", fontSize: 9 }}
-                        domain={[0, 10]}
-                      />
+                      <YAxis tick={{ fill: "#4a5568", fontSize: 9 }} />
                       <Tooltip
                         contentStyle={tooltipStyle}
-                        formatter={(v) => [`${v}h`]}
+                        formatter={(v) => [
+                          `${(v / 1000).toFixed(1)}L`,
+                          "Água",
+                        ]}
+                        cursor={{ fill: "rgba(255,255,255,0.03)" }}
                       />
-                      <GradientDefs />
                       <Bar
-                        dataKey="horas"
-                        fill="url(#gradBlue)"
+                        dataKey="total"
+                        fill="url(#gAgua)"
                         radius={[6, 6, 0, 0]}
                       />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-              )}
+              </div>
+            )}
 
-              {totalTreinosMes === 0 &&
-                pesosMes.length === 0 &&
-                diasMetaAguaMes === 0 &&
-                sonoMes.length === 0 && (
-                  <p
+            {diasComMacros.length > 0 && (
+              <div>
+                <SectionHeader title="Kcal diária" />
+                <div
+                  style={{
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 18,
+                    padding: 16,
+                  }}
+                >
+                  <ResponsiveContainer width="100%" height={100}>
+                    <BarChart data={macrosPorDia}>
+                      <defs>
+                        <linearGradient
+                          id="gKcal"
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1"
+                        >
+                          <stop
+                            offset="0%"
+                            stopColor="#ffd166"
+                            stopOpacity={1}
+                          />
+                          <stop
+                            offset="100%"
+                            stopColor="#ff8c42"
+                            stopOpacity={0.6}
+                          />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="rgba(255,255,255,0.04)"
+                      />
+                      <XAxis
+                        dataKey="name"
+                        tick={{ fill: "#4a5568", fontSize: 9 }}
+                      />
+                      <YAxis tick={{ fill: "#4a5568", fontSize: 9 }} />
+                      <Tooltip
+                        contentStyle={tooltipStyle}
+                        formatter={(v) => [`${v} kcal`, "Ingerido"]}
+                        cursor={{ fill: "rgba(255,255,255,0.03)" }}
+                      />
+                      <Bar
+                        dataKey="kcal"
+                        fill="url(#gKcal)"
+                        radius={[6, 6, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {sonoComRegistro.length > 0 && (
+              <div>
+                <SectionHeader title="Horas de sono" />
+                <div
+                  style={{
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 18,
+                    padding: 16,
+                  }}
+                >
+                  <ResponsiveContainer width="100%" height={100}>
+                    <BarChart data={sonoPorDia}>
+                      <defs>
+                        <linearGradient
+                          id="gSono"
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1"
+                        >
+                          <stop
+                            offset="0%"
+                            stopColor="#7c3aed"
+                            stopOpacity={1}
+                          />
+                          <stop
+                            offset="100%"
+                            stopColor="#5b7fff"
+                            stopOpacity={0.5}
+                          />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="rgba(255,255,255,0.04)"
+                      />
+                      <XAxis
+                        dataKey="name"
+                        tick={{ fill: "#4a5568", fontSize: 9 }}
+                      />
+                      <YAxis
+                        tick={{ fill: "#4a5568", fontSize: 9 }}
+                        domain={[0, 10]}
+                      />
+                      <Tooltip
+                        contentStyle={tooltipStyle}
+                        formatter={(v) => [`${v}h`, "Dormido"]}
+                        cursor={{ fill: "rgba(255,255,255,0.03)" }}
+                      />
+                      <Bar
+                        dataKey="horas"
+                        fill="url(#gSono)"
+                        radius={[6, 6, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {/* Comparativo semana anterior */}
+            {semanaAnterior && (
+              <div>
+                <SectionHeader title="vs semana anterior" />
+                <div
+                  style={{
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 18,
+                    padding: "4px 16px",
+                  }}
+                >
+                  <CompareRow
+                    icon="🏋️"
+                    label="Treinos"
+                    prev={semanaAnterior.treinos}
+                    atual={totalTreinos}
+                    unit="x"
+                    maisMelhor
+                  />
+                  <CompareRow
+                    icon="💧"
+                    label="Meta Água"
+                    prev={semanaAnterior.diasAgua}
+                    atual={diasMetaAgua}
+                    unit="/7"
+                    maisMelhor
+                  />
+                  <CompareRow
+                    icon="👟"
+                    label="Meta Passos"
+                    prev={semanaAnterior.diasPassos}
+                    atual={diasMetaPassos}
+                    unit="/7"
+                    maisMelhor
+                  />
+                  <CompareRow
+                    icon="😴"
+                    label="Sono médio"
+                    prev={parseFloat(semanaAnterior.horasSono || 0)}
+                    atual={parseFloat(mediaHorasSono || 0)}
+                    unit="h"
+                    maisMelhor
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Insights */}
+            {(mediaDuracaoTreino ||
+              volumeTotal > 0 ||
+              diaMaisTreino ||
+              totalPassosSemana > 0 ||
+              mediaProt > 0) && (
+              <div>
+                <SectionHeader title="Insights" />
+                <div
+                  style={{
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 18,
+                    padding: "4px 16px",
+                  }}
+                >
+                  {mediaDuracaoTreino && (
+                    <InsightRow
+                      icon="⏱️"
+                      label="Duração média por treino"
+                      value={`${mediaDuracaoTreino} min`}
+                    />
+                  )}
+                  {volumeTotal > 0 && (
+                    <InsightRow
+                      icon="📦"
+                      label="Volume total levantado"
+                      value={`${volumeTotal.toLocaleString("pt-BR")} kg`}
+                    />
+                  )}
+                  {diaMaisTreino && (
+                    <InsightRow
+                      icon="📅"
+                      label="Dia que mais treinou"
+                      value={diasSemana[diaMaisTreino[0]]}
+                    />
+                  )}
+                  {totalPassosSemana > 0 && (
+                    <InsightRow
+                      icon="🗺️"
+                      label="Total de passos na semana"
+                      value={totalPassosSemana.toLocaleString("pt-BR")}
+                    />
+                  )}
+                  {mediaProt > 0 && (
+                    <InsightRow
+                      icon="💪"
+                      label="Proteína média diária"
+                      value={`${mediaProt}g`}
+                    />
+                  )}
+                  {kcalTreinoSemana > 0 && (
+                    <InsightRow
+                      icon="🔥"
+                      label="Kcal queimadas no treino"
+                      value={`${kcalTreinoSemana}`}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Share card */}
+            <div>
+              <SectionHeader title="Relatório semanal" />
+              <div
+                id="share-card"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #0a0c12 0%, #0f1420 50%, #0a0c12 100%)",
+                  border: "1px solid rgba(91,127,255,0.15)",
+                  borderRadius: 20,
+                  padding: 20,
+                  marginBottom: 10,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    marginBottom: 16,
+                  }}
+                >
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 10,
+                        color: "var(--text3)",
+                        fontWeight: 800,
+                        letterSpacing: "0.15em",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Relatório Semanal
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 17,
+                        fontWeight: 800,
+                        color: "var(--text)",
+                        marginTop: 2,
+                      }}
+                    >
+                      {perfil?.nome || "DayForge"}
+                    </div>
+                  </div>
+                  <div
                     style={{
-                      textAlign: "center",
-                      color: "#475569",
-                      fontSize: 13,
-                      paddingTop: 20,
+                      background: "rgba(91,127,255,0.15)",
+                      border: "1px solid rgba(91,127,255,0.3)",
+                      borderRadius: 10,
+                      padding: "6px 10px",
+                      fontSize: 10,
+                      color: "#5b7fff",
+                      fontWeight: 700,
                     }}
                   >
-                    Nenhum dado registrado neste mês ainda.
-                  </p>
+                    {new Date().toLocaleDateString("pt-BR")}
+                  </div>
+                </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr 1fr",
+                    gap: 6,
+                  }}
+                >
+                  {[
+                    {
+                      icon: "🏋️",
+                      label: "Treinos",
+                      val: totalTreinos,
+                      sub: totalTreinos > 0 ? formatarTempo(tempoTotal) : "—",
+                    },
+                    {
+                      icon: "⚖️",
+                      label: "Peso",
+                      val:
+                        pesoDados.length > 0
+                          ? `${pesoDados[pesoDados.length - 1].peso}kg`
+                          : "—",
+                      sub:
+                        variacaoPeso !== null
+                          ? `${variacaoPeso > 0 ? "+" : ""}${variacaoPeso}kg`
+                          : "—",
+                    },
+                    {
+                      icon: "💧",
+                      label: "Água",
+                      val: `${diasMetaAgua}/7`,
+                      sub: "dias meta",
+                    },
+                    {
+                      icon: "👟",
+                      label: "Passos",
+                      val:
+                        mediaPassos > 0
+                          ? mediaPassos.toLocaleString("pt-BR")
+                          : "—",
+                      sub: "média/dia",
+                    },
+                    {
+                      icon: "😴",
+                      label: "Sono",
+                      val: mediaHorasSono ? `${mediaHorasSono}h` : "—",
+                      sub: `${diasSono7h}/7 ≥7h`,
+                    },
+                    {
+                      icon: "🔥",
+                      label: "Streak",
+                      val: `${rpg?.streak || 0}d`,
+                      sub: "consecutivos",
+                    },
+                  ].map((item, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        background: "rgba(255,255,255,0.03)",
+                        border: "1px solid rgba(255,255,255,0.06)",
+                        borderRadius: 12,
+                        padding: "10px 6px",
+                        textAlign: "center",
+                      }}
+                    >
+                      <div style={{ fontSize: 16, marginBottom: 4 }}>
+                        {item.icon}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 15,
+                          fontWeight: 800,
+                          color: "var(--text)",
+                          lineHeight: 1,
+                          marginBottom: 2,
+                        }}
+                      >
+                        {item.val}
+                      </div>
+                      <div
+                        style={{ fontSize: 9, color: "var(--text3)" }}
+                      >
+                        {item.label}
+                      </div>
+                      <div
+                        style={{ fontSize: 9, color: "var(--text3)" }}
+                      >
+                        {item.sub}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div
+                  style={{
+                    textAlign: "center",
+                    fontSize: 10,
+                    color: "var(--text3)",
+                    marginTop: 14,
+                    letterSpacing: "0.06em",
+                  }}
+                >
+                  dayforge-web.vercel.app
+                </div>
+              </div>
+              <button
+                onClick={async () => {
+                  setCompartilhando(true);
+                  try {
+                    const html2canvas = (await import("html2canvas")).default;
+                    const el = document.getElementById("share-card");
+                    const canvasRaw = await html2canvas(el, {
+                      backgroundColor: null,
+                      scale: 2,
+                      useCORS: true,
+                    });
+                    canvasRaw.toBlob(async (blob) => {
+                      if (
+                        navigator.share &&
+                        navigator.canShare({
+                          files: [
+                            new File([blob], "dayforge.png", {
+                              type: "image/png",
+                            }),
+                          ],
+                        })
+                      ) {
+                        await navigator.share({
+                          title: "Meu relatório semanal — DayForge",
+                          files: [
+                            new File([blob], "dayforge.png", {
+                              type: "image/png",
+                            }),
+                          ],
+                        });
+                      } else {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = "dayforge-semana.png";
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      }
+                    });
+                  } catch (e) {
+                    alert("Erro ao gerar imagem: " + e.message);
+                  }
+                  setCompartilhando(false);
+                }}
+                style={{
+                  width: "100%",
+                  background:
+                    "linear-gradient(135deg, var(--accent), var(--accent2))",
+                  border: "none",
+                  borderRadius: 14,
+                  color: "#fff",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  padding: 14,
+                  cursor: "pointer",
+                  boxShadow: "0 4px 20px rgba(91,127,255,0.35)",
+                  opacity: compartilhando ? 0.7 : 1,
+                }}
+              >
+                {compartilhando ? "Gerando..." : "📤 Compartilhar Semana"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ══ ABA MÊS ══ */}
+        {aba === "mes" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            <select
+              value={mesSel}
+              onChange={(e) => setMesSel(e.target.value)}
+              style={{
+                width: "100%",
+                background: "var(--surface)",
+                border: "1px solid var(--border2)",
+                borderRadius: 12,
+                color: "var(--text)",
+                fontSize: 13,
+                padding: "12px 14px",
+                outline: "none",
+              }}
+            >
+              {mesesOpts.map((o) => (
+                <option key={o.val} value={o.val}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+
+            {carregandoMes ? (
+              <div
+                style={{
+                  textAlign: "center",
+                  color: "var(--text3)",
+                  padding: 40,
+                }}
+              >
+                Carregando... 📊
+              </div>
+            ) : (
+              <>
+                {/* Grid mensal */}
+                <div>
+                  <SectionHeader title="Resumo do mês" />
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr 1fr",
+                      gap: 8,
+                    }}
+                  >
+                    <MetricRing
+                      icon="🏋️"
+                      label="Treinos"
+                      value={totalTreinosMes}
+                      sub={
+                        totalTreinosMes > 0
+                          ? formatarTempo(tempoTotalMes)
+                          : "nenhum"
+                      }
+                      color="#5b7fff"
+                      pct={totalTreinosMes / 20}
+                    />
+                    <MetricRing
+                      icon="💧"
+                      label="Meta Água"
+                      value={`${diasMetaAguaMes}/${diasNoMes}`}
+                      sub="dias atingidos"
+                      color="#00d97e"
+                      pct={diasMetaAguaMes / diasNoMes}
+                    />
+                    <MetricRing
+                      icon="👟"
+                      label="Meta Passos"
+                      value={`${diasMetaPassosMes}/${diasNoMes}`}
+                      sub="dias atingidos"
+                      color="#ff8c42"
+                      pct={diasMetaPassosMes / diasNoMes}
+                    />
+                    <MetricRing
+                      icon="😴"
+                      label="Sono"
+                      value={
+                        mediaHorasSonoMes ? `${mediaHorasSonoMes}h` : "—"
+                      }
+                      sub={
+                        mediaHorasSonoMes
+                          ? `${diasSono7hMes}/${diasNoMes} ≥7h`
+                          : "sem dados"
+                      }
+                      color="#7c3aed"
+                      pct={
+                        mediaHorasSonoMes
+                          ? parseFloat(mediaHorasSonoMes) / 9
+                          : 0
+                      }
+                    />
+                    <MetricRing
+                      icon="⚖️"
+                      label="Peso"
+                      value={
+                        variacaoPesoMes !== null
+                          ? `${variacaoPesoMes > 0 ? "+" : ""}${variacaoPesoMes}kg`
+                          : "—"
+                      }
+                      sub={
+                        pesoInicioMes
+                          ? `${pesoInicioMes} → ${pesoFimMes}kg`
+                          : "sem dados"
+                      }
+                      color={
+                        variacaoPesoMes !== null
+                          ? variacaoPesoMes <= 0
+                            ? "#00d97e"
+                            : "#ff4d6d"
+                          : "#5b7fff"
+                      }
+                      pct={0.6}
+                    />
+                    <MetricRing
+                      icon="🔥"
+                      label="Kcal"
+                      value={
+                        kcalTotalMes > 0
+                          ? kcalTotalMes.toLocaleString("pt-BR")
+                          : "—"
+                      }
+                      sub="queimadas"
+                      color="#ffd166"
+                      pct={kcalTotalMes > 0 ? 0.7 : 0}
+                    />
+                  </div>
+                </div>
+
+                {/* Divisões */}
+                {Object.keys(divisoesMes).length > 0 && (
+                  <div>
+                    <SectionHeader title="Treinos por divisão" />
+                    <div
+                      style={{
+                        background: "var(--surface)",
+                        border: "1px solid var(--border)",
+                        borderRadius: 18,
+                        padding: "8px 16px",
+                      }}
+                    >
+                      {Object.entries(divisoesMes)
+                        .sort((a, b) => b[1] - a[1])
+                        .map(([div, qtd]) => (
+                          <div
+                            key={div}
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              padding: "10px 0",
+                              borderBottom: "1px solid var(--border)",
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: 13,
+                                color: "var(--text2)",
+                              }}
+                            >
+                              Treino {div}
+                            </span>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 10,
+                              }}
+                            >
+                              <div
+                                style={{
+                                  height: 4,
+                                  width: Math.round(
+                                    (qtd / totalTreinosMes) * 80,
+                                  ),
+                                  background:
+                                    "linear-gradient(90deg, #5b7fff, #7c3aed)",
+                                  borderRadius: 99,
+                                }}
+                              />
+                              <span
+                                style={{
+                                  fontSize: 13,
+                                  fontWeight: 800,
+                                  color: "#5b7fff",
+                                  minWidth: 24,
+                                }}
+                              >
+                                {qtd}x
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
                 )}
-            </>
-          )}
-        </>
-      )}
-    </div>
+
+                {/* Insights mensais */}
+                {(totalTreinosMes > 0 ||
+                  sonoMes.length > 0 ||
+                  passosMes.length > 0) && (
+                  <div>
+                    <SectionHeader title="Insights do mês" />
+                    <div
+                      style={{
+                        background: "var(--surface)",
+                        border: "1px solid var(--border)",
+                        borderRadius: 18,
+                        padding: "4px 16px",
+                      }}
+                    >
+                      {totalTreinosMes > 0 && (
+                        <InsightRow
+                          icon="⏱️"
+                          label="Duração média por treino"
+                          value={`${Math.round(tempoTotalMes / totalTreinosMes / 60)} min`}
+                        />
+                      )}
+                      {treinosMes.reduce(
+                        (s, t) => s + (t.volume_total || 0),
+                        0,
+                      ) > 0 && (
+                        <InsightRow
+                          icon="📦"
+                          label="Volume total levantado"
+                          value={`${treinosMes.reduce((s, t) => s + (t.volume_total || 0), 0).toLocaleString("pt-BR")} kg`}
+                        />
+                      )}
+                      {passosMes.length > 0 && (
+                        <InsightRow
+                          icon="🗺️"
+                          label="Km percorridos (passos)"
+                          value={`~${Math.round(passosMes.reduce((s, r) => s + r.passos, 0) * 0.0008)} km`}
+                        />
+                      )}
+                      {mediaQualidadeSonoMes && (
+                        <InsightRow
+                          icon="😴"
+                          label="Qualidade média do sono"
+                          value={`${mediaQualidadeSonoMes}/5`}
+                        />
+                      )}
+                      {kcalTotalMes > 0 && (
+                        <InsightRow
+                          icon="🔥"
+                          label="Kcal queimadas (treino)"
+                          value={kcalTotalMes.toLocaleString("pt-BR")}
+                        />
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {pesosMes.length >= 2 && (
+                  <div>
+                    <SectionHeader title="Evolução do peso" />
+                    <div
+                      style={{
+                        background: "var(--surface)",
+                        border: "1px solid var(--border)",
+                        borderRadius: 18,
+                        padding: 16,
+                      }}
+                    >
+                      <ResponsiveContainer width="100%" height={120}>
+                        <AreaChart
+                          data={pesosMes.map((p) => ({
+                            name: new Date(
+                              p.data + "T00:00:00",
+                            ).toLocaleDateString("pt-BR", {
+                              day: "2-digit",
+                              month: "2-digit",
+                            }),
+                            peso: Number(p.peso),
+                          }))}
+                        >
+                          <defs>
+                            <linearGradient
+                              id="gPesoMes"
+                              x1="0"
+                              y1="0"
+                              x2="0"
+                              y2="1"
+                            >
+                              <stop
+                                offset="0%"
+                                stopColor="#5b7fff"
+                                stopOpacity={0.3}
+                              />
+                              <stop
+                                offset="100%"
+                                stopColor="#5b7fff"
+                                stopOpacity={0}
+                              />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            stroke="rgba(255,255,255,0.04)"
+                          />
+                          <XAxis
+                            dataKey="name"
+                            tick={{ fill: "#4a5568", fontSize: 9 }}
+                          />
+                          <YAxis
+                            tick={{ fill: "#4a5568", fontSize: 9 }}
+                            domain={["auto", "auto"]}
+                          />
+                          <Tooltip
+                            contentStyle={tooltipStyle}
+                            formatter={(v) => [`${v} kg`]}
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="peso"
+                            stroke="#5b7fff"
+                            strokeWidth={2.5}
+                            fill="url(#gPesoMes)"
+                            dot={{
+                              fill: "#5b7fff",
+                              r: 3,
+                              stroke: "#080a0e",
+                              strokeWidth: 2,
+                            }}
+                            activeDot={{ r: 5 }}
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
+
+                {sonoMes.length >= 2 && (
+                  <div>
+                    <SectionHeader title="Sono no mês" />
+                    <div
+                      style={{
+                        background: "var(--surface)",
+                        border: "1px solid var(--border)",
+                        borderRadius: 18,
+                        padding: 16,
+                      }}
+                    >
+                      <ResponsiveContainer width="100%" height={110}>
+                        <BarChart
+                          data={sonoMes.map((r) => ({
+                            name: new Date(
+                              r.data + "T00:00:00",
+                            ).toLocaleDateString("pt-BR", {
+                              day: "2-digit",
+                              month: "2-digit",
+                            }),
+                            horas: calcularHoras(r.dormiu, r.acordou),
+                          }))}
+                        >
+                          <defs>
+                            <linearGradient
+                              id="gSonoMes"
+                              x1="0"
+                              y1="0"
+                              x2="0"
+                              y2="1"
+                            >
+                              <stop
+                                offset="0%"
+                                stopColor="#7c3aed"
+                                stopOpacity={1}
+                              />
+                              <stop
+                                offset="100%"
+                                stopColor="#5b7fff"
+                                stopOpacity={0.4}
+                              />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            stroke="rgba(255,255,255,0.04)"
+                          />
+                          <XAxis
+                            dataKey="name"
+                            tick={{ fill: "#4a5568", fontSize: 9 }}
+                          />
+                          <YAxis
+                            tick={{ fill: "#4a5568", fontSize: 9 }}
+                            domain={[0, 10]}
+                          />
+                          <Tooltip
+                            contentStyle={tooltipStyle}
+                            formatter={(v) => [`${v}h`]}
+                          />
+                          <Bar
+                            dataKey="horas"
+                            fill="url(#gSonoMes)"
+                            radius={[6, 6, 0, 0]}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
+
+                {totalTreinosMes === 0 &&
+                  pesosMes.length === 0 &&
+                  diasMetaAguaMes === 0 &&
+                  sonoMes.length === 0 && (
+                    <div
+                      style={{
+                        textAlign: "center",
+                        padding: "40px 0",
+                        color: "var(--text3)",
+                        fontSize: 13,
+                      }}
+                    >
+                      Nenhum dado registrado neste mês.
+                    </div>
+                  )}
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    </>
   );
 }
