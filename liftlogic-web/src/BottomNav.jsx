@@ -5,8 +5,9 @@ const CATEGORIAS = [
     label: "💪 Treino & Movimento",
     items: [
       { id: "habitos", icon: "✅", label: "Hábitos" },
-      { id: "passos", icon: "👟", label: "Passos" },
-      { id: "rotina", icon: "📋", label: "Rotina" },
+        { id: "passos",  icon: "👟", label: "Passos" },
+        { id: "cardio",  icon: "🏃", label: "Cardio" },
+        { id: "rotina",  icon: "📋", label: "Rotina" },
     ],
   },
   {
@@ -28,8 +29,9 @@ const CATEGORIAS = [
   {
     label: "🎮 Outros",
     items: [
+      { id: "coach",       icon: "🤖", label: "Coach" },
       { id: "smartpocket", icon: "💰", label: "SmartPocket" },
-      { id: "rpg", icon: "⚔️", label: "RPG" },
+      { id: "rpg",         icon: "⚔️", label: "RPG" },
     ],
   },
 ];

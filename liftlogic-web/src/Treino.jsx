@@ -42,6 +42,7 @@ import SmartPocket from "./SmartPocket";
 import RPG from "./RPG";
 import Sono from "./Sono";
 import Cardio from "./Cardio";
+import Coach from "./Coach";
 import BottomNav from "./BottomNav";
 import ModalResumo from "./ModalResumo";
 import TreinoStats from "./TreinoStats";
@@ -913,6 +914,8 @@ function Treino({ logout, user }) {
 
       {abaPrincipal === "rpg" && <RPG user={user} />}
       {abaPrincipal === "sono" && <Sono user={user} />}
+      {abaPrincipal === "cardio" && <Cardio user={user} />}
+            {abaPrincipal === "coach" && <Coach user={user} />}
 
       {abaPrincipal === "treino" && (
         <>
@@ -951,16 +954,7 @@ function Treino({ logout, user }) {
             >
               📜 Histórico
             </button>
-            <button
-              className={
-                subAbaTreino === "cardio"
-                  ? "treino-subnav-btn active"
-                  : "treino-subnav-btn"
-              }
-              onClick={() => setSubAbaTreino("cardio")}
-            >
-              🏃 Cardio
-            </button>
+
           </div>
 
           {/* Exercícios */}
@@ -1315,8 +1309,7 @@ function Treino({ logout, user }) {
             />
           )}
 
-          {/* Cardio */}
-          {subAbaTreino === "cardio" && <Cardio user={user} />}
+
 
           {/* Histórico */}
           {subAbaTreino === "historico" && (
