@@ -192,19 +192,25 @@ export default function Coach({ user }) {
           : null;
 
       const macrosRegs = macros || [];
-      const mediaKcal =
-        macrosRegs.length > 0
-          ? Math.round(
-              macrosRegs.reduce((s, r) => s + r.kcal, 0) / macrosRegs.length,
-            )
-          : null;
-      const mediaProt =
-        macrosRegs.length > 0
-          ? (
-              macrosRegs.reduce((s, r) => s + Number(r.prot), 0) /
-              macrosRegs.length
-            ).toFixed(1)
-          : null;
+            const kcalPorDia = {};
+            const protPorDia = {};
+            macrosRegs.forEach((r) => {
+              kcalPorDia[r.data] = (kcalPorDia[r.data] || 0) + r.kcal;
+              protPorDia[r.data] = (protPorDia[r.data] || 0) + Number(r.prot);
+            });
+            const diasMacros = Object.keys(kcalPorDia);
+            const mediaKcal =
+              diasMacros.length > 0
+                ? Math.round(
+                    Object.values(kcalPorDia).reduce((s, v) => s + v, 0) / diasMacros.length,
+                  )
+                : null;
+            const mediaProt =
+              diasMacros.length > 0
+                ? (
+                    Object.values(protPorDia).reduce((s, v) => s + v, 0) / diasMacros.length
+                  ).toFixed(1)
+                : null;
 
       const humorRegs = (humor || []).filter((r) => r.humor);
       const energiaRegs = (humor || []).filter((r) => r.energia);
@@ -267,7 +273,7 @@ ${
 ## NUTRIÇÃO
 ${
   mediaKcal
-    ? `- Kcal média/dia: ${mediaKcal}${macrosMeta?.meta_kcal ? ` (meta: ${macrosMeta.meta_kcal})` : ""}\n- Proteína média: ${mediaProt}g/dia\n- Dias registrados: ${macrosRegs.length}`
+    ? `- Kcal média/dia: ${mediaKcal}${macrosMeta?.meta_kcal ? ` (meta: ${macrosMeta.meta_kcal})` : ""}\n- Proteína média: ${mediaProt}g/dia\n- Dias registrados: ${diasMacros.length}`
     : "- Sem registros no período"
 }
 
