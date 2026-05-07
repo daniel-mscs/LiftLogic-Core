@@ -17,32 +17,42 @@ function calcularHoras(dormiu, acordou) {
 }
 
 const PERIODOS = [
-  { id: "hoje",    label: "Hoje",          icon: "📅" },
-  { id: "ontem",   label: "Ontem",         icon: "⏮️" },
-  { id: "semana",  label: "Esta semana",   icon: "📆" },
-  { id: "mes",     label: "Este mês",      icon: "🗓️" },
+  { id: "hoje",      label: "Hoje",          icon: "📅" },
+  { id: "ontem",     label: "Ontem",         icon: "⏮️" },
+  { id: "semana",    label: "Esta semana",   icon: "📆" },
+  { id: "mes",       label: "Este mês",      icon: "🗓️" },
+  { id: "especifico", label: "Dia específico", icon: "🗓️" },
 ];
 
 export default function Coach({ user }) {
-  const [periodo, setPeriodo] = useState("semana");
-  const [analisando, setAnalisando] = useState(false);
-  const [analise, setAnalise] = useState(null);
-  const [erro, setErro] = useState(null);
+  if (periodo === "hoje") {
+        const s = fmt(hoje);
+        return { inicio: s, fim: s, label: "hoje" };
+      }
+      if (periodo === "ontem") {
+        const d = new Date(hoje);
+        d.setDate(d.getDate() - 1);
+        const s = fmt(d);
+        return { inicio: s, fim: s, label: "ontem" };
+      }
 
   const getRange = useCallback(() => {
     const hoje = new Date();
     const fmt = (d) => formatarData(d);
 
     if (periodo === "hoje") {
-      const s = fmt(hoje);
-      return { inicio: s, fim: s, label: "hoje" };
-    }
-    if (periodo === "ontem") {
-      const d = new Date(hoje);
-      d.setDate(d.getDate() - 1);
-      const s = fmt(d);
-      return { inicio: s, fim: s, label: "ontem" };
-    }
+          const s = fmt(hoje);
+          return { inicio: s, fim: s, label: "hoje" };
+        }
+        if (periodo === "ontem") {
+          const d = new Date(hoje);
+          d.setDate(d.getDate() - 1);
+          const s = fmt(d);
+          return { inicio: s, fim: s, label: "ontem" };
+        }
+        if (periodo === "especifico") {
+          return { inicio: dataEspecifica, fim: dataEspecifica, label: `em ${new Date(dataEspecifica + "T00:00:00").toLocaleDateString("pt-BR")}` };
+        }
     if (periodo === "semana") {
       const d = new Date(hoje);
       d.setDate(d.getDate() - 6);
@@ -333,7 +343,20 @@ Seja direto, use os números reais, evite ser genérico. Fale como um treinador 
         </div>
       </div>
 
-      {/* Botão analisar */}
+            {periodo === "especifico" && (
+              <div style={{ background: "#1a1d21", border: "1px solid #ffffff0d", borderRadius: 12, padding: 14 }}>
+                <div style={{ fontSize: 11, color: "#64748b", fontWeight: 700, marginBottom: 8 }}>ESCOLHA O DIA</div>
+                <input
+                  type="date"
+                  value={dataEspecifica}
+                  max={formatarData(new Date())}
+                  onChange={(e) => { setDataEspecifica(e.target.value); setAnalise(null); }}
+                  style={{ width: "100%", colorScheme: "dark" }}
+                />
+              </div>
+            )}
+
+            {/* Botão analisar */}
       <button
         onClick={analisar}
         disabled={analisando}
