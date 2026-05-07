@@ -897,6 +897,120 @@ export default function PerfilTab({
             </div>
           </div>
 
+          <div id="ajuda-cardio" className="ajuda-group-title">
+            🏃 Cardio
+          </div>
+          <div className="ajuda-item">
+            <div className="ajuda-num">1</div>
+            <div className="ajuda-body">
+              <strong>O que é?</strong>
+              <p>
+                A aba Cardio registra suas atividades aeróbicas separadas dos
+                treinos de musculação. Acesse pelo menu 🗃️ → Cardio.
+              </p>
+            </div>
+          </div>
+          <div className="ajuda-item">
+            <div className="ajuda-num">2</div>
+            <div className="ajuda-body">
+              <strong>Registrando uma atividade</strong>
+              <p>
+                Selecione a atividade no grid (Muay Thai, Corrida, Bike, etc),
+                informe a duração em minutos e o app calcula as kcal
+                automaticamente usando o MET de cada atividade.
+              </p>
+            </div>
+          </div>
+          <div className="ajuda-item">
+            <div className="ajuda-num">3</div>
+            <div className="ajuda-body">
+              <strong>O que é MET?</strong>
+              <p>
+                MET (Equivalente Metabólico) é uma medida de intensidade da
+                atividade. A fórmula é: kcal = MET × peso(kg) × tempo(horas).
+                Muay Thai tem MET 10.0, corrida 9.8, caminhada 3.5.
+              </p>
+            </div>
+          </div>
+          <div className="ajuda-item">
+            <div className="ajuda-num">4</div>
+            <div className="ajuda-body">
+              <strong>Sobrescrever kcal</strong>
+              <p>
+                Se seu relógio ou app mediu as kcal com mais precisão, preencha
+                o campo "Sobrescrever kcal" e o app usará esse valor em vez do
+                calculado.
+              </p>
+            </div>
+          </div>
+          <div className="ajuda-item">
+            <div className="ajuda-num">💡</div>
+            <div className="ajuda-body">
+              <strong>Histórico do mês</strong>
+              <p>
+                O app mostra o total de sessões, minutos e kcal do mês atual. O
+                gráfico exibe as kcal por sessão ao longo do tempo.
+              </p>
+            </div>
+          </div>
+
+          <div id="ajuda-coach" className="ajuda-group-title">
+            🤖 Coach
+          </div>
+          <div className="ajuda-item">
+            <div className="ajuda-num">1</div>
+            <div className="ajuda-body">
+              <strong>O que é o Coach?</strong>
+              <p>
+                O Coach coleta todos os seus dados do app (treinos, cardio,
+                sono, água, passos, macros, humor e peso) e gera um relatório
+                personalizado para você analisar com uma IA.
+              </p>
+            </div>
+          </div>
+          <div className="ajuda-item">
+            <div className="ajuda-num">2</div>
+            <div className="ajuda-body">
+              <strong>Como usar</strong>
+              <p>
+                Acesse pelo menu 🗃️ → Coach. Escolha o período (hoje, semana,
+                mês ou um dia específico) e clique em "Gerar Relatório".
+              </p>
+            </div>
+          </div>
+          <div className="ajuda-item">
+            <div className="ajuda-num">3</div>
+            <div className="ajuda-body">
+              <strong>Copiando o relatório</strong>
+              <p>
+                Após gerar, clique em "Copiar" para copiar o prompt completo com
+                todos os seus dados.
+              </p>
+            </div>
+          </div>
+          <div className="ajuda-item">
+            <div className="ajuda-num">4</div>
+            <div className="ajuda-body">
+              <strong>Escolhendo a IA</strong>
+              <p>
+                Cole o prompt em qualquer IA gratuita — ChatGPT
+                (chat.openai.com), Gemini (gemini.google.com) ou Claude
+                (claude.ai). Os atalhos aparecem direto na tela após gerar o
+                relatório.
+              </p>
+            </div>
+          </div>
+          <div className="ajuda-item">
+            <div className="ajuda-num">💡</div>
+            <div className="ajuda-body">
+              <strong>Dica</strong>
+              <p>
+                Quanto mais dados você registrar no app (sono, humor, macros,
+                passos), mais rica e personalizada será a análise da IA.
+              </p>
+            </div>
+          </div>
+
           <div id="ajuda-smartpocket" className="ajuda-group-title">
             💰 SmartPocket
           </div>

@@ -915,7 +915,7 @@ function Treino({ logout, user }) {
       {abaPrincipal === "rpg" && <RPG user={user} />}
       {abaPrincipal === "sono" && <Sono user={user} />}
       {abaPrincipal === "cardio" && <Cardio user={user} />}
-            {abaPrincipal === "coach" && <Coach user={user} />}
+      {abaPrincipal === "coach" && <Coach user={user} />}
 
       {abaPrincipal === "treino" && (
         <>
@@ -954,7 +954,6 @@ function Treino({ logout, user }) {
             >
               📜 Histórico
             </button>
-
           </div>
 
           {/* Exercícios */}
@@ -1308,8 +1307,6 @@ function Treino({ logout, user }) {
               buscarEvolucao={buscarEvolucao}
             />
           )}
-
-
 
           {/* Histórico */}
           {subAbaTreino === "historico" && (
