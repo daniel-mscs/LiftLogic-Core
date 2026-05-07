@@ -205,8 +205,9 @@ Seja direto, específico, fale como treinador experiente.`;
       });
 
       const data = await response.json();
-      const texto = data.content?.map(c => c.text || "").join("") || "";
-      if (!texto) throw new Error("Resposta vazia da IA");
+      console.log("Resposta da API:", JSON.stringify(data));
+            const texto = data.content?.map(c => c.text || "").join("") || "";
+            if (!texto) throw new Error("Resposta vazia: " + JSON.stringify(data));
       setAnalise(texto);
     } catch (e) {
       setErro("Erro ao gerar análise: " + e.message);
