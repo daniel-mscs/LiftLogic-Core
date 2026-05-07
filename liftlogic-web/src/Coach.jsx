@@ -235,6 +235,7 @@ export default function Coach({ user }) {
 - Peso: ${perfil?.peso || "?"}kg | Altura: ${perfil?.altura || "?"}cm | Idade: ${perfil?.idade || "?"} anos
 - Sexo: ${perfil?.sexo === "M" ? "Masculino" : "Feminino"}
 - Objetivo: ${perfil?.objetivo === "emagrecer" ? "Emagrecer" : perfil?.objetivo === "ganhar" ? "Ganhar massa" : "Manter peso"}
+${perfil?.sobre_mim ? `- Contexto pessoal: ${perfil.sobre_mim}` : ""}
 
 ## PERÍODO ANALISADO: ${label.toUpperCase()}
 
@@ -316,7 +317,19 @@ Seja direto, use os números reais, evite respostas genéricas.`;
   };
 
   const copiar = async () => {
-    await navigator.clipboard.writeText(prompt);
+    try {
+      await navigator.clipboard.writeText(prompt);
+    } catch {
+      const el = document.createElement("textarea");
+      el.value = prompt;
+      el.style.position = "fixed";
+      el.style.opacity = "0";
+      document.body.appendChild(el);
+      el.focus();
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+    }
     setCopiado(true);
     setTimeout(() => setCopiado(false), 3000);
   };
@@ -512,6 +525,23 @@ Seja direto, use os números reais, evite respostas genéricas.`;
             padding: 20,
           }}
         >
+          {copiado && (
+            <div
+              style={{
+                background: "#10b98122",
+                border: "1px solid #10b98144",
+                borderRadius: 10,
+                padding: "10px 14px",
+                marginBottom: 12,
+                fontSize: 13,
+                color: "#10b981",
+                fontWeight: 700,
+                textAlign: "center",
+              }}
+            >
+              ✅ Relatório copiado! Agora cole em qualquer IA abaixo.
+            </div>
+          )}
           <div
             style={{
               display: "flex",

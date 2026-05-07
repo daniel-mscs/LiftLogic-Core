@@ -13,6 +13,8 @@ export default function Login({ onLoginSuccess }) {
   const [sucesso, setSucesso] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [mostrarConfirmar, setMostrarConfirmar] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -74,6 +76,23 @@ export default function Login({ onLoginSuccess }) {
     if (error) setErro(error.message);
     else setSucesso("Conta criada! Verifique seu email para confirmar. 📧");
     setLoading(false);
+  };
+
+  const handleForgotPassword = async () => {
+    if (!form.email) {
+      setErro("Digite seu e-mail antes de solicitar a redefinição.");
+      return;
+    }
+    setResetLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(form.email, {
+      redirectTo: "https://dayforge-web.vercel.app/reset-password",
+    });
+    setResetLoading(false);
+    if (error) setErro("Erro ao enviar e-mail: " + error.message);
+    else {
+      setResetSent(true);
+      setErro("");
+    }
   };
 
   const forca = modo === "register" ? forcaSenha(form.senha) : null;
@@ -248,6 +267,32 @@ export default function Login({ onLoginSuccess }) {
               "🧱 Criar Conta"
             )}
           </button>
+          {modo === "login" && (
+            <div style={{ textAlign: "center", marginTop: 8 }}>
+              {resetSent ? (
+                <span style={{ color: "#10b981", fontSize: 13 }}>
+                  ✅ E-mail enviado! Verifique sua caixa de entrada.
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  disabled={resetLoading}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "#64748b",
+                    fontSize: 13,
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                    padding: 0,
+                  }}
+                >
+                  {resetLoading ? "Enviando..." : "Esqueci minha senha"}
+                </button>
+              )}
+            </div>
+          )}
         </form>
 
         <div className="login-divider">

@@ -60,6 +60,8 @@ export default function Cardio({ user }) {
   const [registros, setRegistros] = useState([]);
   const [perfil, setPerfil] = useState(null);
   const [carregando, setCarregando] = useState(true);
+  const [celebrando, setCelebrando] = useState(false);
+  const [msgCelebracao, setMsgCelebracao] = useState("");
   const [form, setForm] = useState({
     tipo: "Corrida",
     duracao: "",
@@ -139,8 +141,19 @@ export default function Cardio({ user }) {
 
     setRegistros((prev) => [novo[0], ...prev]);
     setForm((p) => ({ ...p, duracao: "", kcalOverride: "", observacao: "" }));
-    toast(`${form.tipo} registrado! 🔥 ${kcalFinal} kcal`, "success");
     await ganharXP(user.id, "treino_finalizado");
+    const mensagens = [
+      "Cardio feito! Seu coração agradece. ❤️",
+      "Mais uma sessão na conta. Consistência é tudo! 🔥",
+      "Suor é gordura chorando. Continue assim! 💪",
+      "Enquanto outros descansavam, você estava correndo. Respeito! ⚡",
+      "Cada minuto de cardio é um tijolo na sua saúde. 🧱",
+      "Seu pulmão tá mais forte do que ontem. 🏃",
+      "Cardio concluído. Missão cumprida! 🏅",
+    ];
+    setMsgCelebracao(mensagens[Math.floor(Math.random() * mensagens.length)]);
+    setCelebrando(true);
+    setTimeout(() => setCelebrando(false), 3000);
   };
 
   const deletar = async (id) => {
@@ -175,6 +188,112 @@ export default function Cardio({ user }) {
   };
 
   if (carregando)
+    return (
+      <div style={{ textAlign: "center", color: "#64748b", paddingTop: 40 }}>
+        Carregando cardio... 🏃
+      </div>
+    );
+
+  // — overlay de celebração —
+  if (celebrando)
+    return (
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 9999,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "rgba(0,0,0,0.88)",
+        }}
+      >
+        <style>{`
+          @keyframes cardioPop {
+            0%   { transform: scale(0.5); opacity: 0; }
+            60%  { transform: scale(1.15); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+          @keyframes cardioFloat {
+            0%   { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-40px); opacity: 0; }
+          }
+        `}</style>
+        <div
+          style={{
+            animation: "cardioPop 0.5s cubic-bezier(0.16,1,0.3,1)",
+            textAlign: "center",
+          }}
+        >
+          <div style={{ fontSize: 80, lineHeight: 1, marginBottom: 16 }}>
+            🏃
+          </div>
+          <div
+            style={{
+              fontSize: 24,
+              fontWeight: 800,
+              color: "#f8fafc",
+              marginBottom: 8,
+            }}
+          >
+            Cardio Registrado!
+          </div>
+          <div
+            style={{
+              fontSize: 15,
+              color: "#94a3b8",
+              marginBottom: 24,
+              maxWidth: 280,
+              lineHeight: 1.6,
+            }}
+          >
+            {msgCelebracao}
+          </div>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              background: "#f59e0b22",
+              border: "1px solid #f59e0b44",
+              borderRadius: 99,
+              padding: "10px 24px",
+            }}
+          >
+            <span style={{ fontSize: 20 }}>⭐</span>
+            <span style={{ fontSize: 20, fontWeight: 800, color: "#f59e0b" }}>
+              +50 XP
+            </span>
+          </div>
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              pointerEvents: "none",
+              overflow: "hidden",
+            }}
+          >
+            {["🏃", "🔥", "❤️", "⚡", "💪", "🏅", "✨"].map((e, i) => (
+              <div
+                key={i}
+                style={{
+                  position: "absolute",
+                  left: `${10 + i * 13}%`,
+                  top: `${20 + (i % 3) * 20}%`,
+                  fontSize: 24 + (i % 3) * 8,
+                  animation: `cardioFloat ${1.5 + i * 0.2}s ease ${i * 0.1}s infinite`,
+                }}
+              >
+                {e}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+
+  if (false)
     return (
       <div style={{ textAlign: "center", color: "#64748b", paddingTop: 40 }}>
         Carregando cardio... 🏃

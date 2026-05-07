@@ -56,6 +56,7 @@ import { NOTIFICACOES } from "./lib/notifications";
 function ExercicioCard({
   ex,
   concluidos,
+  seriesFeitas,
   treinando,
   toggleConcluido,
   atualizarExercicio,
@@ -97,9 +98,39 @@ function ExercicioCard({
       </div>
       <div className="card-main-row">
         {treinando && (
-          <button className="btn-check" onClick={() => toggleConcluido(ex.id)}>
-            {concluidos[ex.id] ? "✅" : "⭕"}
-          </button>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            {concluidos[ex.id] ? (
+              <span style={{ fontSize: 22 }}>✅</span>
+            ) : (
+              <button
+                className="btn-check"
+                onClick={() => toggleConcluido(ex.id)}
+                style={{
+                  fontSize: 13,
+                  padding: "6px 10px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                ▶ Iniciar
+              </button>
+            )}
+            <span
+              style={{
+                fontSize: 11,
+                color: concluidos[ex.id] ? "#10b981" : "#94a3b8",
+                fontWeight: 700,
+              }}
+            >
+              {seriesFeitas[ex.id] || 0}/{ex.series}
+            </span>
+          </div>
         )}
         <div className="exercise-details">
           <h3>{ex.nome}</h3>
@@ -160,6 +191,9 @@ function Treino({ logout, user }) {
     return localStorage.getItem(TREINO_ATIVO_KEY) || "A";
   });
   const [concluidos, setConcluidos] = useState({});
+  const [seriesFeitas, setSeriesFeitas] = useState({});
+  const [modalDescanso, setModalDescanso] = useState(null);
+  const [salvandoTreino, setSalvandoTreino] = useState(false);
   const [carregando, setCarregando] = useState(false);
   const [abaPrincipal, setAbaPrincipal] = useState("home");
   const [perfilCompleto, setPerfilCompleto] = useState(true);
@@ -205,6 +239,7 @@ function Treino({ logout, user }) {
     idade: "",
     sexo: "M",
     data_nascimento: "",
+    sobre_mim: "",
   });
   const [perfilEditado, setPerfilEditado] = useState(false);
   const [perfilOriginal, setPerfilOriginal] = useState(null);
@@ -241,6 +276,7 @@ function Treino({ logout, user }) {
     grupo_muscular: "",
     treino: "A",
     equipamento: "maquina",
+    descanso_segundos: "90",
   });
 
   const sensors = useSensors(
@@ -307,6 +343,7 @@ function Treino({ logout, user }) {
         idade: data.idade || "",
         sexo: data.sexo || "M",
         data_nascimento: data.data_nascimento || "",
+        sobre_mim: data.sobre_mim || "",
       };
       setPerfil(p);
       setPerfilOriginal(p);
@@ -357,6 +394,7 @@ function Treino({ logout, user }) {
       sexo: perfil.sexo,
       objetivo: perfil.objetivo || "manter",
       data_nascimento: perfil.data_nascimento || null,
+      sobre_mim: perfil.sobre_mim || "",
     };
     const { error } = await supabase
       .from("perfil")
@@ -594,6 +632,8 @@ function Treino({ logout, user }) {
   };
 
   const confirmarFinalizarTreino = async () => {
+    if (salvandoTreino) return;
+    setSalvandoTreino(true);
     const treinoIniciado =
       localStorage.getItem(TREINO_ATIVO_KEY) || treinoAtivo;
     localStorage.removeItem(TREINO_START_KEY);
@@ -635,7 +675,9 @@ function Treino({ logout, user }) {
     setTempoTotal(0);
     cancelarDescanso();
     setConcluidos({});
+    setSeriesFeitas({});
     await buscarHistorico();
+    setSalvandoTreino(false);
     await ganharXP(user.id, "treino_finalizado");
     const mensagens = [
       "Mais um tijolo na forja. Continue assim! 💪",
@@ -671,6 +713,7 @@ function Treino({ logout, user }) {
         user_id: user.id,
         ordem: exerciciosFiltrados.length,
         equipamento: novoExercicio.equipamento,
+        descanso_segundos: Number(novoExercicio.descanso_segundos) || 90,
       },
     ]);
     if (error) toast(error.message, "error");
@@ -712,8 +755,21 @@ function Treino({ logout, user }) {
     else buscarExercicios();
   };
 
-  const toggleConcluido = (id) =>
-    setConcluidos((prev) => ({ ...prev, [id]: !prev[id] }));
+  const toggleConcluido = (id) => {
+    const ex = exercicios.find((e) => e.id === id);
+    if (!ex) return;
+    if (concluidos[id]) return;
+    setModalDescanso({
+      exId: id,
+      nomeEx: ex.nome,
+      serieAtual: seriesFeitas[id] || 0,
+      totalSeries: Number(ex.series),
+      descansoSeg: Number(ex.descanso_segundos) || 90,
+      carga: ex.carga,
+      repeticoes: ex.repeticoes,
+    });
+    cancelarDescanso();
+  };
   const abrirAjuda = (ancora) => {
     setAjudaAncora(ancora);
     setAbaPrincipal("perfil");
@@ -859,6 +915,320 @@ function Treino({ logout, user }) {
         </div>
       )}
 
+      {modalDescanso && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9990,
+            background: "rgba(0,0,0,0.82)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            style={{
+              background: "#1e293b",
+              borderRadius: 20,
+              padding: "28px 24px",
+              width: "90%",
+              maxWidth: 380,
+              textAlign: "center",
+              border: "1px solid #334155",
+              boxShadow: "0 8px 40px #0008",
+            }}
+          >
+            {/* Cabeçalho */}
+            <div
+              style={{
+                fontSize: 12,
+                color: "#64748b",
+                textTransform: "uppercase",
+                letterSpacing: 1,
+                marginBottom: 4,
+              }}
+            >
+              Exercício em andamento
+            </div>
+            <div
+              style={{
+                fontSize: 19,
+                fontWeight: 800,
+                color: "#f8fafc",
+                marginBottom: 2,
+              }}
+            >
+              {modalDescanso.nomeEx}
+            </div>
+            <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 20 }}>
+              {modalDescanso.carga}kg &nbsp;·&nbsp; {modalDescanso.repeticoes}{" "}
+              reps
+            </div>
+
+            {/* Contador de séries */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                gap: 8,
+                marginBottom: 24,
+              }}
+            >
+              {Array.from({ length: modalDescanso.totalSeries }).map((_, i) => (
+                <div
+                  key={i}
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: "50%",
+                    background:
+                      i < modalDescanso.serieAtual ? "#6366f1" : "#0f172a",
+                    border: `2px solid ${i < modalDescanso.serieAtual ? "#6366f1" : "#334155"}`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: i < modalDescanso.serieAtual ? "#fff" : "#475569",
+                  }}
+                >
+                  {i < modalDescanso.serieAtual ? "✓" : i + 1}
+                </div>
+              ))}
+            </div>
+
+            {/* Timer de descanso */}
+            {descanso > 0 ? (
+              <>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: "#64748b",
+                    textTransform: "uppercase",
+                    letterSpacing: 1,
+                    marginBottom: 4,
+                  }}
+                >
+                  Descanso
+                </div>
+                <div
+                  style={{
+                    fontSize: 64,
+                    fontWeight: 800,
+                    color: descanso <= 10 ? "#ef4444" : "#6366f1",
+                    lineHeight: 1,
+                    marginBottom: 16,
+                  }}
+                >
+                  {formatarTempo(descanso)}
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    justifyContent: "center",
+                    marginBottom: 8,
+                  }}
+                >
+                  {[30, 60, 90].map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => adicionarDescanso(s)}
+                      style={{
+                        background: "#334155",
+                        border: "none",
+                        borderRadius: 8,
+                        color: "#f8fafc",
+                        fontSize: 13,
+                        padding: "8px 14px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      +{s}s
+                    </button>
+                  ))}
+                  <button
+                    onClick={cancelarDescanso}
+                    style={{
+                      background: "#334155",
+                      border: "none",
+                      borderRadius: 8,
+                      color: "#ef4444",
+                      fontSize: 13,
+                      padding: "8px 14px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div style={{ marginBottom: 16 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    justifyContent: "center",
+                    marginBottom: 8,
+                  }}
+                >
+                  {[30, 60, 90].map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => iniciarTimerDescanso(s)}
+                      style={{
+                        background: "#1e3a5f",
+                        border: "1px solid #6366f133",
+                        borderRadius: 8,
+                        color: "#818cf8",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        padding: "8px 14px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {s}s
+                    </button>
+                  ))}
+                </div>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    placeholder="Outro (seg)"
+                    value={inputDescanso}
+                    onChange={(e) => setInputDescanso(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") iniciarDescansoManual();
+                    }}
+                    style={{
+                      flex: 1,
+                      background: "#0f172a",
+                      border: "1px solid #334155",
+                      borderRadius: 8,
+                      color: "#f8fafc",
+                      padding: "8px 12px",
+                      fontSize: 13,
+                    }}
+                  />
+                  <button
+                    onClick={iniciarDescansoManual}
+                    style={{
+                      background: "#6366f1",
+                      border: "none",
+                      borderRadius: 8,
+                      color: "#fff",
+                      fontSize: 13,
+                      fontWeight: 700,
+                      padding: "8px 16px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    ▶
+                  </button>
+                </div>
+              </div>
+            )}
+            {/* Botão Série feita */}
+            {modalDescanso.serieAtual < modalDescanso.totalSeries && (
+              <button
+                onClick={() => {
+                  const novasSeries = modalDescanso.serieAtual + 1;
+                  setSeriesFeitas((prev) => ({
+                    ...prev,
+                    [modalDescanso.exId]: novasSeries,
+                  }));
+                  const concluido = novasSeries >= modalDescanso.totalSeries;
+                  if (concluido)
+                    setConcluidos((prev) => ({
+                      ...prev,
+                      [modalDescanso.exId]: true,
+                    }));
+                  cancelarDescanso();
+                  setModalDescanso((prev) => ({
+                    ...prev,
+                    serieAtual: novasSeries,
+                  }));
+                }}
+                style={{
+                  width: "100%",
+                  background: "#10b981",
+                  border: "none",
+                  borderRadius: 10,
+                  color: "#fff",
+                  fontSize: 15,
+                  fontWeight: 700,
+                  padding: "14px 0",
+                  cursor: "pointer",
+                  marginBottom: 10,
+                }}
+              >
+                ✅ Série feita
+              </button>
+            )}
+
+            {/* Botões de navegação */}
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={() => {
+                  cancelarDescanso();
+                  setModalDescanso(null);
+                }}
+                style={{
+                  flex: 1,
+                  background: "#0f172a",
+                  border: "1px solid #334155",
+                  borderRadius: 10,
+                  color: "#94a3b8",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  padding: "12px 0",
+                  cursor: "pointer",
+                }}
+              >
+                ← Fechar
+              </button>
+              <button
+                onClick={() => {
+                  const idx = exerciciosFiltrados.findIndex(
+                    (e) => e.id === modalDescanso.exId,
+                  );
+                  const proximo = exerciciosFiltrados[idx + 1];
+                  cancelarDescanso();
+                  if (proximo) {
+                    setModalDescanso({
+                      exId: proximo.id,
+                      nomeEx: proximo.nome,
+                      serieAtual: seriesFeitas[proximo.id] || 0,
+                      totalSeries: Number(proximo.series),
+                      descansoSeg: Number(proximo.descanso_segundos) || 90,
+                      carga: proximo.carga,
+                      repeticoes: proximo.repeticoes,
+                    });
+                  } else {
+                    setModalDescanso(null);
+                  }
+                }}
+                style={{
+                  flex: 1,
+                  background: "#334155",
+                  border: "none",
+                  borderRadius: 10,
+                  color: "#f8fafc",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  padding: "12px 0",
+                  cursor: "pointer",
+                }}
+              >
+                Próximo →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <ModalResumo
         modalResumo={modalResumo}
         treinoAtivo={treinoAtivo}
@@ -1217,6 +1587,17 @@ function Treino({ logout, user }) {
                       <div className="row">
                         <input
                           type="number"
+                          placeholder="Descanso (seg)"
+                          value={novoExercicio.descanso_segundos}
+                          onChange={(e) =>
+                            setNovoExercicio({
+                              ...novoExercicio,
+                              descanso_segundos: e.target.value,
+                            })
+                          }
+                        />
+                        <input
+                          type="number"
                           placeholder="Séries"
                           value={novoExercicio.series}
                           onChange={(e) =>
@@ -1284,6 +1665,7 @@ function Treino({ logout, user }) {
                             key={ex.id}
                             ex={ex}
                             concluidos={concluidos}
+                            seriesFeitas={seriesFeitas}
                             treinando={treinando}
                             toggleConcluido={toggleConcluido}
                             atualizarExercicio={atualizarExercicio}

@@ -274,6 +274,45 @@ export default function PerfilTab({
               </div>
             )}
 
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <label
+                style={{
+                  fontSize: 10,
+                  color: "#64748b",
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                }}
+              >
+                SOBRE MIM{" "}
+                <span style={{ color: "#334155", fontWeight: 400 }}>
+                  (contexto para o Coach)
+                </span>
+              </label>
+              <textarea
+                placeholder="Ex: Trabalho à noite, tenho 2 filhos, treino 3x por semana, objetivo é hipertrofia..."
+                value={perfil.sobre_mim || ""}
+                onChange={(e) => {
+                  setPerfil({ ...perfil, sobre_mim: e.target.value });
+                  setPerfilEditado(true);
+                }}
+                disabled={!perfilEditado}
+                rows={4}
+                style={{
+                  width: "100%",
+                  background: "#0f172a",
+                  border: "1px solid #ffffff0d",
+                  borderRadius: 10,
+                  color: "#f8fafc",
+                  fontSize: 13,
+                  padding: "10px 12px",
+                  resize: "none",
+                  opacity: perfilEditado ? 1 : 0.6,
+                  fontFamily: "inherit",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
             {perfilEditado && (
               <button type="submit" disabled={salvandoPerfil}>
                 {salvandoPerfil ? "Salvando..." : "Salvar Perfil"}
