@@ -61,6 +61,7 @@ function ExercicioCard({
   toggleConcluido,
   atualizarExercicio,
   deletarExercicio,
+  onEditar,
 }) {
   const {
     attributes,
@@ -88,6 +89,15 @@ function ExercicioCard({
           <span className="drag-handle" {...attributes} {...listeners}>
             ☰
           </span>
+          {!treinando && (
+            <button
+              className="btn-delete-mini"
+              onClick={() => onEditar(ex)}
+              style={{ color: "#818cf8", marginRight: 2 }}
+            >
+              ✏️
+            </button>
+          )}
           <button
             className="btn-delete-mini"
             onClick={() => deletarExercicio(ex.id)}
@@ -193,6 +203,7 @@ function Treino({ logout, user }) {
   const [concluidos, setConcluidos] = useState({});
   const [seriesFeitas, setSeriesFeitas] = useState({});
   const [modalDescanso, setModalDescanso] = useState(null);
+  const [modalEditEx, setModalEditEx] = useState(null);
   const [salvandoTreino, setSalvandoTreino] = useState(false);
   const [carregando, setCarregando] = useState(false);
   const [abaPrincipal, setAbaPrincipal] = useState("home");
@@ -1229,6 +1240,186 @@ function Treino({ logout, user }) {
           </div>
         </div>
       )}
+      {modalEditEx && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9991,
+            background: "rgba(0,0,0,0.82)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            style={{
+              background: "#1e293b",
+              borderRadius: 20,
+              padding: "24px 20px",
+              width: "90%",
+              maxWidth: 380,
+              border: "1px solid #334155",
+              boxShadow: "0 8px 40px #0008",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 16,
+                fontWeight: 800,
+                color: "#f8fafc",
+                marginBottom: 20,
+              }}
+            >
+              ✏️ Editar Exercício
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <input
+                type="text"
+                placeholder="Nome do exercício"
+                value={modalEditEx.nome}
+                onChange={(e) =>
+                  setModalEditEx({ ...modalEditEx, nome: e.target.value })
+                }
+              />
+              <input
+                type="text"
+                placeholder="Grupo muscular"
+                value={modalEditEx.grupo_muscular}
+                onChange={(e) =>
+                  setModalEditEx({
+                    ...modalEditEx,
+                    grupo_muscular: e.target.value,
+                  })
+                }
+              />
+              <div className="sexo-selector">
+                {[
+                  { val: "halter", label: "🏋️ Halter" },
+                  { val: "barra", label: "🔩 Barra" },
+                  { val: "maquina", label: "⚙️ Máquina" },
+                ].map((eq) => (
+                  <button
+                    key={eq.val}
+                    type="button"
+                    className={
+                      modalEditEx.equipamento === eq.val
+                        ? "sexo-btn active"
+                        : "sexo-btn"
+                    }
+                    onClick={() =>
+                      setModalEditEx({ ...modalEditEx, equipamento: eq.val })
+                    }
+                  >
+                    {eq.label}
+                  </button>
+                ))}
+              </div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 10,
+                }}
+              >
+                <input
+                  type="number"
+                  placeholder="Descanso (seg)"
+                  value={modalEditEx.descanso_segundos}
+                  onChange={(e) =>
+                    setModalEditEx({
+                      ...modalEditEx,
+                      descanso_segundos: e.target.value,
+                    })
+                  }
+                />
+                <input
+                  type="number"
+                  placeholder="Séries"
+                  value={modalEditEx.series}
+                  onChange={(e) =>
+                    setModalEditEx({ ...modalEditEx, series: e.target.value })
+                  }
+                />
+                <input
+                  type="number"
+                  placeholder="Reps"
+                  value={modalEditEx.repeticoes}
+                  onChange={(e) =>
+                    setModalEditEx({
+                      ...modalEditEx,
+                      repeticoes: e.target.value,
+                    })
+                  }
+                />
+                <input
+                  type="number"
+                  placeholder="Kg"
+                  value={modalEditEx.carga}
+                  onChange={(e) =>
+                    setModalEditEx({ ...modalEditEx, carga: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
+              <button
+                onClick={() => setModalEditEx(null)}
+                style={{
+                  flex: 1,
+                  background: "#0f172a",
+                  border: "1px solid #334155",
+                  borderRadius: 10,
+                  color: "#94a3b8",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  padding: "12px 0",
+                  cursor: "pointer",
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={async () => {
+                  const { error } = await supabase
+                    .from("exercicio")
+                    .update({
+                      nome: modalEditEx.nome,
+                      grupo_muscular: modalEditEx.grupo_muscular,
+                      equipamento: modalEditEx.equipamento,
+                      series: Number(modalEditEx.series),
+                      repeticoes: Number(modalEditEx.repeticoes),
+                      carga: Number(modalEditEx.carga),
+                      descanso_segundos:
+                        Number(modalEditEx.descanso_segundos) || 90,
+                    })
+                    .eq("id", modalEditEx.id)
+                    .eq("user_id", user.id);
+                  if (error) toast(error.message, "error");
+                  else {
+                    buscarExercicios();
+                    setModalEditEx(null);
+                    toast("Exercício atualizado! ✅", "success");
+                  }
+                }}
+                style={{
+                  flex: 2,
+                  background: "#6366f1",
+                  border: "none",
+                  borderRadius: 10,
+                  color: "#fff",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  padding: "12px 0",
+                  cursor: "pointer",
+                }}
+              >
+                💾 Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <ModalResumo
         modalResumo={modalResumo}
         treinoAtivo={treinoAtivo}
@@ -1584,7 +1775,13 @@ function Treino({ logout, user }) {
                           ⚙️ Máquina
                         </button>
                       </div>
-                      <div className="row">
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: 10,
+                        }}
+                      >
                         <input
                           type="number"
                           placeholder="Descanso (seg)"
@@ -1670,6 +1867,12 @@ function Treino({ logout, user }) {
                             toggleConcluido={toggleConcluido}
                             atualizarExercicio={atualizarExercicio}
                             deletarExercicio={deletarExercicio}
+                            onEditar={(ex) =>
+                              setModalEditEx({
+                                ...ex,
+                                descanso_segundos: ex.descanso_segundos || 90,
+                              })
+                            }
                           />
                         ))}
                       </SortableContext>

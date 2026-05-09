@@ -83,6 +83,7 @@ export default function Home({
   const [kcalGasto, setKcalGasto] = useState({ treino: 0, passos: 0 });
   const [humor, setHumor] = useState(null);
   const [sonoHoje, setSonoHoje] = useState(null);
+  const [treinosSemana, setTreinosSemana] = useState([]);
   const [salvandoHumor, setSalvandoHumor] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [statsAniversario, setStatsAniversario] = useState(null);
@@ -270,6 +271,7 @@ export default function Home({
       { id: "habitos", label: "Hábitos", visivel: true },
       { id: "humor", label: "Humor + Energia", visivel: true },
       { id: "sono", label: "Sono", visivel: true },
+      { id: "treino_semana", label: "Semana de Treino", visivel: true },
     ];
   });
 
@@ -422,6 +424,18 @@ export default function Home({
 
     if (humorHoje) setHumor(humorHoje);
     if (sonoHoje) setSonoHoje(sonoHoje);
+
+    const inicioSemana = (() => {
+      const d = new Date();
+      d.setDate(d.getDate() - 6);
+      return formatarData(d);
+    })();
+    const { data: treinosSemanaDados } = await supabase
+      .from("treinos_finalizados")
+      .select("treino, created_at")
+      .eq("user_id", user.id)
+      .gte("created_at", inicioSemana + "T00:00:00");
+    setTreinosSemana(treinosSemanaDados || []);
     setCarregando(false);
   }, [user.id]);
 
@@ -1245,6 +1259,63 @@ export default function Home({
                     ) : (
                       <div className="home-mini-sub">Registre seu sono</div>
                     )}
+                  </div>
+                </div>
+              )}
+
+              {bloco.id === "treino_semana" && divisao && (
+                <div
+                  className="home-card"
+                  onClick={() => !editandoHome && onNavegar("treino")}
+                  style={{ cursor: "pointer" }}
+                >
+                  <div className="home-section-title">🏋️ SEMANA DE TREINO</div>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      marginTop: 8,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    {divisao.split("").map((letra) => {
+                      const feito = treinosSemana.some(
+                        (t) => t.treino === letra,
+                      );
+                      return (
+                        <div
+                          key={letra}
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: 4,
+                            background: feito ? "#10b98115" : "#24282d",
+                            border: `1px solid ${feito ? "#10b98144" : "#ffffff0d"}`,
+                            borderRadius: 12,
+                            padding: "10px 14px",
+                            minWidth: 52,
+                          }}
+                        >
+                          <span style={{ fontSize: 18 }}>
+                            {feito ? "✅" : "⬜"}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: 13,
+                              fontWeight: 800,
+                              color: feito ? "#10b981" : "#64748b",
+                            }}
+                          >
+                            {letra}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#475569", marginTop: 8 }}>
+                    {treinosSemana.length} treino
+                    {treinosSemana.length !== 1 ? "s" : ""} nos últimos 7 dias
                   </div>
                 </div>
               )}

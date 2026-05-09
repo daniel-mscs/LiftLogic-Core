@@ -558,9 +558,7 @@ export default function Stats({ user }) {
     }),
     total: agua.filter((r) => r.data === data).reduce((s, r) => s + r.ml, 0),
   }));
-  const mediaAgua = Math.round(
-    aguaPorDia.reduce((s, d) => s + d.total, 0) / 7,
-  );
+  const mediaAgua = Math.round(aguaPorDia.reduce((s, d) => s + d.total, 0) / 7);
   const diasMetaAgua = aguaPorDia.filter((d) => d.total >= aguaMeta).length;
 
   const pesoDados = ultimos7
@@ -938,9 +936,7 @@ export default function Stats({ user }) {
                   icon="🏋️"
                   label="Treinos"
                   value={totalTreinos}
-                  sub={
-                    totalTreinos > 0 ? formatarTempo(tempoTotal) : "nenhum"
-                  }
+                  sub={totalTreinos > 0 ? formatarTempo(tempoTotal) : "nenhum"}
                   color="#5b7fff"
                   pct={totalTreinos / 5}
                 />
@@ -964,11 +960,7 @@ export default function Stats({ user }) {
                   icon="😴"
                   label="Sono"
                   value={mediaHorasSono ? `${mediaHorasSono}h` : "—"}
-                  sub={
-                    mediaHorasSono
-                      ? `${diasSono7h}/7 ≥ 7h`
-                      : "sem dados"
-                  }
+                  sub={mediaHorasSono ? `${diasSono7h}/7 ≥ 7h` : "sem dados"}
                   color="#7c3aed"
                   pct={mediaHorasSono ? parseFloat(mediaHorasSono) / 9 : 0}
                 />
@@ -1083,13 +1075,7 @@ export default function Stats({ user }) {
                   <ResponsiveContainer width="100%" height={100}>
                     <AreaChart data={pesoDados}>
                       <defs>
-                        <linearGradient
-                          id="gPeso"
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="1"
-                        >
+                        <linearGradient id="gPeso" x1="0" y1="0" x2="0" y2="1">
                           <stop
                             offset="0%"
                             stopColor="#00d97e"
@@ -1124,7 +1110,12 @@ export default function Stats({ user }) {
                         stroke="#00d97e"
                         strokeWidth={2.5}
                         fill="url(#gPeso)"
-                        dot={{ fill: "#00d97e", r: 4, stroke: "#080a0e", strokeWidth: 2 }}
+                        dot={{
+                          fill: "#00d97e",
+                          r: 4,
+                          stroke: "#080a0e",
+                          strokeWidth: 2,
+                        }}
                         activeDot={{ r: 6 }}
                       />
                     </AreaChart>
@@ -1147,13 +1138,7 @@ export default function Stats({ user }) {
                   <ResponsiveContainer width="100%" height={100}>
                     <BarChart data={aguaPorDia}>
                       <defs>
-                        <linearGradient
-                          id="gAgua"
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="1"
-                        >
+                        <linearGradient id="gAgua" x1="0" y1="0" x2="0" y2="1">
                           <stop
                             offset="0%"
                             stopColor="#00d97e"
@@ -1177,10 +1162,7 @@ export default function Stats({ user }) {
                       <YAxis tick={{ fill: "#4a5568", fontSize: 9 }} />
                       <Tooltip
                         contentStyle={tooltipStyle}
-                        formatter={(v) => [
-                          `${(v / 1000).toFixed(1)}L`,
-                          "Água",
-                        ]}
+                        formatter={(v) => [`${(v / 1000).toFixed(1)}L`, "Água"]}
                         cursor={{ fill: "rgba(255,255,255,0.03)" }}
                       />
                       <Bar
@@ -1208,13 +1190,7 @@ export default function Stats({ user }) {
                   <ResponsiveContainer width="100%" height={100}>
                     <BarChart data={macrosPorDia}>
                       <defs>
-                        <linearGradient
-                          id="gKcal"
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="1"
-                        >
+                        <linearGradient id="gKcal" x1="0" y1="0" x2="0" y2="1">
                           <stop
                             offset="0%"
                             stopColor="#ffd166"
@@ -1266,13 +1242,7 @@ export default function Stats({ user }) {
                   <ResponsiveContainer width="100%" height={100}>
                     <BarChart data={sonoPorDia}>
                       <defs>
-                        <linearGradient
-                          id="gSono"
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="1"
-                        >
+                        <linearGradient id="gSono" x1="0" y1="0" x2="0" y2="1">
                           <stop
                             offset="0%"
                             stopColor="#7c3aed"
@@ -1560,14 +1530,10 @@ export default function Stats({ user }) {
                       >
                         {item.val}
                       </div>
-                      <div
-                        style={{ fontSize: 9, color: "var(--text3)" }}
-                      >
+                      <div style={{ fontSize: 9, color: "var(--text3)" }}>
                         {item.label}
                       </div>
-                      <div
-                        style={{ fontSize: 9, color: "var(--text3)" }}
-                      >
+                      <div style={{ fontSize: 9, color: "var(--text3)" }}>
                         {item.sub}
                       </div>
                     </div>
@@ -1727,9 +1693,7 @@ export default function Stats({ user }) {
                     <MetricRing
                       icon="😴"
                       label="Sono"
-                      value={
-                        mediaHorasSonoMes ? `${mediaHorasSonoMes}h` : "—"
-                      }
+                      value={mediaHorasSonoMes ? `${mediaHorasSonoMes}h` : "—"}
                       sub={
                         mediaHorasSonoMes
                           ? `${diasSono7hMes}/${diasNoMes} ≥7h`
