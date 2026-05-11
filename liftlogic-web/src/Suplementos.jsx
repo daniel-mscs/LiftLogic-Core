@@ -21,6 +21,7 @@ export default function Suplementos({
   const [nomeInput, setNomeInput] = useState("");
   const [doseInput, setDoseInput] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const dataAtualRef = React.useRef(formatarData(new Date()));
 
   const buscarTudo = useCallback(async () => {
     const hoje = formatarData(new Date());
@@ -47,8 +48,24 @@ export default function Suplementos({
   }, [user.id]);
 
   useEffect(() => {
-    buscarTudo();
-  }, [buscarTudo]);
+      buscarTudo();
+    }, [buscarTudo]);
+
+    useEffect(() => {
+      const verificarMudancaDia = () => {
+        const hoje = formatarData(new Date());
+        if (hoje !== dataAtualRef.current) {
+          dataAtualRef.current = hoje;
+          buscarTudo();
+        }
+      };
+      document.addEventListener("visibilitychange", verificarMudancaDia);
+      window.addEventListener("focus", verificarMudancaDia);
+      return () => {
+        document.removeEventListener("visibilitychange", verificarMudancaDia);
+        window.removeEventListener("focus", verificarMudancaDia);
+      };
+    }, [buscarTudo]);
 
   const toggleCheck = async (suplId) => {
     const hoje = formatarData(new Date());
