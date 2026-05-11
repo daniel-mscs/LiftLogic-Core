@@ -34,6 +34,7 @@ export default function Passos({ user, onAjuda }) {
   const [editandoMeta, setEditandoMeta] = useState(false);
   const [passosInput, setPassosInput] = useState("");
   const [carregando, setCarregando] = useState(true);
+  const [mostrarTooltip, setMostrarTooltip] = useState(false);
 
   const hoje = formatarData(new Date());
   const ultimos7 = getLast7Days();
@@ -157,12 +158,89 @@ export default function Passos({ user, onAjuda }) {
         <h2 className="title-divisao" style={{ margin: 0 }}>
           👟 Passos Diários
         </h2>
-        <button
-          className="ajuda-shortcut-btn"
-          onClick={() => onAjuda("ajuda-passos")}
-        >
-          ?
-        </button>
+        <div style={{ position: "relative" }}>
+          <button
+            className="ajuda-shortcut-btn"
+            onClick={() => setMostrarTooltip((v) => !v)}
+          >
+            ?
+          </button>
+          {mostrarTooltip && (
+            <div
+              onClick={() => setMostrarTooltip(false)}
+              style={{ position: "fixed", inset: 0, zIndex: 998 }}
+            />
+          )}
+          {mostrarTooltip && (
+            <div
+              style={{
+                position: "absolute",
+                right: 0,
+                top: 36,
+                zIndex: 999,
+                background: "#1e293b",
+                border: "1px solid #334155",
+                borderRadius: 14,
+                padding: "16px 18px",
+                width: 280,
+                boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+                textAlign: "left",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 14,
+                  fontWeight: 800,
+                  color: "#f8fafc",
+                  marginBottom: 10,
+                }}
+              >
+                👟 Como usar
+              </div>
+              {[
+                {
+                  icon: "📱",
+                  text: "Ao final do dia, registre quantos passos você deu. Use o contador do celular ou relógio.",
+                },
+                {
+                  icon: "⚡",
+                  text: "Botões rápidos: toque em 5k, 8k, 10k ou 12k para preencher o campo automaticamente.",
+                },
+                {
+                  icon: "🎯",
+                  text: "A OMS recomenda 10.000 passos/dia. Cada 1.000 passos queima ~40 kcal.",
+                },
+                {
+                  icon: "📊",
+                  text: "Barras verdes = meta atingida. Roxo = acima de 50%. Laranja = abaixo de 50%.",
+                },
+                {
+                  icon: "🔥",
+                  text: "Seus passos entram no cálculo do saldo calórico do dia na aba Macros.",
+                },
+              ].map((item, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: "flex",
+                    gap: 10,
+                    marginBottom: 8,
+                    alignItems: "flex-start",
+                  }}
+                >
+                  <span style={{ fontSize: 14, flexShrink: 0 }}>
+                    {item.icon}
+                  </span>
+                  <span
+                    style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.5 }}
+                  >
+                    {item.text}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Card principal */}

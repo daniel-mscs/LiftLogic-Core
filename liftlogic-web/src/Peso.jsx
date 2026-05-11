@@ -206,6 +206,7 @@ export default function Peso({ user, onAjuda }) {
   const [medidaSel, setMedidaSel] = useState("cintura");
   const [compDataA, setCompDataA] = useState("");
   const [compDataB, setCompDataB] = useState("");
+  const [mostrarTooltip, setMostrarTooltip] = useState(false);
 
   const hoje = formatarData(new Date());
 
@@ -384,12 +385,89 @@ export default function Peso({ user, onAjuda }) {
         <h2 className="title-divisao" style={{ margin: 0 }}>
           ⚖️ Controle de Peso
         </h2>
-        <button
-          className="ajuda-shortcut-btn"
-          onClick={() => onAjuda("ajuda-peso")}
-        >
-          ?
-        </button>
+        <div style={{ position: "relative" }}>
+          <button
+            className="ajuda-shortcut-btn"
+            onClick={() => setMostrarTooltip((v) => !v)}
+          >
+            ?
+          </button>
+          {mostrarTooltip && (
+            <div
+              onClick={() => setMostrarTooltip(false)}
+              style={{ position: "fixed", inset: 0, zIndex: 998 }}
+            />
+          )}
+          {mostrarTooltip && (
+            <div
+              style={{
+                position: "absolute",
+                right: 0,
+                top: 36,
+                zIndex: 999,
+                background: "#1e293b",
+                border: "1px solid #334155",
+                borderRadius: 14,
+                padding: "16px 18px",
+                width: 280,
+                boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+                textAlign: "left",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 14,
+                  fontWeight: 800,
+                  color: "#f8fafc",
+                  marginBottom: 10,
+                }}
+              >
+                ⚖️ Como usar
+              </div>
+              {[
+                {
+                  icon: "🌅",
+                  text: "Pese-se sempre em jejum logo ao acordar, após urinar, com roupa leve ou sem roupa.",
+                },
+                {
+                  icon: "📊",
+                  text: "A média dos 7 dias é o que importa — oscilações diárias são normais (retenção hídrica, resíduo gástrico).",
+                },
+                {
+                  icon: "🎯",
+                  text: "Defina uma meta de peso para ver a previsão de quando vai atingi-la baseada na sua tendência atual.",
+                },
+                {
+                  icon: "📏",
+                  text: "Na aba Medidas você registra bíceps, cintura, quadril e mais — porque a balança não conta tudo.",
+                },
+                {
+                  icon: "🧬",
+                  text: "O IMC e a composição corporal estimada são calculados automaticamente com base no seu peso e altura do perfil.",
+                },
+              ].map((item, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: "flex",
+                    gap: 10,
+                    marginBottom: 8,
+                    alignItems: "flex-start",
+                  }}
+                >
+                  <span style={{ fontSize: 14, flexShrink: 0 }}>
+                    {item.icon}
+                  </span>
+                  <span
+                    style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.5 }}
+                  >
+                    {item.text}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Sub-nav */}
