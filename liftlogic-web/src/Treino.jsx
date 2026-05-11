@@ -197,9 +197,9 @@ function Treino({ logout, user }) {
   const [divisao, setDivisao] = useState(
     localStorage.getItem("divisao") || null,
   );
-  const [treinoAtivo, setTreinoAtivo] = useState(() => {
-    return localStorage.getItem(TREINO_ATIVO_KEY) || "A";
-  });
+  const [treinoAtivo, setTreinoAtivo] = useState(
+    () => localStorage.getItem(TREINO_ATIVO_KEY) || "A",
+  );
   const [concluidos, setConcluidos] = useState({});
   const [seriesFeitas, setSeriesFeitas] = useState({});
   const [modalDescanso, setModalDescanso] = useState(null);
@@ -218,7 +218,6 @@ function Treino({ logout, user }) {
   const [celebrando, setCelebrando] = useState(false);
   const [xpGanho, setXpGanho] = useState(0);
   const [mensagemCelebracao, setMensagemCelebracao] = useState("");
-
   const [notifAtivas, setNotifAtivas] = useState(() => {
     const salvo = localStorage.getItem("df_notif_ativas");
     return salvo ? JSON.parse(salvo) : NOTIFICACOES.map((n) => n.id);
@@ -226,14 +225,12 @@ function Treino({ logout, user }) {
   const [notifPermissao, setNotifPermissao] = useState(
     typeof Notification !== "undefined" ? Notification.permission : "default",
   );
-
   const [treinando, setTreinando] = useState(() => {
     const salvo = localStorage.getItem(TREINO_START_KEY);
     if (!salvo) return false;
     const elapsed = Math.floor((Date.now() - Number(salvo)) / 1000);
     return elapsed < MAX_TREINO_SEG;
   });
-
   const [tempoTotal, setTempoTotal] = useState(() => {
     const salvo = localStorage.getItem(TREINO_START_KEY);
     if (!salvo) return 0;
@@ -242,7 +239,6 @@ function Treino({ logout, user }) {
   });
   const [descanso, setDescanso] = useState(0);
   const [inputDescanso, setInputDescanso] = useState("");
-
   const [perfil, setPerfil] = useState({
     nome: "",
     peso: "",
@@ -266,6 +262,7 @@ function Treino({ logout, user }) {
   const timerRef = useRef(null);
   const descansoRef = useRef(null);
   const alertaAtivoRef = useRef(false);
+  const alerta10sDisparadoRef = useRef(false);
   const inicioTreinoRef = useRef(
     localStorage.getItem(TREINO_START_KEY)
       ? Number(localStorage.getItem(TREINO_START_KEY))
@@ -372,7 +369,6 @@ function Treino({ logout, user }) {
         setPerfilEditado(true);
       }
     } else {
-      // Usuário novo sem perfil
       setPerfilCompleto(false);
       setAbaPrincipal("perfil");
       setPerfilEditado(true);
@@ -547,6 +543,7 @@ function Treino({ logout, user }) {
     inicioDescansoRef.current = Date.now();
     duracaoDescansoRef.current = segundos;
     setDescanso(segundos);
+    alerta10sDisparadoRef.current = false;
     descansoRef.current = setInterval(() => {
       const restante =
         duracaoDescansoRef.current -
@@ -557,8 +554,15 @@ function Treino({ logout, user }) {
         inicioDescansoRef.current = null;
         duracaoDescansoRef.current = 0;
         setDescanso(0);
+        alerta10sDisparadoRef.current = false;
         tocarAlertaLongo();
       } else {
+        if (restante === 10 && !alerta10sDisparadoRef.current) {
+          alerta10sDisparadoRef.current = true;
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+          audioRef.current.play().catch(() => {});
+        }
         setDescanso(restante);
       }
     }, 1000);
@@ -781,6 +785,7 @@ function Treino({ logout, user }) {
     });
     cancelarDescanso();
   };
+
   const abrirAjuda = (ancora) => {
     setAjudaAncora(ancora);
     setAbaPrincipal("perfil");
@@ -793,8 +798,6 @@ function Treino({ logout, user }) {
       .toString()
       .padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
   };
-
-  // removido — seleção de divisão agora fica dentro da aba treino
 
   const abasDisponiveis = divisao ? divisao.split("") : [];
   const exerciciosFiltrados = exercicios.filter(
@@ -812,12 +815,12 @@ function Treino({ logout, user }) {
             if (aba === "perfil") {
               setAbaPrincipal("perfil");
               setSubAbaPerfil("ajuda");
-            } else {
-              setAbaPrincipal(aba);
-            }
+            } else setAbaPrincipal(aba);
           }}
         />
       )}
+
+      {/* ── Celebração ── */}
       {celebrando && (
         <div
           style={{
@@ -834,22 +837,10 @@ function Treino({ logout, user }) {
           }}
         >
           <style>{`
-                  @keyframes celebPop {
-                    0%   { transform: scale(0.5) rotate(-10deg); opacity: 0; }
-                    60%  { transform: scale(1.15) rotate(5deg); opacity: 1; }
-                    100% { transform: scale(1) rotate(0deg); opacity: 1; }
-                  }
-                  @keyframes celebFloat {
-                    0%   { transform: translateY(0px); opacity: 1; }
-                    100% { transform: translateY(-40px); opacity: 0; }
-                  }
-                  @keyframes xpBadge {
-                    0%   { transform: scale(0) translateY(20px); opacity: 0; }
-                    50%  { transform: scale(1.2) translateY(-5px); opacity: 1; }
-                    100% { transform: scale(1) translateY(0); opacity: 1; }
-                  }
-                `}</style>
-
+            @keyframes celebPop { 0%{transform:scale(0.5) rotate(-10deg);opacity:0} 60%{transform:scale(1.15) rotate(5deg);opacity:1} 100%{transform:scale(1) rotate(0deg);opacity:1} }
+            @keyframes celebFloat { 0%{transform:translateY(0px);opacity:1} 100%{transform:translateY(-40px);opacity:0} }
+            @keyframes xpBadge { 0%{transform:scale(0) translateY(20px);opacity:0} 50%{transform:scale(1.2) translateY(-5px);opacity:1} 100%{transform:scale(1) translateY(0);opacity:1} }
+          `}</style>
           <div
             style={{
               animation: "celebPop 0.5s cubic-bezier(0.16,1,0.3,1)",
@@ -897,8 +888,6 @@ function Treino({ logout, user }) {
                 +{xpGanho} XP
               </span>
             </div>
-
-            {/* Partículas */}
             <div
               style={{
                 position: "absolute",
@@ -926,120 +915,163 @@ function Treino({ logout, user }) {
         </div>
       )}
 
+      {/* ── Modal de exercício / descanso ── */}
       {modalDescanso && (
         <div
           style={{
             position: "fixed",
             inset: 0,
             zIndex: 9990,
-            background: "rgba(0,0,0,0.82)",
+            background: "rgba(0,0,0,0.88)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
           }}
         >
+          <style>{`
+            @keyframes modalSlideUp { from{transform:translateY(30px);opacity:0} to{transform:translateY(0);opacity:1} }
+            @keyframes timerPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.04)} }
+          `}</style>
           <div
             style={{
-              background: "#1e293b",
-              borderRadius: 20,
-              padding: "28px 24px",
-              width: "90%",
+              background: "#1a1d21",
+              borderRadius: 24,
+              padding: "28px 22px 22px",
+              width: "92%",
               maxWidth: 380,
               textAlign: "center",
-              border: "1px solid #334155",
-              boxShadow: "0 8px 40px #0008",
+              border: "1px solid #ffffff0d",
+              boxShadow: "0 24px 60px rgba(0,0,0,0.8)",
+              animation: "modalSlideUp 0.3s cubic-bezier(0.16,1,0.3,1)",
             }}
           >
-            {/* Cabeçalho */}
             <div
               style={{
-                fontSize: 12,
-                color: "#64748b",
+                display: "inline-block",
+                background: "rgba(99,102,241,0.12)",
+                border: "1px solid rgba(99,102,241,0.25)",
+                borderRadius: 99,
+                padding: "4px 14px",
+                fontSize: 10,
+                fontWeight: 800,
+                letterSpacing: "0.12em",
+                color: "#818cf8",
+                marginBottom: 10,
                 textTransform: "uppercase",
-                letterSpacing: 1,
-                marginBottom: 4,
               }}
             >
               Exercício em andamento
             </div>
             <div
               style={{
-                fontSize: 19,
-                fontWeight: 800,
-                color: "#f8fafc",
-                marginBottom: 2,
+                fontSize: 20,
+                fontWeight: 900,
+                color: "#f1f5f9",
+                marginBottom: 4,
+                lineHeight: 1.2,
               }}
             >
               {modalDescanso.nomeEx}
             </div>
-            <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 20 }}>
-              {modalDescanso.carga}kg &nbsp;·&nbsp; {modalDescanso.repeticoes}{" "}
-              reps
+            <div style={{ fontSize: 13, color: "#64748b", marginBottom: 20 }}>
+              <span style={{ color: "#94a3b8", fontWeight: 600 }}>
+                {modalDescanso.carga}kg
+              </span>
+              <span style={{ margin: "0 8px", color: "#334155" }}>·</span>
+              <span style={{ color: "#94a3b8", fontWeight: 600 }}>
+                {modalDescanso.repeticoes} reps
+              </span>
             </div>
 
-            {/* Contador de séries */}
+            {/* Bolinhas */}
             <div
               style={{
                 display: "flex",
                 justifyContent: "center",
-                gap: 8,
+                gap: 10,
                 marginBottom: 24,
+                flexWrap: "wrap",
               }}
             >
-              {Array.from({ length: modalDescanso.totalSeries }).map((_, i) => (
-                <div
-                  key={i}
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: "50%",
-                    background:
-                      i < modalDescanso.serieAtual ? "#6366f1" : "#0f172a",
-                    border: `2px solid ${i < modalDescanso.serieAtual ? "#6366f1" : "#334155"}`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: i < modalDescanso.serieAtual ? "#fff" : "#475569",
-                  }}
-                >
-                  {i < modalDescanso.serieAtual ? "✓" : i + 1}
-                </div>
-              ))}
+              {Array.from({ length: modalDescanso.totalSeries }).map((_, i) => {
+                const feita = i < modalDescanso.serieAtual;
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: "50%",
+                      background: feita
+                        ? "linear-gradient(135deg, #6366f1, #4f46e5)"
+                        : "rgba(255,255,255,0.04)",
+                      border: `2px solid ${feita ? "#6366f1" : "rgba(255,255,255,0.12)"}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 13,
+                      fontWeight: 800,
+                      color: feita ? "#fff" : "#64748b",
+                      boxShadow: feita
+                        ? "0 4px 14px rgba(99,102,241,0.45)"
+                        : "none",
+                      transition: "all 0.3s",
+                    }}
+                  >
+                    {feita ? "✓" : i + 1}
+                  </div>
+                );
+              })}
             </div>
 
-            {/* Timer de descanso */}
+            {/* Timer */}
             {descanso > 0 ? (
               <>
                 <div
                   style={{
-                    fontSize: 11,
-                    color: "#64748b",
+                    fontSize: 10,
+                    fontWeight: 800,
+                    letterSpacing: "0.14em",
+                    color: "#334155",
                     textTransform: "uppercase",
-                    letterSpacing: 1,
-                    marginBottom: 4,
+                    marginBottom: 6,
                   }}
                 >
                   Descanso
                 </div>
                 <div
                   style={{
-                    fontSize: 64,
-                    fontWeight: 800,
-                    color: descanso <= 10 ? "#ef4444" : "#6366f1",
+                    fontSize: 72,
+                    fontWeight: 900,
                     lineHeight: 1,
-                    marginBottom: 16,
+                    marginBottom: 4,
+                    color: descanso <= 10 ? "#ef4444" : "#6366f1",
+                    fontVariantNumeric: "tabular-nums",
+                    animation:
+                      descanso <= 10 ? "timerPulse 0.8s ease infinite" : "none",
+                    transition: "color 0.3s",
                   }}
                 >
                   {formatarTempo(descanso)}
                 </div>
+                {descanso <= 10 && (
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#ef444488",
+                      marginBottom: 10,
+                      fontWeight: 600,
+                    }}
+                  >
+                    Prepare-se! ⚡
+                  </div>
+                )}
                 <div
                   style={{
                     display: "flex",
-                    gap: 8,
+                    gap: 6,
                     justifyContent: "center",
-                    marginBottom: 8,
+                    marginBottom: 14,
                   }}
                 >
                   {[30, 60, 90].map((s) => (
@@ -1047,12 +1079,13 @@ function Treino({ logout, user }) {
                       key={s}
                       onClick={() => adicionarDescanso(s)}
                       style={{
-                        background: "#334155",
-                        border: "none",
-                        borderRadius: 8,
-                        color: "#f8fafc",
-                        fontSize: 13,
-                        padding: "8px 14px",
+                        background: "#1e293b",
+                        border: "1px solid #334155",
+                        borderRadius: 10,
+                        color: "#94a3b8",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        padding: "7px 14px",
                         cursor: "pointer",
                       }}
                     >
@@ -1062,12 +1095,12 @@ function Treino({ logout, user }) {
                   <button
                     onClick={cancelarDescanso}
                     style={{
-                      background: "#334155",
-                      border: "none",
-                      borderRadius: 8,
+                      background: "#1e293b",
+                      border: "1px solid #334155",
+                      borderRadius: 10,
                       color: "#ef4444",
-                      fontSize: 13,
-                      padding: "8px 14px",
+                      fontSize: 12,
+                      padding: "7px 12px",
                       cursor: "pointer",
                     }}
                   >
@@ -1079,10 +1112,22 @@ function Treino({ logout, user }) {
               <div style={{ marginBottom: 16 }}>
                 <div
                   style={{
+                    fontSize: 10,
+                    fontWeight: 800,
+                    letterSpacing: "0.14em",
+                    color: "#334155",
+                    textTransform: "uppercase",
+                    marginBottom: 10,
+                  }}
+                >
+                  Iniciar descanso
+                </div>
+                <div
+                  style={{
                     display: "flex",
                     gap: 8,
                     justifyContent: "center",
-                    marginBottom: 8,
+                    marginBottom: 10,
                   }}
                 >
                   {[30, 60, 90].map((s) => (
@@ -1090,14 +1135,15 @@ function Treino({ logout, user }) {
                       key={s}
                       onClick={() => iniciarTimerDescanso(s)}
                       style={{
-                        background: "#1e3a5f",
-                        border: "1px solid #6366f133",
-                        borderRadius: 8,
-                        color: "#818cf8",
-                        fontSize: 13,
-                        fontWeight: 600,
-                        padding: "8px 14px",
+                        background: "rgba(99,102,241,0.12)",
+                        border: "1px solid rgba(99,102,241,0.35)",
+                        borderRadius: 12,
+                        color: "#a5b4fc",
+                        fontSize: 15,
+                        fontWeight: 800,
+                        padding: "12px 20px",
                         cursor: "pointer",
+                        letterSpacing: "0.02em",
                       }}
                     >
                       {s}s
@@ -1116,25 +1162,27 @@ function Treino({ logout, user }) {
                     }}
                     style={{
                       flex: 1,
-                      background: "#0f172a",
-                      border: "1px solid #334155",
-                      borderRadius: 8,
-                      color: "#f8fafc",
-                      padding: "8px 12px",
-                      fontSize: 13,
+                      background: "rgba(255,255,255,0.05)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: 10,
+                      color: "#f1f5f9",
+                      padding: "11px 14px",
+                      fontSize: 14,
+                      outline: "none",
                     }}
                   />
                   <button
                     onClick={iniciarDescansoManual}
                     style={{
-                      background: "#6366f1",
+                      background: "linear-gradient(135deg, #6366f1, #4f46e5)",
                       border: "none",
-                      borderRadius: 8,
+                      borderRadius: 10,
                       color: "#fff",
-                      fontSize: 13,
-                      fontWeight: 700,
-                      padding: "8px 16px",
+                      fontSize: 16,
+                      fontWeight: 800,
+                      padding: "11px 20px",
                       cursor: "pointer",
+                      boxShadow: "0 4px 14px rgba(99,102,241,0.4)",
                     }}
                   >
                     ▶
@@ -1142,7 +1190,8 @@ function Treino({ logout, user }) {
                 </div>
               </div>
             )}
-            {/* Botão Série feita */}
+
+            {/* Série feita */}
             {modalDescanso.serieAtual < modalDescanso.totalSeries && (
               <button
                 onClick={() => {
@@ -1151,8 +1200,7 @@ function Treino({ logout, user }) {
                     ...prev,
                     [modalDescanso.exId]: novasSeries,
                   }));
-                  const concluido = novasSeries >= modalDescanso.totalSeries;
-                  if (concluido)
+                  if (novasSeries >= modalDescanso.totalSeries)
                     setConcluidos((prev) => ({
                       ...prev,
                       [modalDescanso.exId]: true,
@@ -1165,22 +1213,23 @@ function Treino({ logout, user }) {
                 }}
                 style={{
                   width: "100%",
-                  background: "#10b981",
+                  background: "linear-gradient(135deg, #10b981, #059669)",
                   border: "none",
-                  borderRadius: 10,
+                  borderRadius: 14,
                   color: "#fff",
                   fontSize: 15,
-                  fontWeight: 700,
-                  padding: "14px 0",
+                  fontWeight: 800,
+                  padding: "15px 0",
                   cursor: "pointer",
                   marginBottom: 10,
+                  boxShadow: "0 4px 20px rgba(16,185,129,0.35)",
                 }}
               >
                 ✅ Série feita
               </button>
             )}
 
-            {/* Botões de navegação */}
+            {/* Navegação */}
             <div style={{ display: "flex", gap: 8 }}>
               <button
                 onClick={() => {
@@ -1189,13 +1238,13 @@ function Treino({ logout, user }) {
                 }}
                 style={{
                   flex: 1,
-                  background: "#0f172a",
-                  border: "1px solid #334155",
-                  borderRadius: 10,
-                  color: "#94a3b8",
+                  background: "transparent",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 12,
+                  color: "#475569",
                   fontSize: 13,
                   fontWeight: 600,
-                  padding: "12px 0",
+                  padding: "13px 0",
                   cursor: "pointer",
                 }}
               >
@@ -1224,13 +1273,13 @@ function Treino({ logout, user }) {
                 }}
                 style={{
                   flex: 1,
-                  background: "#334155",
-                  border: "none",
-                  borderRadius: 10,
-                  color: "#f8fafc",
+                  background: "rgba(99,102,241,0.1)",
+                  border: "1px solid rgba(99,102,241,0.25)",
+                  borderRadius: 12,
+                  color: "#818cf8",
                   fontSize: 13,
-                  fontWeight: 600,
-                  padding: "12px 0",
+                  fontWeight: 700,
+                  padding: "13px 0",
                   cursor: "pointer",
                 }}
               >
@@ -1240,6 +1289,8 @@ function Treino({ logout, user }) {
           </div>
         </div>
       )}
+
+      {/* ── Modal editar exercício ── */}
       {modalEditEx && (
         <div
           style={{
@@ -1420,6 +1471,7 @@ function Treino({ logout, user }) {
           </div>
         </div>
       )}
+
       <ModalResumo
         modalResumo={modalResumo}
         treinoAtivo={treinoAtivo}
@@ -1451,28 +1503,18 @@ function Treino({ logout, user }) {
           onNavegar={setAbaPrincipal}
         />
       )}
-
       {abaPrincipal === "rotina" && <Rotina user={user} />}
-
       {abaPrincipal === "habitos" && <Habitos user={user} />}
-
       {abaPrincipal === "agua" && <Agua user={user} onAjuda={abrirAjuda} />}
-
       {abaPrincipal === "peso" && <Peso user={user} onAjuda={abrirAjuda} />}
-
       {abaPrincipal === "suplementos" && (
         <Suplementos user={user} onAjuda={abrirAjuda} />
       )}
       {abaPrincipal === "dieta" && <Dieta user={user} onAjuda={abrirAjuda} />}
-
       {abaPrincipal === "macros" && <Macros user={user} onAjuda={abrirAjuda} />}
-
       {abaPrincipal === "passos" && <Passos user={user} onAjuda={abrirAjuda} />}
-
       {abaPrincipal === "stats" && <Stats user={user} />}
-
       {abaPrincipal === "smartpocket" && <SmartPocket user={user} />}
-
       {abaPrincipal === "rpg" && <RPG user={user} />}
       {abaPrincipal === "sono" && <Sono user={user} />}
       {abaPrincipal === "cardio" && <Cardio user={user} />}
@@ -1480,7 +1522,6 @@ function Treino({ logout, user }) {
 
       {abaPrincipal === "treino" && (
         <>
-          {/* Sub-nav do treino */}
           <div className="treino-subnav">
             <button
               className={
@@ -1517,7 +1558,6 @@ function Treino({ logout, user }) {
             </button>
           </div>
 
-          {/* Exercícios */}
           {subAbaTreino === "exercicios" && (
             <>
               {!divisao ? (
@@ -1726,54 +1766,29 @@ function Treino({ logout, user }) {
                         required
                       />
                       <div className="sexo-selector">
-                        <button
-                          type="button"
-                          className={
-                            novoExercicio.equipamento === "halter"
-                              ? "sexo-btn active"
-                              : "sexo-btn"
-                          }
-                          onClick={() =>
-                            setNovoExercicio({
-                              ...novoExercicio,
-                              equipamento: "halter",
-                            })
-                          }
-                        >
-                          🏋️ Halter
-                        </button>
-                        <button
-                          type="button"
-                          className={
-                            novoExercicio.equipamento === "barra"
-                              ? "sexo-btn active"
-                              : "sexo-btn"
-                          }
-                          onClick={() =>
-                            setNovoExercicio({
-                              ...novoExercicio,
-                              equipamento: "barra",
-                            })
-                          }
-                        >
-                          🔩 Barra
-                        </button>
-                        <button
-                          type="button"
-                          className={
-                            novoExercicio.equipamento === "maquina"
-                              ? "sexo-btn active"
-                              : "sexo-btn"
-                          }
-                          onClick={() =>
-                            setNovoExercicio({
-                              ...novoExercicio,
-                              equipamento: "maquina",
-                            })
-                          }
-                        >
-                          ⚙️ Máquina
-                        </button>
+                        {[
+                          { val: "halter", label: "🏋️ Halter" },
+                          { val: "barra", label: "🔩 Barra" },
+                          { val: "maquina", label: "⚙️ Máquina" },
+                        ].map((eq) => (
+                          <button
+                            key={eq.val}
+                            type="button"
+                            className={
+                              novoExercicio.equipamento === eq.val
+                                ? "sexo-btn active"
+                                : "sexo-btn"
+                            }
+                            onClick={() =>
+                              setNovoExercicio({
+                                ...novoExercicio,
+                                equipamento: eq.val,
+                              })
+                            }
+                          >
+                            {eq.label}
+                          </button>
+                        ))}
                       </div>
                       <div
                         style={{
@@ -1883,7 +1898,6 @@ function Treino({ logout, user }) {
             </>
           )}
 
-          {/* Stats */}
           {subAbaTreino === "stats" && (
             <TreinoStats
               dashData={dashData}
@@ -1893,7 +1907,6 @@ function Treino({ logout, user }) {
             />
           )}
 
-          {/* Histórico */}
           {subAbaTreino === "historico" && (
             <div className="historico-section">
               <h1 className="title-divisao">Histórico 📜</h1>
@@ -2001,6 +2014,7 @@ function Treino({ logout, user }) {
           )}
         </>
       )}
+
       {abaPrincipal === "perfil" && (
         <PerfilTab
           perfil={perfil}
