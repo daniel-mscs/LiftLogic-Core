@@ -22,6 +22,7 @@ export default function Suplementos({
   const [doseInput, setDoseInput] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(null);
   const dataAtualRef = React.useRef(formatarData(new Date()));
+  const [mostrarTooltip, setMostrarTooltip] = useState(false);
 
   const buscarTudo = useCallback(async () => {
     const hoje = formatarData(new Date());
@@ -244,12 +245,47 @@ export default function Suplementos({
         <h2 className="title-divisao" style={{ margin: 0 }}>
           💊 Suplementação
         </h2>
-        <button
-          className="ajuda-shortcut-btn"
-          onClick={() => onAjuda("ajuda-geral")}
-        >
-          ?
-        </button>
+        <div style={{ position: "relative" }}>
+                  <button
+                    className="ajuda-shortcut-btn"
+                    onClick={() => setMostrarTooltip((v) => !v)}
+                  >
+                    ?
+                  </button>
+                  {mostrarTooltip && (
+                    <div
+                      onClick={() => setMostrarTooltip(false)}
+                      style={{
+                        position: "fixed", inset: 0, zIndex: 998,
+                      }}
+                    />
+                  )}
+                  {mostrarTooltip && (
+                    <div style={{
+                      position: "absolute", right: 0, top: 36, zIndex: 999,
+                      background: "#1e293b", border: "1px solid #334155",
+                      borderRadius: 14, padding: "16px 18px",
+                      width: 280, boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+                      textAlign: "left",
+                    }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: "#f8fafc", marginBottom: 10 }}>
+                        💊 Como usar
+                      </div>
+                      {[
+                        { icon: "➕", text: "Cadastre seus suplementos com nome e dose no campo abaixo." },
+                        { icon: "✅", text: "Toque no suplemento para marcar como tomado. O horário é registrado automaticamente." },
+                        { icon: "🔄", text: "Os checks resetam automaticamente a meia-noite todo dia." },
+                        { icon: "🏠", text: "Na Home você vê o progresso do dia no card de Suplementos." },
+                        { icon: "🗑️", text: "Para remover um suplemento, toque no × ao lado dele." },
+                      ].map((item, i) => (
+                        <div key={i} style={{ display: "flex", gap: 10, marginBottom: 8, alignItems: "flex-start" }}>
+                          <span style={{ fontSize: 14, flexShrink: 0 }}>{item.icon}</span>
+                          <span style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.5 }}>{item.text}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
       </div>
 
       {lista.length > 0 && (
