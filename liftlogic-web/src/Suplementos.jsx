@@ -4,7 +4,9 @@ import { toast } from "./lib/toast";
 import { SkeletonSupl } from "./lib/skeleton";
 
 function formatarData(date) {
-  return date.toISOString().split("T")[0];
+  const offset = date.getTimezoneOffset();
+  const local = new Date(date.getTime() - offset * 60000);
+  return local.toISOString().split("T")[0];
 }
 
 export default function Suplementos({
