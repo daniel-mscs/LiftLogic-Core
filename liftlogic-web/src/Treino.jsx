@@ -1504,7 +1504,7 @@ function Treino({ logout, user }) {
         />
       )}
       {abaPrincipal === "rotina" && <Rotina user={user} />}
-      {abaPrincipal === "habitos" && <Habitos user={user} />}
+      {abaPrincipal === "habitos" && <Habitos user={user} onAjuda={abrirAjuda} />}
       {abaPrincipal === "agua" && <Agua user={user} onAjuda={abrirAjuda} />}
       {abaPrincipal === "peso" && <Peso user={user} onAjuda={abrirAjuda} />}
       {abaPrincipal === "suplementos" && (
@@ -1516,7 +1516,7 @@ function Treino({ logout, user }) {
       {abaPrincipal === "stats" && <Stats user={user} />}
       {abaPrincipal === "smartpocket" && <SmartPocket user={user} />}
       {abaPrincipal === "rpg" && <RPG user={user} />}
-      {abaPrincipal === "sono" && <Sono user={user} />}
+      {abaPrincipal === "sono" && <Sono user={user} onAjuda={abrirAjuda} />}
       {abaPrincipal === "cardio" && <Cardio user={user} />}
       {abaPrincipal === "coach" && <Coach user={user} />}
 

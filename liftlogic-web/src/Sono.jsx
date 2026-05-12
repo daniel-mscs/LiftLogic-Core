@@ -57,10 +57,11 @@ function getLast7Days() {
   });
 }
 
-export default function Sono({ user }) {
+export default function Sono({ user, onAjuda }) {
   const [registros, setRegistros] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [dormiu, setDormiu] = useState("22:00");
+  const [mostrarTooltip, setMostrarTooltip] = useState(false);
   const [acordou, setAcordou] = useState("06:00");
   const [qualidade, setQualidade] = useState(3);
   const [salvando, setSalvando] = useState(false);
@@ -218,7 +219,32 @@ export default function Sono({ user }) {
         </div>
       )}
 
-      <h2 className="title-divisao">😴 Registro de Sono</h2>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h2 className="title-divisao" style={{ margin: 0 }}>😴 Registro de Sono</h2>
+              <div style={{ position: "relative" }}>
+                <button className="ajuda-shortcut-btn" onClick={() => setMostrarTooltip((v) => !v)}>?</button>
+                {mostrarTooltip && (
+                  <div onClick={() => setMostrarTooltip(false)} style={{ position: "fixed", inset: 0, zIndex: 998 }} />
+                )}
+                {mostrarTooltip && (
+                  <div style={{ position: "absolute", right: 0, top: 36, zIndex: 999, background: "#1e293b", border: "1px solid #334155", borderRadius: 14, padding: "16px 18px", width: 280, boxShadow: "0 8px 32px rgba(0,0,0,0.5)", textAlign: "left" }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: "#f8fafc", marginBottom: 10 }}>😴 Como usar</div>
+                    {[
+                      { icon: "🌙", text: "Registre o horário que dormiu e acordou. O app calcula a duração automaticamente." },
+                      { icon: "⭐", text: "Avalie a qualidade do sono de 1 a 5. Isso ajuda a identificar padrões ao longo da semana." },
+                      { icon: "🎯", text: "A OMS recomenda 7-9h por noite para adultos. Barras verdes no gráfico = noites ideais." },
+                      { icon: "💪", text: "O GH (hormônio do crescimento) é liberado durante o sono — essencial para recuperação muscular e queima de gordura." },
+                      { icon: "⏰", text: "Durma e acorde sempre no mesmo horário, mesmo no fim de semana. A consistência é mais importante que a duração." },
+                    ].map((item, i) => (
+                      <div key={i} style={{ display: "flex", gap: 10, marginBottom: 8, alignItems: "flex-start" }}>
+                        <span style={{ fontSize: 14, flexShrink: 0 }}>{item.icon}</span>
+                        <span style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.5 }}>{item.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
 
       <div
         style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}

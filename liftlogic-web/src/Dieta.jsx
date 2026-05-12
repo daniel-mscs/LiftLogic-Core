@@ -44,6 +44,7 @@ export default function Dieta({ user, compact = false, onAjuda }) {
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [showSugestao, setShowSugestao] = useState(false);
+    const [mostrarTooltip, setMostrarTooltip] = useState(false);
   const [objetivo, setObjetivo] = useState("emagrecer");
   const [renda, setRenda] = useState("baixa");
   const [perfil, setPerfil] = useState(null);
@@ -236,12 +237,34 @@ export default function Dieta({ user, compact = false, onAjuda }) {
           <h2 className="title-divisao" style={{ margin: 0 }}>
             🥗 Plano Alimentar
           </h2>
-          <button
-            className="ajuda-shortcut-btn"
-            onClick={() => onAjuda("ajuda-dieta")}
-          >
-            ?
-          </button>
+          <div style={{ position: "relative" }}>
+                      <button
+                        className="ajuda-shortcut-btn"
+                        onClick={() => setMostrarTooltip((v) => !v)}
+                      >
+                        ?
+                      </button>
+                      {mostrarTooltip && (
+                        <div onClick={() => setMostrarTooltip(false)} style={{ position: "fixed", inset: 0, zIndex: 998 }} />
+                      )}
+                      {mostrarTooltip && (
+                        <div style={{ position: "absolute", right: 0, top: 36, zIndex: 999, background: "#1e293b", border: "1px solid #334155", borderRadius: 14, padding: "16px 18px", width: 280, boxShadow: "0 8px 32px rgba(0,0,0,0.5)", textAlign: "left" }}>
+                          <div style={{ fontSize: 14, fontWeight: 800, color: "#f8fafc", marginBottom: 10 }}>🥗 Como usar</div>
+                          {[
+                            { icon: "✏️", text: "Edite cada refeição diretamente no campo de texto. Salva automaticamente quando você sai do campo." },
+                            { icon: "✨", text: "Use a sugestão automática para gerar um plano completo baseado no seu objetivo e renda." },
+                            { icon: "🏠", text: "A refeição do horário atual aparece automaticamente na Home." },
+                            { icon: "⏰", text: "Cada refeição tem um horário sugerido — café (5-9h), almoço (12-13h), janta (18-22h), etc." },
+                            { icon: "⚠️", text: "A sugestão automática substitui o plano atual. Você pode editar qualquer item depois." },
+                          ].map((item, i) => (
+                            <div key={i} style={{ display: "flex", gap: 10, marginBottom: 8, alignItems: "flex-start" }}>
+                              <span style={{ fontSize: 14, flexShrink: 0 }}>{item.icon}</span>
+                              <span style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.5 }}>{item.text}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
         </div>
         {salvando && (
           <span style={{ fontSize: 12, color: "#64748b" }}>Salvando...</span>
