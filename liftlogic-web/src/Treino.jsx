@@ -1504,7 +1504,9 @@ function Treino({ logout, user }) {
         />
       )}
       {abaPrincipal === "rotina" && <Rotina user={user} />}
-      {abaPrincipal === "habitos" && <Habitos user={user} onAjuda={abrirAjuda} />}
+      {abaPrincipal === "habitos" && (
+        <Habitos user={user} onAjuda={abrirAjuda} />
+      )}
       {abaPrincipal === "agua" && <Agua user={user} onAjuda={abrirAjuda} />}
       {abaPrincipal === "peso" && <Peso user={user} onAjuda={abrirAjuda} />}
       {abaPrincipal === "suplementos" && (

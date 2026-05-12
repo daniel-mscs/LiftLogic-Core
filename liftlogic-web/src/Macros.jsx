@@ -100,7 +100,7 @@ export default function Macros({ user, onAjuda }) {
   const [registrosClonar, setRegistrosClonar] = useState([]);
   const [gramasClonar, setGramasClonar] = useState({});
   const [carregandoClonar, setCarregandoClonar] = useState(false);
-    const [mostrarTooltip, setMostrarTooltip] = useState(false);
+  const [mostrarTooltip, setMostrarTooltip] = useState(false);
 
   const hoje = formatarData(new Date());
 
@@ -490,33 +490,88 @@ export default function Macros({ user, onAjuda }) {
           🍽️ Controle de Macros
         </h2>
         <div style={{ position: "relative" }}>
-                  <button
-                    className="ajuda-shortcut-btn"
-                    onClick={() => setMostrarTooltip((v) => !v)}
+          <button
+            className="ajuda-shortcut-btn"
+            onClick={() => setMostrarTooltip((v) => !v)}
+          >
+            ?
+          </button>
+          {mostrarTooltip && (
+            <div
+              onClick={() => setMostrarTooltip(false)}
+              style={{ position: "fixed", inset: 0, zIndex: 998 }}
+            />
+          )}
+          {mostrarTooltip && (
+            <div
+              style={{
+                position: "absolute",
+                right: 0,
+                top: 36,
+                zIndex: 999,
+                background: "#1e293b",
+                border: "1px solid #334155",
+                borderRadius: 14,
+                padding: "16px 18px",
+                width: 280,
+                boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+                textAlign: "left",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 14,
+                  fontWeight: 800,
+                  color: "#f8fafc",
+                  marginBottom: 10,
+                }}
+              >
+                🍽️ Como usar
+              </div>
+              {[
+                {
+                  icon: "🔍",
+                  text: "Busque qualquer alimento pelo nome. O app tem uma base com centenas de alimentos brasileiros.",
+                },
+                {
+                  icon: "⚖️",
+                  text: "Digite a quantidade em gramas e selecione a refeição. O preview mostra os macros antes de confirmar.",
+                },
+                {
+                  icon: "📋",
+                  text: "Use 'Clonar de outro dia' para copiar refeições de dias anteriores sem redigitar tudo.",
+                },
+                {
+                  icon: "🎯",
+                  text: "Selecione seu objetivo (emagrecer/manter/ganhar) para ver as metas de proteína, carb e gordura calculadas pelo seu peso.",
+                },
+                {
+                  icon: "🔥",
+                  text: "O saldo calórico cruza o que você comeu com treino, cardio e passos do dia automaticamente.",
+                },
+              ].map((item, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: "flex",
+                    gap: 10,
+                    marginBottom: 8,
+                    alignItems: "flex-start",
+                  }}
+                >
+                  <span style={{ fontSize: 14, flexShrink: 0 }}>
+                    {item.icon}
+                  </span>
+                  <span
+                    style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.5 }}
                   >
-                    ?
-                  </button>
-                  {mostrarTooltip && (
-                    <div onClick={() => setMostrarTooltip(false)} style={{ position: "fixed", inset: 0, zIndex: 998 }} />
-                  )}
-                  {mostrarTooltip && (
-                    <div style={{ position: "absolute", right: 0, top: 36, zIndex: 999, background: "#1e293b", border: "1px solid #334155", borderRadius: 14, padding: "16px 18px", width: 280, boxShadow: "0 8px 32px rgba(0,0,0,0.5)", textAlign: "left" }}>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: "#f8fafc", marginBottom: 10 }}>🍽️ Como usar</div>
-                      {[
-                        { icon: "🔍", text: "Busque qualquer alimento pelo nome. O app tem uma base com centenas de alimentos brasileiros." },
-                        { icon: "⚖️", text: "Digite a quantidade em gramas e selecione a refeição. O preview mostra os macros antes de confirmar." },
-                        { icon: "📋", text: "Use 'Clonar de outro dia' para copiar refeições de dias anteriores sem redigitar tudo." },
-                        { icon: "🎯", text: "Selecione seu objetivo (emagrecer/manter/ganhar) para ver as metas de proteína, carb e gordura calculadas pelo seu peso." },
-                        { icon: "🔥", text: "O saldo calórico cruza o que você comeu com treino, cardio e passos do dia automaticamente." },
-                      ].map((item, i) => (
-                        <div key={i} style={{ display: "flex", gap: 10, marginBottom: 8, alignItems: "flex-start" }}>
-                          <span style={{ fontSize: 14, flexShrink: 0 }}>{item.icon}</span>
-                          <span style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.5 }}>{item.text}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                    {item.text}
+                  </span>
                 </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Resumo */}

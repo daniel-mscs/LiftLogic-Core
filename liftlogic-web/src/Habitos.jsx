@@ -230,48 +230,112 @@ export default function Habitos({ user, compact = false, onAjuda }) {
   return (
     <div className="habitos-section">
       {/* Header */}
-            <div className="habitos-header">
-              <div>
-                <div className="habitos-hoje-label">HOJE</div>
-                <div className="habitos-hoje-data">
-                  {new Date().toLocaleDateString("pt-BR", {
-                    weekday: "long",
-                    day: "2-digit",
-                    month: "long",
-                  })}
-                </div>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                {streak > 0 && (
-                  <div className="habitos-streak">
-                    🔥 {streak} dia{streak > 1 ? "s" : ""}
-                  </div>
-                )}
-                <div style={{ position: "relative" }}>
-                  <button className="ajuda-shortcut-btn" onClick={() => setMostrarTooltip((v) => !v)}>?</button>
-                  {mostrarTooltip && (
-                    <div onClick={() => setMostrarTooltip(false)} style={{ position: "fixed", inset: 0, zIndex: 998 }} />
-                  )}
-                  {mostrarTooltip && (
-                    <div style={{ position: "absolute", right: 0, top: 36, zIndex: 999, background: "#1e293b", border: "1px solid #334155", borderRadius: 14, padding: "16px 18px", width: 280, boxShadow: "0 8px 32px rgba(0,0,0,0.5)", textAlign: "left" }}>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: "#f8fafc", marginBottom: 10 }}>🧱 Como usar</div>
-                      {[
-                        { icon: "✅", text: "Toque em qualquer hábito para marcar como concluído no dia de hoje." },
-                        { icon: "🔥", text: "O streak conta quantos dias seguidos você marcou pelo menos um hábito." },
-                        { icon: "➕", text: "Adicione hábitos personalizados com nome e emoji próprio." },
-                        { icon: "📊", text: "Os pontos dos últimos 7 dias mostram quantos hábitos você completou em cada dia." },
-                        { icon: "⭐", text: "Cada hábito concluído ganha XP pro seu personagem RPG." },
-                      ].map((item, i) => (
-                        <div key={i} style={{ display: "flex", gap: 10, marginBottom: 8, alignItems: "flex-start" }}>
-                          <span style={{ fontSize: 14, flexShrink: 0 }}>{item.icon}</span>
-                          <span style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.5 }}>{item.text}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
+      <div className="habitos-header">
+        <div>
+          <div className="habitos-hoje-label">HOJE</div>
+          <div className="habitos-hoje-data">
+            {new Date().toLocaleDateString("pt-BR", {
+              weekday: "long",
+              day: "2-digit",
+              month: "long",
+            })}
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {streak > 0 && (
+            <div className="habitos-streak">
+              🔥 {streak} dia{streak > 1 ? "s" : ""}
             </div>
+          )}
+          <div style={{ position: "relative" }}>
+            <button
+              className="ajuda-shortcut-btn"
+              onClick={() => setMostrarTooltip((v) => !v)}
+            >
+              ?
+            </button>
+            {mostrarTooltip && (
+              <div
+                onClick={() => setMostrarTooltip(false)}
+                style={{ position: "fixed", inset: 0, zIndex: 998 }}
+              />
+            )}
+            {mostrarTooltip && (
+              <div
+                style={{
+                  position: "absolute",
+                  right: 0,
+                  top: 36,
+                  zIndex: 999,
+                  background: "#1e293b",
+                  border: "1px solid #334155",
+                  borderRadius: 14,
+                  padding: "16px 18px",
+                  width: 280,
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+                  textAlign: "left",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 800,
+                    color: "#f8fafc",
+                    marginBottom: 10,
+                  }}
+                >
+                  🧱 Como usar
+                </div>
+                {[
+                  {
+                    icon: "✅",
+                    text: "Toque em qualquer hábito para marcar como concluído no dia de hoje.",
+                  },
+                  {
+                    icon: "🔥",
+                    text: "O streak conta quantos dias seguidos você marcou pelo menos um hábito.",
+                  },
+                  {
+                    icon: "➕",
+                    text: "Adicione hábitos personalizados com nome e emoji próprio.",
+                  },
+                  {
+                    icon: "📊",
+                    text: "Os pontos dos últimos 7 dias mostram quantos hábitos você completou em cada dia.",
+                  },
+                  {
+                    icon: "⭐",
+                    text: "Cada hábito concluído ganha XP pro seu personagem RPG.",
+                  },
+                ].map((item, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: "flex",
+                      gap: 10,
+                      marginBottom: 8,
+                      alignItems: "flex-start",
+                    }}
+                  >
+                    <span style={{ fontSize: 14, flexShrink: 0 }}>
+                      {item.icon}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 12,
+                        color: "#94a3b8",
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {item.text}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Progresso */}
       <div className="habitos-prog-card">
